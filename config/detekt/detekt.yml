@@ -1,0 +1,50 @@
+naming:
+  ClassNaming:
+    active: true
+    # Empieza con mayúscula y NO permite [A-Z]{2}
+    classPattern: '^(?!.*[A-Z]{2})[A-Z][A-Za-z0-9]*$'
+
+  FunctionNaming:
+    active: true
+    # lowerCamelCase, sin AA
+    functionPattern: '^(?!.*[A-Z]{2})[a-z][A-Za-z0-9]*$'
+    ignoreAnnotated: ['Test']   # permite nombres raros en tests
+
+  VariableNaming:
+    active: true
+    # lowerCamelCase, sin AA
+    variablePattern: '^(?!.*[A-Z]{2})[a-z][A-Za-z0-9]*$'
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 400
+    excludePackageStatements: true
+    excludeImportStatements: true
+    excludeCommentStatements: false
+
+  ReturnCount:
+    active: true
+    max: 10
+
+  LoopWithTooManyJumpStatements:
+    active: false
+
+complexity:
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 25
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 20
+    thresholdInInterfaces: 20
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+    excludes: ['**/runner/src/main/kotlin/org/printscript/runner/**']
+    allowedExceptionNameRegex: '^(_|(ignore|expected).*)'
