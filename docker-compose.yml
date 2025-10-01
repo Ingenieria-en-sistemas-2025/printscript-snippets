@@ -6,9 +6,26 @@ services:
       POSTGRES_USER: tests
       POSTGRES_PASSWORD: tests
       POSTGRES_DB: tests
-    ports: [ "5434:5432" ]
-    volumes:
-      - pg_tests:/var/lib/postgresql/data
+    volumes: ["pg_tests:/var/lib/postgresql/data"]
+    ports: ["5434:5432"]
+    networks: [printscript-net]
+
+  tests:
+    build: .
+    container_name: ps-tests
+    ports: [ "8084:8084" ]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-tests:5432/tests
+      SPRING_DATASOURCE_USERNAME: tests
+      SPRING_DATASOURCE_PASSWORD: tests
+      EXECUTION_BASE_URL: http://execution:8082
+      LOGGING_LEVEL_ROOT: INFO
+    depends_on: [ pg-tests ]
+    networks: [ printscript-net ]
 
 volumes:
-  pg_tests:
+  pg_tests: {}
+
+networks:
+  printscript-net:
+    external: true
