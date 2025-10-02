@@ -1,4 +1,4 @@
-package com.printscript.tests
+package com.printscript.tests.api
 
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
