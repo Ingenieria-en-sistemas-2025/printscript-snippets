@@ -91,4 +91,54 @@ jobs:
           provenance: false
 
 
+  deploy:
+    needs: publish
+    if: github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to DEV over SSH
+        if: github.ref_name == 'dev'
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        with:
+          host: ${{ secrets.VM_DEV_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_DEV_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/infrastructure
+            git fetch --all
+            git checkout dev || true
+            git pull || true
+            if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
+              echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            fi
+            docker network create printscript-net || true
+            docker compose up -d --pull always
+            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
+
+      - name: Deploy to PROD over SSH
+        if: github.ref_name == 'main'
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        with:
+          host: ${{ secrets.VM_PROD_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_PROD_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/infrastructure
+            git fetch --all
+            git checkout main || true
+            git pull || true
+            if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
+              echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            fi
+            docker network create printscript-net || true
+            docker compose up -d --pull always
+            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
