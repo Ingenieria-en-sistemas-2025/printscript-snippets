@@ -120,7 +120,7 @@ jobs:
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
 
-      - name: Deploy to PROD over SSH
+      - name: Deploy to PROD over SSH #separadas
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         env:
