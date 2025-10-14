@@ -1,5 +1,14 @@
-import jakarta.persistence.*
+package com.printscript.tests.domain
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.annotations.UpdateTimestamp
 import org.hibernate.type.SqlTypes
 import java.time.Instant
 
@@ -7,40 +16,31 @@ import java.time.Instant
 @Table(name = "test_case")
 data class TestCaseEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
-
-    @Column(name = "snippet_id", nullable = false)
+    val id: Long? = null,
     val snippetId: Long,
+    @Column(nullable = false) val name: String,
 
-    @Column(name = "name", length = 120, nullable = false)
-    val name: String,
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition = "jsonb", nullable = false)
+    val inputs: List<String>,
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "inputs", columnDefinition = "jsonb", nullable = false)
-    var inputs: String?,
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "expected_outputs", columnDefinition = "jsonb", nullable = false)
-    var expectedOutputs: String?,
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition = "jsonb", nullable = false)
+    val expectedOutputs: List<String>,
 
     @Column(name = "target_version_number")
     val targetVersionNumber: Long? = null,
 
-    @Column(name = "last_run_status", length = 20, nullable = false)
-    var lastRunStatus: String = "NEVER_RUN",
-
-    @Column(name = "last_run_output", columnDefinition = "jsonb")
-    var lastRunOutput: String? = null,
-
-    @Column(name = "last_run_at")
-    var lastRunAt: Instant? = null,
-
-    @Column(name = "created_by", nullable = false, length = 120)
     val createdBy: String,
 
-    @Column(name = "created_at", nullable = false)
-    val createdAt: Instant = Instant.now(),
+    @CreationTimestamp @Column(nullable = false, updatable = false)
+    val createdAt: Instant? = null,
 
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    @UpdateTimestamp @Column(nullable = false)
+    val updatedAt: Instant? = null,
+
+    val lastRunStatus: String? = null,
+
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition = "jsonb")
+    val lastRunOutput: List<String>? = null,
+
+    val lastRunAt: Instant? = null
 )

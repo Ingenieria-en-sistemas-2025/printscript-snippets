@@ -1,45 +1,41 @@
 package com.printscript.tests.domain
 
-import jakarta.persistence.*
-import java.time.Instant
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "test_run")
-class TestRunEntity(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+data class TestRunEntity(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
 
-    @Column(name = "test_id", nullable = false)
-    var testId: Long,
+    val testId: Long,
+    val snippetId: Long,
+    val snippetVersionNumber: Long,
 
-    @Column(name = "snippet_id", nullable = false)
-    var snippetId: Long,
+    val status: String,
 
-    @Column(name = "snippet_version_number", nullable = false)
-    var snippetVersionNumber: Long,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    val inputs: List<String>,
 
-    @Column(name = "status", nullable = false, length = 20)
-    var status: String,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    val expectedOutputs: List<String>,
 
-    @Column(name = "inputs", nullable = false, columnDefinition = "jsonb")
-    var inputsJson: String?,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    val outputs: List<String>? = null,
 
-    @Column(name = "expected_outputs", nullable = false, columnDefinition = "jsonb")
-    var expectedOutputsJson: String?,
-
-    @Column(name = "outputs", columnDefinition = "jsonb")
-    var outputsJson: String? = null,
-
-    @Column(name = "error_message")
-    var errorMessage: String? = null,
-
-    @Column(name = "duration_ms")
-    var durationMs: Long? = null,
-
-    @Column(name = "executed_by", length = 120)
-    var executedBy: String? = null,
-
-    @Column(name = "executed_at", nullable = false)
-    var executedAt: Instant = Instant.now()
+    val errorMessage: String? = null,
+    val durationMs: Long,
+    val executedBy: String,
+    val executedAt: java.time.Instant
 )

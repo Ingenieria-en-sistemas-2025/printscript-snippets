@@ -1,11 +1,15 @@
 package com.printscript.tests.service
 
-import TestCaseEntity
-import com.printscript.tests.domain.JsonUtils
+import com.printscript.tests.clients.SnippetClient
+import com.printscript.tests.domain.TestCaseEntity
 import com.printscript.tests.domain.TestCaseRepository
+import com.printscript.tests.domain.toBrief
 import com.printscript.tests.domain.toResponse
 import com.printscript.tests.dto.CreateTestRequest
 import com.printscript.tests.dto.TestCaseResponse
+import com.printscript.tests.dto.UpdateTestRequest
+import com.printscript.tests.dto.SnippetTestsResponse
+import com.printscript.tests.dto.TestCaseBriefResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -13,22 +17,90 @@ import java.time.Instant
 @Service
 class TestService(
     private val repo: TestCaseRepository,
-    private val json: JsonUtils
+    private val snippetClient: SnippetClient
 ) {
 
+    // CREATE (US8)
     @Transactional
     fun create(snippetId: Long, req: CreateTestRequest, userId: String): TestCaseResponse {
-        // chequear permisos contra Snippet Service (canWrite)
+        ensureCanWrite(userId, snippetId)
         val entity = TestCaseEntity(
             snippetId = snippetId,
             name = req.name,
-            inputs = json.listToJson(req.inputs),
-            expectedOutputs = json.listToJson(req.expectedOutputs),
+            inputs = req.inputs,
+            expectedOutputs = req.expectedOutputs,
             targetVersionNumber = req.targetVersionNumber,
-            createdBy = userId,
-            createdAt = Instant.now(),
+            createdBy = userId
+        )
+        return repo.save(entity).toResponse()
+    }
+
+    // READ ALL (US6)
+    @Transactional(readOnly = true)
+    fun getTestsBySnippet(snippetId: Long, userId: String): List<TestCaseResponse> {
+        ensureCanRead(userId, snippetId)
+        return repo.findBySnippetId(snippetId).map { it.toResponse() }
+    }
+
+    // READ ONE
+    @Transactional(readOnly = true)
+    fun getTestForSnippet(testId: Long, snippetId: Long, userId: String): TestCaseResponse {
+        val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
+        ensureCanRead(userId, test.snippetId)
+        require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
+        return test.toResponse()
+    }
+
+    // UPDATE entidad inmutable: usar copy(...)
+    @Transactional
+    fun update(testId: Long, snippetId: Long, req: UpdateTestRequest, userId: String): TestCaseResponse {
+        val current = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
+        require(current.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
+        ensureCanWrite(userId, snippetId)
+
+        val updated = current.copy(
+            name = req.name ?: current.name,
+            inputs = req.inputs ?: current.inputs,
+            expectedOutputs = req.expectedOutputs ?: current.expectedOutputs,
+            targetVersionNumber = req.targetVersionNumber ?: current.targetVersionNumber,
             updatedAt = Instant.now()
         )
-        return repo.save(entity).toResponse(json)
+        return repo.save(updated).toResponse()
+    }
+
+    // DELETE
+    @Transactional
+    fun delete(testId: Long, snippetId: Long, userId: String) {
+        val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
+        require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
+        ensureCanWrite(userId, snippetId)
+        repo.delete(test)
+    }
+
+    @Transactional(readOnly = true)
+    fun getTestsBriefBySnippet(snippetId: Long, userId: String): List<TestCaseBriefResponse> {
+        ensureCanRead(userId, snippetId)
+        return repo.findBySnippetId(snippetId).map { it.toBrief() }
+    }
+
+    @Transactional(readOnly = true)
+    fun getTestsSummary(snippetId: Long, userId: String): SnippetTestsResponse {
+        val tests = getTestsBriefBySnippet(snippetId, userId)
+        return SnippetTestsResponse(
+            snippetId = snippetId,
+            tests = tests,
+            total = tests.size,
+            passed = tests.count { it.lastRunStatus == "PASSED" },
+            failed = tests.count { it.lastRunStatus == "FAILED" },
+            error = tests.count { it.lastRunStatus == "ERROR" }
+        )
+    }
+
+    // helpers
+    private fun ensureCanRead(userId: String, snippetId: Long) {
+        if (!snippetClient.canRead(userId, snippetId)) throw SecurityException("Sin permisos de lectura")
+    }
+    private fun ensureCanWrite(userId: String, snippetId: Long) {
+        if (!snippetClient.canWrite(userId, snippetId)) throw SecurityException("Sin permisos de escritura")
     }
 }

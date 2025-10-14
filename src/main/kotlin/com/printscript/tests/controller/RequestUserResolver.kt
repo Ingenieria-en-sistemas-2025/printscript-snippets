@@ -1,4 +1,4 @@
-package com.printscript.tests.api
+package com.printscript.tests.controller
 
 import jakarta.servlet.http.HttpServletRequest
 

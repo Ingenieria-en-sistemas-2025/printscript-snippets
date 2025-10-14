@@ -11,7 +11,7 @@ data class TestRunResponse(
     val expectedOutputs: List<String>?,
     val outputs: List<String>?,
     val errorMessage: String?,
-    val durationMs: Long,
-    val executedBy: String,
+    val durationMs: Long?,
+    val executedBy: String?,
     val executedAt: Instant
 )
