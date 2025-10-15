@@ -1,7 +1,7 @@
 package com.printscript.tests.domain
 
-import com.printscript.tests.dto.TestCaseResponse
 import com.printscript.tests.dto.TestCaseBriefResponse
+import com.printscript.tests.dto.TestCaseResponse
 
 fun TestCaseEntity.toResponse() = TestCaseResponse(
     id = id!!,
@@ -12,7 +12,7 @@ fun TestCaseEntity.toResponse() = TestCaseResponse(
     targetVersionNumber = targetVersionNumber,
     lastRunStatus = lastRunStatus,
     lastRunOutput = lastRunOutput,
-    lastRunAt = lastRunAt
+    lastRunAt = lastRunAt,
 )
 
 // version resumida del test, sin inputs ni outputs
@@ -20,5 +20,5 @@ fun TestCaseEntity.toBrief() = TestCaseBriefResponse(
     id = id!!,
     name = name,
     lastRunStatus = lastRunStatus,
-    lastRunAt = lastRunAt?.toString()
+    lastRunAt = lastRunAt?.toString(),
 )

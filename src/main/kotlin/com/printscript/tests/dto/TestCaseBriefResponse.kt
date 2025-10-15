@@ -4,5 +4,5 @@ data class TestCaseBriefResponse(
     val id: Long,
     val name: String,
     val lastRunStatus: String?,
-    val lastRunAt: String?
+    val lastRunAt: String?,
 )

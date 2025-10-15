@@ -6,10 +6,10 @@ import com.printscript.tests.domain.TestCaseRepository
 import com.printscript.tests.domain.toBrief
 import com.printscript.tests.domain.toResponse
 import com.printscript.tests.dto.CreateTestRequest
-import com.printscript.tests.dto.TestCaseResponse
-import com.printscript.tests.dto.UpdateTestRequest
 import com.printscript.tests.dto.SnippetTestsResponse
 import com.printscript.tests.dto.TestCaseBriefResponse
+import com.printscript.tests.dto.TestCaseResponse
+import com.printscript.tests.dto.UpdateTestRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -17,7 +17,7 @@ import java.time.Instant
 @Service
 class TestService(
     private val repo: TestCaseRepository,
-    private val snippetClient: SnippetClient
+    private val snippetClient: SnippetClient,
 ) {
 
     // CREATE (US8)
@@ -30,7 +30,7 @@ class TestService(
             inputs = req.inputs,
             expectedOutputs = req.expectedOutputs,
             targetVersionNumber = req.targetVersionNumber,
-            createdBy = userId
+            createdBy = userId,
         )
         return repo.save(entity).toResponse()
     }
@@ -63,7 +63,7 @@ class TestService(
             inputs = req.inputs ?: current.inputs,
             expectedOutputs = req.expectedOutputs ?: current.expectedOutputs,
             targetVersionNumber = req.targetVersionNumber ?: current.targetVersionNumber,
-            updatedAt = Instant.now()
+            updatedAt = Instant.now(),
         )
         return repo.save(updated).toResponse()
     }
@@ -92,7 +92,7 @@ class TestService(
             total = tests.size,
             passed = tests.count { it.lastRunStatus == "PASSED" },
             failed = tests.count { it.lastRunStatus == "FAILED" },
-            error = tests.count { it.lastRunStatus == "ERROR" }
+            error = tests.count { it.lastRunStatus == "ERROR" },
         )
     }
 

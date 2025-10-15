@@ -1,6 +1,5 @@
 package com.printscript.tests.domain
 
-
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -37,5 +36,5 @@ data class TestRunEntity(
     val errorMessage: String? = null,
     val durationMs: Long,
     val executedBy: String,
-    val executedAt: java.time.Instant
+    val executedAt: java.time.Instant,
 )

@@ -95,7 +95,34 @@ jobs:
     needs: publish
     if: github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Start DEV VM
+        if: github.ref_name == 'dev'
+        run: |
+          az vm start -g "${{ secrets.AZ_RG_DEV }}" -n "${{ secrets.AZ_VM_DEV_NAME }}"
+          # Esperar a que el SSH responda (máx ~2 min)
+          for i in {1..24}; do
+            nc -z ${{ secrets.VM_DEV_HOST }} 22 && echo "SSH listo" && exit 0
+            echo "Esperando SSH..." && sleep 5
+          done
+          echo "Timeout esperando SSH" && exit 1
+      - name: Start PROD VM
+        if: github.ref_name == 'main'
+        run: |
+          az vm start -g "${{ secrets.AZ_RG_PROD }}" -n "${{ secrets.AZ_VM_PROD_NAME }}"
+          # Esperar a que el SSH responda (máx ~2 min)
+          for i in {1..24}; do
+            nc -z ${{ secrets.VM_PROD_HOST }} 22 && echo "SSH listo" && exit 0
+            echo "Esperando SSH..." && sleep 5
+          done
+          echo "Timeout esperando SSH" && exit 1
       - name: Deploy to DEV over SSH
         if: github.ref_name == 'dev'
         uses: appleboy/ssh-action@v1.0.3

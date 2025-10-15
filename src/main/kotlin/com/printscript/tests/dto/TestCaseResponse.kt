@@ -11,5 +11,5 @@ data class TestCaseResponse(
     val targetVersionNumber: Long?,
     val lastRunStatus: String?,
     val lastRunOutput: List<String>?,
-    val lastRunAt: Instant?
+    val lastRunAt: Instant?,
 )

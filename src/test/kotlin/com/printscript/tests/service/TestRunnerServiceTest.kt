@@ -35,7 +35,7 @@ class TestRunnerServiceTest {
         expectedOutputs = listOf("5"),
         targetVersionNumber = 3L,
         createdBy = "u1", createdAt = Instant.now(), updatedAt = Instant.now(),
-        lastRunStatus = "NEVER_RUN", lastRunOutput = null, lastRunAt = null
+        lastRunStatus = "NEVER_RUN", lastRunOutput = null, lastRunAt = null,
     )
 
     @Test
@@ -86,7 +86,7 @@ class TestRunnerServiceTest {
         every { snippetClient.canRead("u1", 42L) } returns true
         val t1 = helperTestCaseEntityCreator().copy(id = 11L)
         val t2 = helperTestCaseEntityCreator().copy(id = 12L)
-        every { testCaseRepo.findBySnippetId(42L) } returns listOf(t1,t2)
+        every { testCaseRepo.findBySnippetId(42L) } returns listOf(t1, t2)
         every { testCaseRepo.findById(11L) } returns Optional.of(t1)
         every { testCaseRepo.findById(12L) } returns Optional.of(t2)
         every { exec.execute(42L, any()) } returnsMany listOf(listOf("5"), listOf("5"))
@@ -117,7 +117,7 @@ class TestRunnerServiceTest {
             null,
             1,
             "u1",
-            Instant.parse("2025-10-10T10:00:00Z")
+            Instant.parse("2025-10-10T10:00:00Z"),
         )
         val r2 = TestRunEntity(
             null,
@@ -131,9 +131,9 @@ class TestRunnerServiceTest {
             null,
             1,
             "u1",
-            Instant.parse("2025-10-11T10:00:00Z")
+            Instant.parse("2025-10-11T10:00:00Z"),
         )
-        every { testRunRepo.findByTestId(10L) } returns listOf(r1,r2)
+        every { testRunRepo.findByTestId(10L) } returns listOf(r1, r2)
 
         val hist = service.getTestRunHistory(10L, "u1")
         assertEquals(listOf("FAILED", "PASSED"), hist.map { it.status })

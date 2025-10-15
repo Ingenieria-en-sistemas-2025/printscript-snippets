@@ -42,5 +42,5 @@ data class TestCaseEntity(
     @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition = "jsonb")
     val lastRunOutput: List<String>? = null,
 
-    val lastRunAt: Instant? = null
+    val lastRunAt: Instant? = null,
 )

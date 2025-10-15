@@ -13,5 +13,5 @@ data class TestRunResponse(
     val errorMessage: String?,
     val durationMs: Long?,
     val executedBy: String?,
-    val executedAt: Instant
+    val executedAt: Instant,
 )
