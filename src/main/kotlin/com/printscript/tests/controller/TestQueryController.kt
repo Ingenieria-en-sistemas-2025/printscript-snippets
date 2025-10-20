@@ -21,7 +21,6 @@ class TestQueryController(
         @PathVariable snippetId: Long,
         request: HttpServletRequest,
     ): List<TestCaseBriefResponse> {
-        val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestsBriefBySnippet(snippetId)
     }
 
@@ -31,7 +30,6 @@ class TestQueryController(
         @PathVariable snippetId: Long,
         request: HttpServletRequest,
     ): SnippetTestsResponse {
-        val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestsSummary(snippetId)
     }
 }
