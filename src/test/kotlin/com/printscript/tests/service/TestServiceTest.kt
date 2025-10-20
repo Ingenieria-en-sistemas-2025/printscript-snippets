@@ -152,7 +152,7 @@ class TestServiceTest {
         )
         every { repo.findBySnippetId(42L) } returns listOf(e1, e2, e3)
 
-        val summary = service.getTestsSummary(42L, "u1")
+        val summary = service.getTestsSummary(42L)
         assertEquals(3, summary.total)
         assertEquals(1, summary.passed)
         assertEquals(1, summary.failed)

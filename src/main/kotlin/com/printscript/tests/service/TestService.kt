@@ -84,7 +84,7 @@ class TestService(
     }
 
     @Transactional(readOnly = true)
-    fun getTestsSummary(snippetId: Long, userId: String): SnippetTestsResponse {
+    fun getTestsSummary(snippetId: Long): SnippetTestsResponse {
         val tests = getTestsBriefBySnippet(snippetId)
         return SnippetTestsResponse(
             snippetId = snippetId,

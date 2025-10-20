@@ -32,6 +32,6 @@ class TestQueryController(
         request: HttpServletRequest,
     ): SnippetTestsResponse {
         val userId = RequestUserResolver.resolveUserId(request)
-        return testService.getTestsSummary(snippetId, userId)
+        return testService.getTestsSummary(snippetId)
     }
 }
