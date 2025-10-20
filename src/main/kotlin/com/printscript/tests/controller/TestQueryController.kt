@@ -4,7 +4,10 @@ import com.printscript.tests.dto.SnippetTestsResponse
 import com.printscript.tests.dto.TestCaseBriefResponse
 import com.printscript.tests.service.TestService
 import jakarta.servlet.http.HttpServletRequest
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 // US6
 @RestController
