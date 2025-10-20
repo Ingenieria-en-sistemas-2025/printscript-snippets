@@ -43,7 +43,7 @@ class TestRunnerServiceTest {
         // u1 si puede leer
         every { snippetClient.canRead() } returns true
         every { testCaseRepo.findById(10L) } returns Optional.of(helperTestCaseEntityCreator())
-        every { exec.execute(42L, listOf("2", "3")) } returns listOf("5")
+        every { exec.execute(listOf("2", "3")) } returns listOf("5")
         every { testRunRepo.save(any<TestRunEntity>()) } answers { firstArg() }
         every { testCaseRepo.save(any()) } answers { firstArg() }
 
@@ -57,7 +57,7 @@ class TestRunnerServiceTest {
     fun testRunSingleFail() {
         every { snippetClient.canRead() } returns true
         every { testCaseRepo.findById(10L) } returns Optional.of(helperTestCaseEntityCreator())
-        every { exec.execute(42L, listOf("2", "3")) } returns listOf("7")
+        every { exec.execute(listOf("2", "3")) } returns listOf("7")
         every { testRunRepo.save(any<TestRunEntity>()) } answers { firstArg() }
         every { testCaseRepo.save(any()) } answers { firstArg() }
 
@@ -70,7 +70,7 @@ class TestRunnerServiceTest {
     fun testRunSingleError() {
         every { snippetClient.canRead() } returns true
         every { testCaseRepo.findById(10L) } returns Optional.of(helperTestCaseEntityCreator())
-        every { exec.execute(42L, any()) } throws IllegalStateException("error msg")
+        every { exec.execute(any()) } throws IllegalStateException("error msg")
         every { testRunRepo.save(any<TestRunEntity>()) } answers { firstArg() }
         every { testCaseRepo.save(any()) } answers { firstArg() }
         // si el executor lanza, el servicio captura, marca ERROR,
@@ -89,14 +89,14 @@ class TestRunnerServiceTest {
         every { testCaseRepo.findBySnippetId(42L) } returns listOf(t1, t2)
         every { testCaseRepo.findById(11L) } returns Optional.of(t1)
         every { testCaseRepo.findById(12L) } returns Optional.of(t2)
-        every { exec.execute(42L, any()) } returnsMany listOf(listOf("5"), listOf("5"))
+        every { exec.execute(any()) } returnsMany listOf(listOf("5"), listOf("5"))
         every { testRunRepo.save(any<TestRunEntity>()) } answers { firstArg() }
         every { testCaseRepo.save(any()) } answers { firstArg() }
         // verifico que la lista de rtas tenga 2
         // y que el executor haya sido llamado 2 veces con runSingle
         val res = service.runAllForSnippet(42L, "u1")
         assertEquals(2, res.size)
-        verify(exactly = 2) { exec.execute(42L, any()) }
+        verify(exactly = 2) { exec.execute(any()) }
     }
 
     @Test

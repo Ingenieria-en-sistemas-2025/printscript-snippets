@@ -23,7 +23,7 @@ class TestService(
     // CREATE (US8)
     @Transactional
     fun create(snippetId: Long, req: CreateTestRequest, userId: String): TestCaseResponse {
-        ensureCanWrite(userId, snippetId)
+        ensureCanWrite()
         val entity = TestCaseEntity(
             snippetId = snippetId,
             name = req.name,
@@ -38,7 +38,7 @@ class TestService(
     // READ ALL (US6)
     @Transactional(readOnly = true)
     fun getTestsBySnippet(snippetId: Long, userId: String): List<TestCaseResponse> {
-        ensureCanRead(userId, snippetId)
+        ensureCanRead()
         return repo.findBySnippetId(snippetId).map { it.toResponse() }
     }
 
@@ -46,7 +46,7 @@ class TestService(
     @Transactional(readOnly = true)
     fun getTestForSnippet(testId: Long, snippetId: Long, userId: String): TestCaseResponse {
         val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
-        ensureCanRead(userId, test.snippetId)
+        ensureCanRead()
         require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
         return test.toResponse()
     }
@@ -56,7 +56,7 @@ class TestService(
     fun update(testId: Long, snippetId: Long, req: UpdateTestRequest, userId: String): TestCaseResponse {
         val current = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
         require(current.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
-        ensureCanWrite(userId, snippetId)
+        ensureCanWrite()
 
         val updated = current.copy(
             name = req.name ?: current.name,
@@ -73,13 +73,13 @@ class TestService(
     fun delete(testId: Long, snippetId: Long, userId: String) {
         val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
         require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
-        ensureCanWrite(userId, snippetId)
+        ensureCanWrite()
         repo.delete(test)
     }
 
     @Transactional(readOnly = true)
     fun getTestsBriefBySnippet(snippetId: Long, userId: String): List<TestCaseBriefResponse> {
-        ensureCanRead(userId, snippetId)
+        ensureCanRead()
         return repo.findBySnippetId(snippetId).map { it.toBrief() }
     }
 
@@ -97,10 +97,10 @@ class TestService(
     }
 
     // helpers
-    private fun ensureCanRead(userId: String, snippetId: Long) {
+    private fun ensureCanRead() {
         if (!snippetClient.canRead()) throw SecurityException("Sin permisos de lectura")
     }
-    private fun ensureCanWrite(userId: String, snippetId: Long) {
+    private fun ensureCanWrite() {
         if (!snippetClient.canWrite()) throw SecurityException("Sin permisos de escritura")
     }
 }

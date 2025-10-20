@@ -32,7 +32,7 @@ class TestRunnerService(
         var status = "ERROR"
 
         val duration = kotlin.system.measureTimeMillis {
-            runCatching { executionClient.execute(test.snippetId, test.inputs) }
+            runCatching { executionClient.execute(test.inputs) }
                 .onSuccess {
                     outputs = it
                     status = if (it == test.expectedOutputs) "PASSED" else "FAILED"
