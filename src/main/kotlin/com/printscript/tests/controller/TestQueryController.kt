@@ -3,7 +3,6 @@ package com.printscript.tests.controller
 import com.printscript.tests.dto.SnippetTestsResponse
 import com.printscript.tests.dto.TestCaseBriefResponse
 import com.printscript.tests.service.TestService
-import jakarta.servlet.http.HttpServletRequest
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -19,7 +18,6 @@ class TestQueryController(
     @GetMapping
     fun listBrief(
         @PathVariable snippetId: Long,
-        request: HttpServletRequest,
     ): List<TestCaseBriefResponse> {
         return testService.getTestsBriefBySnippet(snippetId)
     }
@@ -28,7 +26,6 @@ class TestQueryController(
     @GetMapping("/summary")
     fun summary(
         @PathVariable snippetId: Long,
-        request: HttpServletRequest,
     ): SnippetTestsResponse {
         return testService.getTestsSummary(snippetId)
     }
