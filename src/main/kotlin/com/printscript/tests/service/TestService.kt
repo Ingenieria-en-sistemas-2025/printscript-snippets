@@ -37,14 +37,14 @@ class TestService(
 
     // READ ALL (US6)
     @Transactional(readOnly = true)
-    fun getTestsBySnippet(snippetId: Long, userId: String): List<TestCaseResponse> {
+    fun getTestsBySnippet(snippetId: Long): List<TestCaseResponse> {
         ensureCanRead()
         return repo.findBySnippetId(snippetId).map { it.toResponse() }
     }
 
     // READ ONE
     @Transactional(readOnly = true)
-    fun getTestForSnippet(testId: Long, snippetId: Long, userId: String): TestCaseResponse {
+    fun getTestForSnippet(testId: Long, snippetId: Long): TestCaseResponse {
         val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
         ensureCanRead()
         require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
@@ -53,7 +53,7 @@ class TestService(
 
     // UPDATE entidad inmutable: usar copy(...)
     @Transactional
-    fun update(testId: Long, snippetId: Long, req: UpdateTestRequest, userId: String): TestCaseResponse {
+    fun update(testId: Long, snippetId: Long, req: UpdateTestRequest): TestCaseResponse {
         val current = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
         require(current.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
         ensureCanWrite()
@@ -70,7 +70,7 @@ class TestService(
 
     // DELETE
     @Transactional
-    fun delete(testId: Long, snippetId: Long, userId: String) {
+    fun delete(testId: Long, snippetId: Long) {
         val test = repo.findById(testId).orElseThrow { IllegalArgumentException("Test $testId no existe") }
         require(test.snippetId == snippetId) { "El test $testId no pertenece al snippet $snippetId" }
         ensureCanWrite()
@@ -78,14 +78,14 @@ class TestService(
     }
 
     @Transactional(readOnly = true)
-    fun getTestsBriefBySnippet(snippetId: Long, userId: String): List<TestCaseBriefResponse> {
+    fun getTestsBriefBySnippet(snippetId: Long): List<TestCaseBriefResponse> {
         ensureCanRead()
         return repo.findBySnippetId(snippetId).map { it.toBrief() }
     }
 
     @Transactional(readOnly = true)
     fun getTestsSummary(snippetId: Long, userId: String): SnippetTestsResponse {
-        val tests = getTestsBriefBySnippet(snippetId, userId)
+        val tests = getTestsBriefBySnippet(snippetId)
         return SnippetTestsResponse(
             snippetId = snippetId,
             tests = tests,

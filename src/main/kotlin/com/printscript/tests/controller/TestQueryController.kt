@@ -22,7 +22,7 @@ class TestQueryController(
         request: HttpServletRequest,
     ): List<TestCaseBriefResponse> {
         val userId = RequestUserResolver.resolveUserId(request)
-        return testService.getTestsBriefBySnippet(snippetId, userId)
+        return testService.getTestsBriefBySnippet(snippetId)
     }
 
     // Resumen (totales/passed/failed/error)

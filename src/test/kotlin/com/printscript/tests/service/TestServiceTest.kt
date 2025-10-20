@@ -81,7 +81,7 @@ class TestServiceTest {
             expectedOutputs = listOf("5"),
             targetVersionNumber = 4L,
         )
-        val resp = service.update(10L, 42L, req, "u1")
+        val resp = service.update(10L, 42L, req)
 
         assertEquals("nuevo", resp.name)
         assertEquals(listOf("2", "3"), resp.inputs)
@@ -101,7 +101,7 @@ class TestServiceTest {
         every { repo.findById(10L) } returns Optional.of(entity)
         every { repo.delete(entity) } just runs
 
-        service.delete(10L, 42L, "u1")
+        service.delete(10L, 42L)
         verify { repo.delete(entity) }
     }
 

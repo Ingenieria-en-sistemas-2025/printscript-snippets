@@ -42,7 +42,7 @@ class TestCrudController(
         request: HttpServletRequest,
     ): List<TestCaseResponse> {
         val userId = RequestUserResolver.resolveUserId(request)
-        return testService.getTestsBySnippet(snippetId, userId)
+        return testService.getTestsBySnippet(snippetId)
     }
 
     // READ ONE
@@ -53,7 +53,7 @@ class TestCrudController(
         request: HttpServletRequest,
     ): TestCaseResponse {
         val userId = RequestUserResolver.resolveUserId(request)
-        return testService.getTestForSnippet(testId, snippetId, userId)
+        return testService.getTestForSnippet(testId, snippetId)
     }
 
     // UPDATE
@@ -65,7 +65,7 @@ class TestCrudController(
         request: HttpServletRequest,
     ): TestCaseResponse {
         val userId = RequestUserResolver.resolveUserId(request)
-        return testService.update(testId, snippetId, req, userId)
+        return testService.update(testId, snippetId, req)
     }
 
     // DELETE
@@ -76,7 +76,7 @@ class TestCrudController(
         request: HttpServletRequest,
     ): ResponseEntity<Void> {
         val userId = RequestUserResolver.resolveUserId(request)
-        testService.delete(testId, snippetId, userId)
+        testService.delete(testId, snippetId)
         return ResponseEntity.noContent().build()
     }
 }
