@@ -31,7 +31,7 @@ class TestServiceTest {
     @Test
     fun testCreateSavesAndReturnsResponse() {
         // true to u1 can write
-        every { snippetClient.canWrite("u1", 42L) } returns true
+        every { snippetClient.canWrite() } returns true
 
         val saved = TestCaseEntity(
             id = 100L,
@@ -45,7 +45,7 @@ class TestServiceTest {
             updatedAt = Instant.now(),
             lastRunStatus = "NEVER_RUN",
             lastRunOutput = null,
-            lastRunAt = null
+            lastRunAt = null,
         )
         every { repo.save(any<TestCaseEntity>()) } returns saved
 
@@ -59,18 +59,18 @@ class TestServiceTest {
         assertEquals(3L, resp.targetVersionNumber)
         assertEquals("NEVER_RUN", resp.lastRunStatus)
         verify { repo.save(match { it.name == "suma" && it.snippetId == 42L }) }
-        verify { snippetClient.canWrite("u1", 42L) }
+        verify { snippetClient.canWrite() }
         confirmVerified(repo, snippetClient)
     }
 
     @Test
     fun testUpdate() {
-        every { snippetClient.canWrite("u1", 42L) } returns true
+        every { snippetClient.canWrite() } returns true
         val current = TestCaseEntity(
             id = 10L, snippetId = 42L, name = "old",
             inputs = listOf("1"), expectedOutputs = listOf("1"),
             targetVersionNumber = null,
-            createdBy = "u1", createdAt = Instant.now(), updatedAt = Instant.now()
+            createdBy = "u1", createdAt = Instant.now(), updatedAt = Instant.now(),
         )
         every { repo.findById(10L) } returns Optional.of(current)
         every { repo.save(any<TestCaseEntity>()) } answers { firstArg() }
@@ -79,7 +79,7 @@ class TestServiceTest {
             name = "nuevo",
             inputs = listOf("2", "3"),
             expectedOutputs = listOf("5"),
-            targetVersionNumber = 4L
+            targetVersionNumber = 4L,
         )
         val resp = service.update(10L, 42L, req, "u1")
 
@@ -91,12 +91,12 @@ class TestServiceTest {
 
     @Test
     fun testDelete() {
-        every { snippetClient.canWrite("u1", 42L) } returns true
+        every { snippetClient.canWrite() } returns true
         val entity = TestCaseEntity(
             id = 10L, snippetId = 42L, name = "x",
             inputs = emptyList(), expectedOutputs = emptyList(),
             targetVersionNumber = null, createdBy = "u1",
-            createdAt = Instant.now(), updatedAt = Instant.now()
+            createdAt = Instant.now(), updatedAt = Instant.now(),
         )
         every { repo.findById(10L) } returns Optional.of(entity)
         every { repo.delete(entity) } just runs
@@ -107,7 +107,7 @@ class TestServiceTest {
 
     @Test
     fun testGetTestsSummaryCalculatesTotals() {
-        every { snippetClient.canRead("u1", 42L) } returns true
+        every { snippetClient.canRead() } returns true
         val e1 = TestCaseEntity(
             1L,
             42L,
@@ -120,7 +120,7 @@ class TestServiceTest {
             Instant.now(),
             "PASSED",
             null,
-            null
+            null,
         )
         val e2 = TestCaseEntity(
             2L,
@@ -134,7 +134,7 @@ class TestServiceTest {
             Instant.now(),
             "FAILED",
             null,
-            null
+            null,
         )
         val e3 = TestCaseEntity(
             3L,
@@ -148,9 +148,9 @@ class TestServiceTest {
             Instant.now(),
             "ERROR",
             null,
-            null
+            null,
         )
-        every { repo.findBySnippetId(42L) } returns listOf(e1,e2,e3)
+        every { repo.findBySnippetId(42L) } returns listOf(e1, e2, e3)
 
         val summary = service.getTestsSummary(42L, "u1")
         assertEquals(3, summary.total)

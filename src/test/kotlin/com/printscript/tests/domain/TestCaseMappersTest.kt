@@ -12,7 +12,7 @@ class TestCaseMappersTest {
             inputs = listOf("a"), expectedOutputs = listOf("b"),
             targetVersionNumber = null, createdBy = "u",
             createdAt = Instant.now(), updatedAt = Instant.now(),
-            lastRunStatus = "NEVER_RUN", lastRunOutput = null, lastRunAt = null
+            lastRunStatus = "NEVER_RUN", lastRunOutput = null, lastRunAt = null,
         )
         // convierte entidad (TestCaseEntity) al dto (TestCaseResponse)
         val dto = e.toResponse()
@@ -29,7 +29,7 @@ class TestCaseMappersTest {
             inputs = emptyList(), expectedOutputs = emptyList(),
             targetVersionNumber = null, createdBy = "u",
             createdAt = Instant.now(), updatedAt = Instant.now(),
-            lastRunStatus = "PASSED", lastRunOutput = null, lastRunAt = Instant.parse("2025-10-11T12:00:00Z")
+            lastRunStatus = "PASSED", lastRunOutput = null, lastRunAt = Instant.parse("2025-10-11T12:00:00Z"),
         )
         val brief = e.toBrief()
         assertEquals("n", brief.name)

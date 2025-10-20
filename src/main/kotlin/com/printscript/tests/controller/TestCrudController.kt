@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/snippets/{snippetId}/tests")
 class TestCrudController(
-    private val testService: TestService
+    private val testService: TestService,
 ) {
 
     // CREATE
@@ -28,7 +28,7 @@ class TestCrudController(
     fun create(
         @PathVariable snippetId: Long,
         @Valid @RequestBody req: CreateTestRequest,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ResponseEntity<TestCaseResponse> {
         val userId = RequestUserResolver.resolveUserId(request)
         val created = testService.create(snippetId, req, userId)
@@ -39,7 +39,7 @@ class TestCrudController(
     @GetMapping
     fun list(
         @PathVariable snippetId: Long,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): List<TestCaseResponse> {
         val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestsBySnippet(snippetId, userId)
@@ -50,7 +50,7 @@ class TestCrudController(
     fun get(
         @PathVariable snippetId: Long,
         @PathVariable testId: Long,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): TestCaseResponse {
         val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestForSnippet(testId, snippetId, userId)
@@ -62,7 +62,7 @@ class TestCrudController(
         @PathVariable snippetId: Long,
         @PathVariable testId: Long,
         @Valid @RequestBody req: UpdateTestRequest,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): TestCaseResponse {
         val userId = RequestUserResolver.resolveUserId(request)
         return testService.update(testId, snippetId, req, userId)
@@ -73,7 +73,7 @@ class TestCrudController(
     fun delete(
         @PathVariable snippetId: Long,
         @PathVariable testId: Long,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ResponseEntity<Void> {
         val userId = RequestUserResolver.resolveUserId(request)
         testService.delete(testId, snippetId, userId)

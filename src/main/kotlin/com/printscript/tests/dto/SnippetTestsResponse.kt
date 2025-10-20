@@ -6,5 +6,5 @@ data class SnippetTestsResponse(
     val total: Int,
     val passed: Int,
     val failed: Int,
-    val error: Int
+    val error: Int,
 )

@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/snippets/{snippetId}/tests")
 class TestQueryController(
-    private val testService: TestService
+    private val testService: TestService,
 ) {
     // Lista de tests (Brief) para un snippet
     @GetMapping
     fun listBrief(
         @PathVariable snippetId: Long,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): List<TestCaseBriefResponse> {
         val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestsBriefBySnippet(snippetId, userId)
@@ -29,7 +29,7 @@ class TestQueryController(
     @GetMapping("/summary")
     fun summary(
         @PathVariable snippetId: Long,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): SnippetTestsResponse {
         val userId = RequestUserResolver.resolveUserId(request)
         return testService.getTestsSummary(snippetId, userId)
