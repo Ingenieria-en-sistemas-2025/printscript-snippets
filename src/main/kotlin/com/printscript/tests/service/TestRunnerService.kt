@@ -1,7 +1,7 @@
 package com.printscript.tests.service
 
 import com.printscript.tests.clients.ExecutionClient
-import com.printscript.tests.clients.SnippetClient
+import com.printscript.tests.clients.PermissionClient
 import com.printscript.tests.domain.TestCaseRepository
 import com.printscript.tests.domain.TestRunEntity
 import com.printscript.tests.domain.TestRunRepository
@@ -15,16 +15,15 @@ class TestRunnerService(
     private val testCaseRepo: TestCaseRepository,
     private val testRunRepo: TestRunRepository,
     private val executionClient: ExecutionClient,
-    private val snippetClient: SnippetClient,
+    private val snippetClient: PermissionClient
 ) : TestRunner {
 
     @Transactional // US9
     override fun runSingle(testId: Long, userId: String): TestRunResponse {
         val test = testCaseRepo.findById(testId)
             .orElseThrow { IllegalArgumentException("TestCase $testId no existe") }
-        if (!snippetClient.canRead(userId, test.snippetId)) {
+        if (!snippetClient.canRead(userId, test.snippetId))
             throw SecurityException("Sin acceso al snippet ${test.snippetId}")
-        }
 
         val startedAt = Instant.now()
         var outputs: List<String>? = null
@@ -56,15 +55,15 @@ class TestRunnerService(
                 errorMessage = error,
                 durationMs = duration,
                 executedBy = userId,
-                executedAt = startedAt,
-            ),
+                executedAt = startedAt
+            )
         )
 
         val updated = test.copy(
             lastRunStatus = status,
             lastRunOutput = outputs,
             lastRunAt = startedAt,
-            updatedAt = Instant.now(),
+            updatedAt = Instant.now()
         )
         testCaseRepo.save(updated)
 
@@ -73,9 +72,8 @@ class TestRunnerService(
 
     @Transactional // US16
     override fun runAllForSnippet(snippetId: Long, userId: String): List<TestRunResponse> {
-        if (!snippetClient.canRead(userId, snippetId)) {
+        if (!snippetClient.canRead(userId, snippetId))
             throw SecurityException("Sin acceso al snippet $snippetId")
-        }
         return testCaseRepo.findBySnippetId(snippetId).map { runSingle(it.id!!, userId) }
     }
 
@@ -84,9 +82,8 @@ class TestRunnerService(
     override fun getTestRunHistory(testId: Long, userId: String): List<TestRunResponse> {
         val test = testCaseRepo.findById(testId)
             .orElseThrow { IllegalArgumentException("TestCase $testId no existe") }
-        if (!snippetClient.canRead(userId, test.snippetId)) {
+        if (!snippetClient.canRead(userId, test.snippetId))
             throw SecurityException("Sin acceso al snippet ${test.snippetId}")
-        }
 
         return testRunRepo.findByTestId(testId)
             .sortedByDescending { it.executedAt }
@@ -99,9 +96,8 @@ class TestRunnerService(
             .orElseThrow { IllegalArgumentException("TestRun $runId no existe") }
         val test = testCaseRepo.findById(run.testId)
             .orElseThrow { IllegalArgumentException("TestCase ${run.testId} no existe") }
-        if (!snippetClient.canRead(userId, test.snippetId)) {
+        if (!snippetClient.canRead(userId, test.snippetId))
             throw SecurityException("Sin acceso al snippet ${test.snippetId}")
-        }
 
         return run.toResponse()
     }
@@ -118,6 +114,6 @@ class TestRunnerService(
         errorMessage = errorMessage,
         durationMs = durationMs,
         executedBy = executedBy,
-        executedAt = executedAt,
+        executedAt = executedAt
     )
 }
