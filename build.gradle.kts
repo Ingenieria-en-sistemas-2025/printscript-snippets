@@ -116,3 +116,22 @@ tasks.register<JacocoCoverageVerification>("jacocoVerify") {
 tasks.check {
     dependsOn("detekt", "spotlessCheck", "jacocoVerify")
 }
+
+// Git hooks
+val gitDir = layout.projectDirectory.dir(".git")
+val hooksSrc = layout.projectDirectory.dir("hooks")
+val hooksDst = layout.projectDirectory.dir(".git/hooks")
+
+tasks.register<Copy>("installGitHooks") {
+    onlyIf { gitDir.asFile.exists() && hooksSrc.asFile.exists() }
+    from(hooksSrc)
+    into(hooksDst)
+    fileMode = Integer.parseInt("775", 8) // chmod +x
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.register("ensureGitHooks") {
+    dependsOn("installGitHooks")
+    onlyIf { gitDir.asFile.exists() }
+}
+

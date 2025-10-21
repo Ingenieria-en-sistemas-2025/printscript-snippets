@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+set -e  # cualquier error -> se bloquea el push
+
+./gradlew --quiet spotlessApply
+git add -A
+
+./gradlew --quiet detekt
+
+# Tests + coverage + checks
+./gradlew --quiet clean check
+
+echo "pre-push OK"
