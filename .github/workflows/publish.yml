@@ -123,6 +123,7 @@ jobs:
             echo "Esperando SSH..." && sleep 5
           done
           echo "Timeout esperando SSH" && exit 1
+
       - name: Deploy to DEV over SSH
         if: github.ref_name == 'dev'
         uses: appleboy/ssh-action@v1.0.3
@@ -143,7 +144,9 @@ jobs:
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
             docker network create printscript-net || true
-            docker compose up -d --pull always
+            SVC_NAME="tests"
+            docker compose pull "$SVC_NAME"
+            docker compose up -d --no-deps "$SVC_NAME"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
 
@@ -167,5 +170,7 @@ jobs:
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
             docker network create printscript-net || true
-            docker compose up -d --pull always
+            SVC_NAME="tests"
+            docker compose pull "$SVC_NAME"
+            docker compose up -d --no-deps "$SVC_NAME"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
