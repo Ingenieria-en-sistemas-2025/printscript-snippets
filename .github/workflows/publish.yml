@@ -143,8 +143,8 @@ jobs:
             if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
-            docker network create printscript-net || true
-            SVC_NAME="tests"
+            
+            SVC_NAME="snippets"
             docker compose pull "$SVC_NAME"
             docker compose up -d --no-deps "$SVC_NAME"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
@@ -169,8 +169,8 @@ jobs:
             if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
-            docker network create printscript-net || true
-            SVC_NAME="tests"
+            
+            SVC_NAME="snippets"
             docker compose pull "$SVC_NAME"
             docker compose up -d --no-deps "$SVC_NAME"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
