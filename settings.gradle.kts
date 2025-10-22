@@ -1,1 +1,1 @@
-rootProject.name = "printscript-tests"
+rootProject.name = "printscript-snippets"
