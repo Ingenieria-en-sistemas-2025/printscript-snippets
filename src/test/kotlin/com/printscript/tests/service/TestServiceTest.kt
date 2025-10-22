@@ -1,6 +1,6 @@
 package com.printscript.tests.service
 
-import com.printscript.tests.clients.SnippetClient
+import com.printscript.tests.clients.PermissionsClient
 import com.printscript.tests.domain.TestCaseEntity
 import com.printscript.tests.domain.TestCaseRepository
 import com.printscript.tests.dto.CreateTestRequest
@@ -20,7 +20,7 @@ import java.util.Optional
 class TestServiceTest {
 
     private val repo = mockk<TestCaseRepository>()
-    private val snippetClient = mockk<SnippetClient>()
+    private val snippetClient = mockk<PermissionsClient>()
     private lateinit var service: TestService
 
     @BeforeEach

@@ -3,7 +3,7 @@ package com.printscript.tests.clients
 import org.springframework.stereotype.Component
 
 @Component
-class SnippetClient {
+class PermissionsClient {
     @Suppress("FunctionOnlyReturningConstant")
     fun canWrite(): Boolean = true
 

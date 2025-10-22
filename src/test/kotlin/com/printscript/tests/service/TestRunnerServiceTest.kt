@@ -1,7 +1,7 @@
 package com.printscript.tests.service
 
 import com.printscript.tests.clients.ExecutionClient
-import com.printscript.tests.clients.SnippetClient
+import com.printscript.tests.clients.PermissionsClient
 import com.printscript.tests.domain.TestCaseEntity
 import com.printscript.tests.domain.TestCaseRepository
 import com.printscript.tests.domain.TestRunEntity
@@ -21,7 +21,7 @@ class TestRunnerServiceTest {
     private val testCaseRepo = mockk<TestCaseRepository>()
     private val testRunRepo = mockk<TestRunRepository>()
     private val exec = mockk<ExecutionClient>()
-    private val snippetClient = mockk<SnippetClient>()
+    private val snippetClient = mockk<PermissionsClient>()
     private lateinit var service: TestRunnerService
 
     @BeforeEach
