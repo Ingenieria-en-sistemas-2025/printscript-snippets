@@ -24,6 +24,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.client.RestClient
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
@@ -79,7 +82,7 @@ class SecurityConfig(
                 rs.jwt { jwt -> jwt.jwtAuthenticationConverter(permissionsConverter()) }
             }
             .csrf { it.disable() }
-            .cors { it.disable() }
+            .cors { } // Habilita el manejo de CORS. Spring Security buscará un CorsConfigurationSource bean.
             .build()
 
     // SOLUCION PARA EL ERROR DE RESTCLIENT (Bean definition)
@@ -88,6 +91,21 @@ class SecurityConfig(
     fun restClient(): RestClient {
         // Le dice a Spring que registre esta instancia para inyeccion (@Autowired)
         return RestClient.create()
+    }
+
+    // CORS
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        // Despues cambiar "*" al dominio exacto de la UI ("http://localhost:5173")
+        configuration.allowedOrigins = listOf("*")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        configuration.allowedHeaders = listOf("*")
+        configuration.allowCredentials = true
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration) // Aplica la configuracion a todas las rutas
+        return source
     }
 
     // Funcion para extraer los scopes de Auth0
