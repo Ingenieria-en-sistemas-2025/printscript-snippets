@@ -11,9 +11,9 @@ import java.time.Instant
 class Auth0TokenService(
     @param:Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private val issuer: String,
-    @param:Value("\${auth0.m2m.client-id}")
+    @param:Value("\${auth0.client-id}")
     private val clientId: String,
-    @param:Value("\${auth0.m2m.client-secret}")
+    @param:Value("\${auth0.client-secret}")
     private val clientSecret: String,
     @param:Value("\${auth0.audience}")
     private val audience: String,

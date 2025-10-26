@@ -42,37 +42,31 @@ class SecurityConfig(
         http
             .authorizeHttpRequests {
                 it
-                    // 1. ENDPOINTS DE SNIPPETS
-                    // GET /snippets/all (Listar)
+                    // 1. ENDPOINTS DE SNIPPETS (CRUD)
+                    // Lectura de snippets y sus tests (read:snippets)
                     .requestMatchers(GET, "/snippets/all").hasAuthority("SCOPE_read:snippets")
-                    // POST /snippets/create (Crear)
-                    .requestMatchers(POST, "/snippets/create").hasAuthority("SCOPE_write:snippets")
-                    // GET /snippets/{id} (Obtener por ID)
                     .requestMatchers(GET, "/snippets/*").hasAuthority("SCOPE_read:snippets")
-                    // PUT /snippets/{id} (Actualizar por ID)
+                    .requestMatchers(GET, "/snippets/cases/*").hasAuthority("SCOPE_read:snippets")
+
+                    // Escritura/Modificación/Eliminación de snippets y sus tests (write:snippets)
+                    .requestMatchers(POST, "/snippets/create").hasAuthority("SCOPE_write:snippets")
                     .requestMatchers(PUT, "/snippets/*").hasAuthority("SCOPE_write:snippets")
-                    // DELETE /snippets/{id} (Eliminar por ID)
                     .requestMatchers(DELETE, "/snippets/*").hasAuthority("SCOPE_write:snippets")
-                    // POST /snippets/share (Compartir)
                     .requestMatchers(POST, "/snippets/share").hasAuthority("SCOPE_write:snippets")
-                    // GET /snippets/users (Listar Usuarios/Amigos)
+                    .requestMatchers(POST, "/snippets/cases").hasAuthority("SCOPE_write:snippets")
+                    .requestMatchers(DELETE, "/snippets/cases/*").hasAuthority("SCOPE_write:snippets")
+
+                    // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
                     .requestMatchers(GET, "/snippets/users").hasAuthority("SCOPE_read:users")
 
                     // 2. ENDPOINTS DE REGLAS (RULES) Y CONFIG
-                    // GET /snippets/rules/{ruleType} (Obtener reglas)
-                    .requestMatchers(GET, "/snippets/rules/*").hasAuthority("SCOPE_read:rules")
-                    // PUT /snippets/rules (Modificar reglas)
-                    .requestMatchers(PUT, "/snippets/rules").hasAuthority("SCOPE_write:rules")
-                    // GET /snippets/config/filetypes (Listar Tipos Archivo)
-                    .requestMatchers(GET, "/snippets/config/filetypes").hasAuthority("SCOPE_read:config")
+                    // Administracion de Reglas/Config (admin:rules)
+                    .requestMatchers(GET, "/snippets/rules/*").hasAuthority("SCOPE_admin:rules")
+                    .requestMatchers(PUT, "/snippets/rules").hasAuthority("SCOPE_admin:rules")
+                    .requestMatchers(GET, "/snippets/config/filetypes").hasAuthority("SCOPE_admin:rules")
 
-                    // 3. ENDPOINTS DE CASOS DE PRUEBA (CASES) y RUN (EJECUCIÓN)
-                    // GET/POST/DELETE para Cases
-                    .requestMatchers(GET, "/snippets/cases/*").hasAuthority("SCOPE_read:test-cases")
-                    .requestMatchers(POST, "/snippets/cases").hasAuthority("SCOPE_write:test-cases")
-                    .requestMatchers(DELETE, "/snippets/cases/*").hasAuthority("SCOPE_write:test-cases")
-
-                    // POST /snippets/run/format (Formato) y POST /snippets/run/case/{testCaseId} (Testear)
+                    // 3. ENDPOINTS DE EJECUCIÓN (RUN)
+                    // POST /snippets/run/* (Formato, Testear, etc.) -> execute:code
                     .requestMatchers(POST, "/snippets/run/*").hasAuthority("SCOPE_execute:code")
 
                     // Fallback: Cualquier otra ruta requiere autenticacion, pero sin scope especifico
@@ -82,7 +76,7 @@ class SecurityConfig(
                 rs.jwt { jwt -> jwt.jwtAuthenticationConverter(permissionsConverter()) }
             }
             .csrf { it.disable() }
-            .cors { } // Habilita el manejo de CORS. Spring Security buscará un CorsConfigurationSource bean.
+            .cors { }
             .build()
 
     // SOLUCION PARA EL ERROR DE RESTCLIENT (Bean definition)

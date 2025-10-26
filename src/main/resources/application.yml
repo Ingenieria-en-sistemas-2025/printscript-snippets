@@ -23,3 +23,13 @@ spring:
 execution:
   base-url: ${EXECUTION_BASE_URL:http://localhost:8080}
 
+authorization:
+  # URL del microservicio authorization
+  base-url: ${AUTHORIZATION_BASE_URL:http://authorization:8081}
+
+# Auth0
+auth0:
+  domain: ${AUTH0_DOMAIN:dev-c2gyaqqsxa2v3nig.us.auth0.com}
+  client-id: ${AUTH0_CLIENT_ID}
+  client-secret: ${AUTH0_CLIENT_SECRET}
+  audience: ${AUTH0_AUDIENCE:https://snippet-manager}
