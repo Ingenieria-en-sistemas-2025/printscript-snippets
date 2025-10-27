@@ -11,6 +11,6 @@ interface SnippetExecution {
     fun parse(req: ParseReq): ParseRes
     fun lint(req: LintReq): LintRes
     fun format(req: FormatReq): FormatRes
-    // futuro: fun run(req: RunReq): RunRes
-    // futuro: fun runTests(req: RunTestsReq): RunTestsRes
+    // fun run(req: RunReq): RunRes
+    // fun runOneTest(req: RunTestsReq): RunTestsRes
 }
