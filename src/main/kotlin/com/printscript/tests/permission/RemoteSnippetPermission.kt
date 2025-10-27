@@ -11,11 +11,11 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.util.UriComponentsBuilder
 
 @Component
-class RemoteSnippetPermisson(
+class RemoteSnippetPermission(
     private val auth0TokenService: Auth0TokenService, // servicio de token M2M
     private val restClient: RestClient,
     @param:Value("\${authorization.service.url}") private val permissionServiceUrl: String,
-) : SnippetPermisson {
+) : SnippetPermission {
 
     override fun createAuthorization(
         input: PermissionCreateSnippetInput,

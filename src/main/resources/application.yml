@@ -20,12 +20,16 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+asset:
+  service:
+    base-url: ${ASSET_BASE_URL:http://localhost:8080}
+
 execution:
-  base-url: ${EXECUTION_BASE_URL:http://localhost:8080}
+  base-url: ${EXECUTION_BASE_URL:http://localhost:8082}
 
 authorization:
-  # URL del microservicio authorization
-  base-url: ${AUTHORIZATION_BASE_URL:http://authorization:8081}
+  service:
+    url: ${AUTHORIZATION_BASE_URL:http://authorization:8081}
 
 # Auth0
 auth0:
@@ -33,3 +37,10 @@ auth0:
   client-id: ${AUTH0_CLIENT_ID}
   client-secret: ${AUTH0_CLIENT_SECRET}
   audience: ${AUTH0_AUDIENCE:https://snippet-manager}
+
+  spring:
+    security:
+      oauth2:
+        resourceserver:
+          jwt:
+            issuer-uri: https://${auth0.domain}/

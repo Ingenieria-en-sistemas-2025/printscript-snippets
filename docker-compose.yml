@@ -1,0 +1,27 @@
+services:
+  asset_service:
+    image: ghcr.io/austral-ingsis/snippet-asset-service:main.14
+    container_name: asset_service
+    environment:
+      AZURE_HOST: "http://azurite"
+      NEW_RELIC_APP_NAME: "asset-service"
+      NEW_RELIC_AGENT_ENABLED: "false"
+    ports:
+      - "8080:8080"    #8080 (container) donde el Asset Service escucha dentro del contenedor
+    depends_on: [azurite]  #8080(host) es el puerto expuesto en mi maquina para que lo pueda abrir desde el navegador o llamarlo desde otros procesos fuera de Docker
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    hostname: azurite
+    restart: always
+    ports:
+      - "10000:10000" #Blob service
+      - "10001:10001"  #Queue service
+      - "10002:10002"  #Table service
+    volumes:
+      - blob:/workspace
+
+volumes:
+  blob:
+    external: false

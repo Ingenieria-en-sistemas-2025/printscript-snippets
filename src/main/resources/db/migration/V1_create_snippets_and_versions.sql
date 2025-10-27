@@ -33,3 +33,18 @@ CREATE TABLE snippet_version (
 );
 
 CREATE INDEX ix_snipver_snip_created ON snippet_version(snippet_id, created_at DESC);
+
+
+-- MIGRACION Q TENGO Q HACER PERO NO PUEDO
+-- -- 1) Hacer "content" opcional durante transición
+-- ALTER TABLE snippet_version
+--     ALTER COLUMN content DROP NOT NULL;
+--
+-- -- 2) Agregar punteros al asset service
+-- ALTER TABLE snippet_version
+--     ADD COLUMN asset_container VARCHAR(80),
+--   ADD COLUMN asset_key       VARCHAR(255);
+--
+-- -- 3) Índice útil si después querés buscar por punteros
+-- CREATE INDEX IF NOT EXISTS ix_snipver_asset
+--     ON snippet_version(asset_container, asset_key);

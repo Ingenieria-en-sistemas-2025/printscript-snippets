@@ -1,0 +1,16 @@
+package com.printscript.tests.execution
+
+import com.printscript.tests.execution.dto.FormatReq
+import com.printscript.tests.execution.dto.FormatRes
+import com.printscript.tests.execution.dto.LintReq
+import com.printscript.tests.execution.dto.LintRes
+import com.printscript.tests.execution.dto.ParseReq
+import com.printscript.tests.execution.dto.ParseRes
+
+interface SnippetExecution {
+    fun parse(req: ParseReq): ParseRes
+    fun lint(req: LintReq): LintRes
+    fun format(req: FormatReq): FormatRes
+    // futuro: fun run(req: RunReq): RunRes
+    // futuro: fun runTests(req: RunTestsReq): RunTestsRes
+}
