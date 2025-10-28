@@ -17,6 +17,8 @@ import com.printscript.tests.dto.SnippetSource
 import com.printscript.tests.dto.SnippetSummaryDto
 import com.printscript.tests.dto.TestCaseDto
 import com.printscript.tests.dto.UpdateSnippetReq
+import com.printscript.tests.error.NotFound
+import com.printscript.tests.error.UnsupportedOperation
 import com.printscript.tests.execution.SnippetExecution
 import com.printscript.tests.execution.dto.FormatReq
 import com.printscript.tests.execution.dto.FormatRes
@@ -129,10 +131,10 @@ class SnippetServiceImpl(
     @Transactional(readOnly = true)
     override fun getSnippet(snippetId: Long): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
-            .orElseThrow { IllegalArgumentException("Snippet with ID $snippetId not found") }
+            .orElseThrow { NotFound("Snippet with ID $snippetId not found") }
 
         val latestVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw IllegalStateException("Snippet $snippetId has no versions")
+            ?: throw NotFound("Snippet $snippetId has no versions")
 
         val content = assetClient.download(containerName, latestVersion.contentKey)
             .toString(StandardCharsets.UTF_8)
@@ -145,14 +147,14 @@ class SnippetServiceImpl(
         req: UpdateSnippetReq
     ): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
-            .orElseThrow { IllegalArgumentException("Snippet not found") }
+            .orElseThrow { NotFound("Snippet not found") }
 
         req.name?.let { snippet.name = it }
         req.description?.let { snippet.description = it }
 
         val savedSnippet = snippetRepo.save(snippet)
         val latestVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw IllegalStateException("Snippet without versions")
+            ?: throw NotFound("Snippet without versions")
 
         val content = assetClient.download(containerName, latestVersion.contentKey)
             .toString(StandardCharsets.UTF_8)
@@ -175,9 +177,9 @@ class SnippetServiceImpl(
     }
 
     @Transactional
-    override fun addVersion(snippetId: Long, source: SnippetSource): SnippetDetailDto {
+    override fun addVersion(snippetId: Long, req: SnippetSource): SnippetDetailDto {
         //solo enruta
-        throw UnsupportedOperationException(
+        throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
                     "El enum SnippetSource no contiene el contenido."
         )
@@ -186,7 +188,7 @@ class SnippetServiceImpl(
     @Transactional
     fun addVersionFromInlineContent(snippetId: Long, content: String): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
-            .orElseThrow { IllegalArgumentException("Snippet not found") }
+            .orElseThrow { NotFound("Snippet not found") }
 
         val nextVersionNumber = getLatestVersionNumber(snippetId) + 1
         val contentKey = buildVersionKey(snippetId, nextVersionNumber)
@@ -223,7 +225,7 @@ class SnippetServiceImpl(
     @Transactional
     fun addVersionFromUploadedFile(snippetId: Long, fileBytes: ByteArray): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
-            .orElseThrow { IllegalArgumentException("Snippet not found") }
+            .orElseThrow { NotFound("Snippet not found") }
 
         val nextVersionNumber = getLatestVersionNumber(snippetId) + 1
         val contentKey = buildVersionKey(snippetId, nextVersionNumber)
@@ -318,7 +320,7 @@ class SnippetServiceImpl(
                 inputs = inputsJson,
                 expectedOutputs = expectedOutputsJson,
                 targetVersionNumber = req.targetVersionNumber,
-                createdBy = "system" // o el userId real si lo tenés en contexto
+                createdBy = "system" //o agarrar el user id
             )
         )
 

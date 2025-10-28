@@ -1,6 +1,7 @@
 package com.printscript.tests.auth
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.printscript.tests.error.RunTimeError
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -47,14 +48,14 @@ class Auth0TokenService(
                 .body(requestBody)
                 .retrieve()
                 .body(TokenResponse::class.java)
-                ?: throw RuntimeException("Respuesta nula del endpoint de token de Auth0.")
+                ?: throw RunTimeError("Respuesta nula del endpoint de token de Auth0.")
 
             this.accessToken = response.accessToken
             this.expiresAt = Instant.now().plusSeconds(response.expiresIn.toLong())
             logger.info("Nuevo token M2M obtenido. Expira en {} segundos.", response.expiresIn)
         } catch (e: Exception) {
             logger.error("Fallo al obtener el token M2M de Auth0. Asegúrate que AUTH0_M2M_CLIENT_ID y SECRET son correctos.", e)
-            throw RuntimeException("Fallo al obtener token M2M de Auth0.", e)
+            throw RunTimeError("Fallo al obtener token M2M de Auth0.")
         }
     }
 

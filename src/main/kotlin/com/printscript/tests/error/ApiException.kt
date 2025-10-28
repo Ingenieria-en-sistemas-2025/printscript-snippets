@@ -19,3 +19,8 @@ class Conflict(msg: String) :
 class UpstreamError(service: String, status: Int, body: String?) :
     ApiException(ApiError("UPSTREAM_ERROR", "$service respondió $status", null), HttpStatus.BAD_GATEWAY)
 
+class UnsupportedOperation(msg: String) :
+    ApiException(ApiError("UNSUPPORTED_OPERATION", msg), HttpStatus.NOT_IMPLEMENTED)
+
+class RunTimeError(msg: String) :
+    ApiException(ApiError("RUNTIME_ERROR", msg), HttpStatus.UNPROCESSABLE_ENTITY)
