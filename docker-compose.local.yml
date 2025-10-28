@@ -54,7 +54,7 @@ services:
       NEW_RELIC_APP_NAME: "asset-service"
       NEW_RELIC_AGENT_ENABLED: "false"
     ports:
-      - "8080:8080" # 8080 host -> 8080 container
+      - "8080:8080" #8080 host -> 8080 container
     depends_on:
       - azurite
     networks:
