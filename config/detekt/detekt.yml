@@ -34,6 +34,9 @@ complexity:
   LongParameterList:
     active: true
     functionThreshold: 8
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+
 
   CyclomaticComplexMethod:
     active: true
