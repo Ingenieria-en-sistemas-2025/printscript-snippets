@@ -91,7 +91,10 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        // Despues cambiar "*" al dominio exacto de la UI ("http://localhost:5173")
+        //configuration.allowedOrigins = listOf(
+        //        "http://localhost:5173",
+        //        "https://printscript-dev.duckdns.org",
+        //        "https://printscript-prod.duckdns.org")
         configuration.allowedOrigins = listOf("*")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
