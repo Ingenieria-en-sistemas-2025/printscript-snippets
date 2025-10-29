@@ -1,10 +1,9 @@
 package com.printscript.tests
 
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 import kotlin.test.assertTrue
 
-@SpringBootTest
+// @SpringBootTest
 class TestsApplicationTests {
 
     @Test

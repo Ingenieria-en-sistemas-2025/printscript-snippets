@@ -1,13 +1,34 @@
 #!/usr/bin/env sh
+# pre-push: formatter + linter + tests + auto-repush
+set -euo pipefail
 
-set -e  # cualquier error -> se bloquea el push
+# Evitar loop cuando reintentamos el push desde el propio hook
+if [ "${GIT_HOOK_REPUSH:-}" = "1" ]; then
+  exit 0
+fi
 
-./gradlew --quiet spotlessApply
-git add -A
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Hay cambios sin commitear (working tree o index sucio). Hacé commit antes de pushear."
+  exit 1
+fi
 
-./gradlew --quiet detekt
+./gradlew --no-daemon --quiet spotlessApply
 
-# Tests + coverage + checks
-./gradlew --quiet clean check
+SPOTLESS_CHANGED=0
+if ! git diff --quiet; then
+  SPOTLESS_CHANGED=1
+  git add -u
+fi
+
+./gradlew --no-daemon --quiet detekt
+
+./gradlew --no-daemon --quiet spotlessCheck
+
+./gradlew --no-daemon --quiet clean check
+
+if [ "$SPOTLESS_CHANGED" -eq 1 ]; then
+  git commit -m "style: apply Spotless"
+  GIT_HOOK_REPUSH=1 exec git push --no-verify "$@"
+fi
 
 echo "pre-push OK"

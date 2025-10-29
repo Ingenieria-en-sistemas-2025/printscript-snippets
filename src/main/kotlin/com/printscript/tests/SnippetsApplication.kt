@@ -4,9 +4,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class TestsApplication
+class SnippetsApplication
 
 fun main(args: Array<String>) {
     @Suppress("SpreadOperator")
-    runApplication<TestsApplication>(*args)
+    runApplication<SnippetsApplication>(*args)
 }

@@ -31,11 +31,10 @@ repositories {
 }
 
 flyway {
-    url = "jdbc:postgresql://localhost:5434/tests"
-    user = "tests"
-    password = "tests"
+    url = "jdbc:postgresql://localhost:5432/snippets"
+    user = "snippets"
+    password = "snippets"
     driver = "org.postgresql.Driver"
-    // Para Gradle es más robusto apuntar al filesystem:
     locations = arrayOf("filesystem:src/main/resources/db/migration")
     schemas = arrayOf("public")
 }
@@ -54,11 +53,14 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    //testRuntimeOnly("com.h2database:h2")
+    // testRuntimeOnly("com.h2database:h2")
     testImplementation("org.testcontainers:postgresql")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.1"))
     testImplementation("org.testcontainers:junit-jupiter")
@@ -66,9 +68,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test") // JUnit5 + Mockito + MockMvc
     testImplementation("io.mockk:mockk:1.13.12") // mocking para Kotlin
+
     "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
     "flyway"("org.postgresql:postgresql:42.7.4")
-
 }
 
 kotlin {
@@ -141,4 +143,20 @@ tasks.check {
     dependsOn("detekt", "spotlessCheck", "jacocoVerify")
 }
 
+// Git hooks
+val gitDir = layout.projectDirectory.dir(".git")
+val hooksSrc = layout.projectDirectory.dir("hooks")
+val hooksDst = layout.projectDirectory.dir(".git/hooks")
 
+tasks.register<Copy>("installGitHooks") {
+    onlyIf { gitDir.asFile.exists() && hooksSrc.asFile.exists() }
+    from(hooksSrc)
+    into(hooksDst)
+    fileMode = Integer.parseInt("775", 8) // chmod +x
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.register("ensureGitHooks") {
+    dependsOn("installGitHooks")
+    onlyIf { gitDir.asFile.exists() }
+}

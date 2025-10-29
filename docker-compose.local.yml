@@ -1,0 +1,79 @@
+version: "3.9"
+
+networks:
+  printscript-dev:
+    external: true
+
+volumes:
+  pg_snippets_local: {}
+  blob: {}
+
+services:
+  pg-snippets:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: snippets
+      POSTGRES_PASSWORD: snippets
+      POSTGRES_DB: snippets
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_snippets_local:/var/lib/postgresql/data
+    networks:
+      printscript-dev:
+        aliases: [ pg-snippets ]
+    profiles: [ "local" ]
+
+  snippets:
+    build: .
+    container_name: ps-snippets-local
+    environment:
+      SERVER_PORT: 8080
+      LOGGING_LEVEL_ROOT: DEBUG
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-snippets:5432/snippets
+      SPRING_DATASOURCE_USERNAME: snippets
+      SPRING_DATASOURCE_PASSWORD: snippets
+      EXECUTION_BASE_URL: http://execution:8080
+      # mapea a property Spring `asset.service.base-url`
+      ASSET_SERVICE_BASE_URL: http://asset_service:8080
+    depends_on:
+      - pg-snippets
+      - asset_service
+    ports:
+      - "8082:8080"
+    networks:
+      printscript-dev:
+        aliases: [ snippets ]
+    profiles: [ "local" ]
+
+  asset_service:
+    image: ghcr.io/austral-ingsis/snippet-asset-service:main.14
+    container_name: asset_service
+    environment:
+      AZURE_HOST: "http://azurite"
+      NEW_RELIC_APP_NAME: "asset-service"
+      NEW_RELIC_AGENT_ENABLED: "false"
+    ports:
+      - "8080:8080" #8080 host -> 8080 container
+    depends_on:
+      - azurite
+    networks:
+      printscript-dev:
+        aliases: [ asset_service ]
+    profiles: [ "local" ]
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    hostname: azurite
+    restart: always
+    ports:
+      - "10000:10000" # Blob
+      - "10001:10001" # Queue
+      - "10002:10002" # Table
+    volumes:
+      - blob:/workspace
+    networks:
+      printscript-dev:
+        aliases: [ azurite ]
+    profiles: [ "local" ]
