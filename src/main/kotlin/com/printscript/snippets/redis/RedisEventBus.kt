@@ -3,22 +3,21 @@ package com.printscript.snippets.redis
 import com.printscript.snippets.redis.events.DomainEvent
 import org.austral.ingsis.redis.RedisStreamProducer
 import org.springframework.core.env.Environment
+import org.springframework.data.redis.connection.stream.StreamRecords
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Component
 class RedisEventBus(
-    private val redis: RedisTemplate<String, String>,
+    private val redisJson: RedisTemplate<String, String>,
     private val env: Environment,
 ) : EventBus {
 
-    private val producers = mutableMapOf<String, RedisStreamProducer>()
+    private val streamKeys = mutableMapOf<Channel, String>()
 
     override fun publish(channel: Channel, event: DomainEvent) {
-        val streamKey = env.getRequiredProperty(channel.streamKeyProp)
-        val prod = producers.getOrPut(streamKey) {
-            object : RedisStreamProducer(streamKey, redis) {}
-        }
-        prod.emit(event)
+        val streamKey = streamKeys.getOrPut(channel) { env.getRequiredProperty(channel.streamKeyProp) }
+        val rec = StreamRecords.newRecord().ofObject(event).withStreamKey(streamKey)
+        redisJson.opsForStream<String, Any>().add(rec)
     }
 }

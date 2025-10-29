@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
+import org.springframework.data.redis.serializer.StringRedisSerializer
 
 @Configuration
 class RedisConfiguration(
@@ -21,4 +23,16 @@ class RedisConfiguration(
             setConnectionFactory(cf)
             afterPropertiesSet()
         }
+
+    @Bean
+    fun redisJsonTemplate(cf: LettuceConnectionFactory) =
+        RedisTemplate<String, Any>().apply {
+            setConnectionFactory(cf)
+            keySerializer = StringRedisSerializer()
+            valueSerializer = GenericJackson2JsonRedisSerializer()
+            hashKeySerializer = keySerializer
+            hashValueSerializer = valueSerializer
+            afterPropertiesSet()
+        }
+
 }
