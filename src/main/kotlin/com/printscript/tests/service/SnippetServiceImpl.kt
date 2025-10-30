@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 @Service
 class SnippetServiceImpl(
@@ -46,12 +47,12 @@ class SnippetServiceImpl(
     private val objectMapper = jacksonObjectMapper()
 
     //key del archivo en el bucket
-    private fun buildVersionKey(ownerId: String, snippetId: Long, versionNumber: Long): String =
-        "$ownerId/snippets/$snippetId/v$versionNumber.ps"
+    private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
+        "$ownerId/$snippetId/v$versionNumber.ps"
 
     //ult nro de version persistido para ese snippet
-    private fun getLatestVersionNumber(snippetId: Long): Long =
-        (versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L) as Long
+    private fun getLatestVersionNumber(snippetId: UUID): Long =
+        versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
 
     private fun createAndPersistVersion(
         snippet: Snippet,
@@ -70,6 +71,7 @@ class SnippetServiceImpl(
         // guardar versión
         val version = versionRepo.save(
             SnippetVersion(
+                id = null,
                 snippetId = snippet.id!!,
                 versionNumber = nextVersion,
                 contentKey = contentKey,
@@ -94,7 +96,7 @@ class SnippetServiceImpl(
     //dto q usa la ui
     private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
         SnippetDetailDto(
-            id = snippet.id!!,
+            id = snippet.id!!.toString(),
             name = snippet.name,
             description = snippet.description,
             language = snippet.language,
@@ -104,6 +106,7 @@ class SnippetServiceImpl(
             isValid = version.isValid,
             lintCount = snippet.lastLintCount
         )
+
 
     override fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
         val content = req.content ?: ""
@@ -130,8 +133,9 @@ class SnippetServiceImpl(
         return toDetailDto(snippet, version, content)
     }
 
+
     @Transactional(readOnly = true)
-    override fun getSnippet(snippetId: Long): SnippetDetailDto {
+    override fun getSnippet(snippetId: UUID): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
             .orElseThrow { NotFound("Snippet with ID $snippetId not found") }
 
@@ -144,10 +148,8 @@ class SnippetServiceImpl(
         return toDetailDto(snippet, latestVersion, content)
     }
 
-    override fun updateSnippet(
-        snippetId: Long,
-        req: UpdateSnippetReq
-    ): SnippetDetailDto {
+
+    override fun updateSnippet(snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
             .orElseThrow { NotFound("Snippet not found") }
 
@@ -164,23 +166,25 @@ class SnippetServiceImpl(
         return toDetailDto(savedSnippet, latestVersion, content)
     }
 
+
     @Transactional
-    override fun deleteSnippet(snippetId: Long) {
-        //borro permisos
+    override fun deleteSnippet(snippetId: UUID) {
         permissionClient.deleteSnippetPermissions(snippetId.toString(), token = "")
 
-        //borro files del bucket
+        // borrar files del bucket
         val versions = versionRepo.findAllBySnippetId(snippetId)
-        versions.forEach { version -> assetClient.delete(containerName, version.contentKey) }
+        versions.forEach { v ->
+            assetClient.delete(containerName, v.contentKey)
+            v.formattedKey?.let { assetClient.delete(containerName, it) }
+        }
 
-        //borro datos en db
+        // borrar datos en db
         versionRepo.deleteAll(versions)
         snippetRepo.deleteById(snippetId)
     }
 
     @Transactional
-    override fun addVersion(snippetId: Long, req: SnippetSource): SnippetDetailDto {
-        //solo enruta
+    override fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto {
         throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
                     "El enum SnippetSource no contiene el contenido."
@@ -188,19 +192,20 @@ class SnippetServiceImpl(
     }
 
     @Transactional
-    fun addVersionFromInlineContent(snippetId: Long, content: String): SnippetDetailDto {
+    fun addVersionFromInlineContent(snippetId: UUID, content: String): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         val version = createAndPersistVersion(snippet, content)
         return toDetailDto(snippet, version, content)
     }
 
     @Transactional
-    fun addVersionFromUploadedFile(snippetId: Long, fileBytes: ByteArray): SnippetDetailDto {
+    fun addVersionFromUploadedFile(snippetId: UUID, fileBytes: ByteArray): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         val content = fileBytes.toString(StandardCharsets.UTF_8)
         val version = createAndPersistVersion(snippet, content)
         return toDetailDto(snippet, version, content)
     }
+
 
     @Transactional(readOnly = true)
     override fun listMySnippets(
@@ -212,23 +217,23 @@ class SnippetServiceImpl(
             .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
             .body
 
-        val snippetIds = (response?.permissions ?: emptyList())
-            .mapNotNull { it.snippetId.toLongOrNull() }
+        val snippetIds: List<UUID> = (response?.permissions ?: emptyList())
+            .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
 
         if (snippetIds.isEmpty())
             return PageDto(emptyList(), 0, page, size)
 
         val snippets = snippetRepo.findAllById(snippetIds)
-        val summaries = snippets.map { snippet ->
+        val summaries = snippets.map { s ->
             SnippetSummaryDto(
-                id = snippet.id!!,
-                name = snippet.name,
-                description = snippet.description,
-                language = snippet.language,
-                version = snippet.languageVersion,
-                ownerId = snippet.ownerId,
-                lastIsValid = snippet.lastIsValid,
-                lastLintCount = snippet.lastLintCount
+                id = s.id!!.toString(),
+                name = s.name,
+                description = s.description,
+                language = s.language,
+                version = s.languageVersion,
+                ownerId = s.ownerId,
+                lastIsValid = s.lastIsValid,
+                lastLintCount = s.lastLintCount
             )
         }
 
@@ -244,14 +249,13 @@ class SnippetServiceImpl(
     override fun shareSnippet(req: ShareSnippetReq) {
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(
-                snippetId = req.snippetId.toString(),
+                snippetId = req.snippetId,
                 userId = req.userId,
                 permissionType = req.permissionType
             ),
             token = ""
         )
     }
-
     @Transactional
     override fun createTestCase(req: CreateTestReq): TestCaseDto {
         val inputsJson = objectMapper.writeValueAsString(req.inputs)
@@ -259,12 +263,13 @@ class SnippetServiceImpl(
 
         val testCase = testCaseRepo.save(
             TestCase(
-                snippetId = req.snippetId,
+                id = null,
+                snippetId = UUID.fromString(req.snippetId), // si viene como String
                 name = req.name,
                 inputs = inputsJson,
                 expectedOutputs = expectedOutputsJson,
                 targetVersionNumber = req.targetVersionNumber,
-                createdBy = "system" //o agarrar el user id
+                createdBy = "system"
             )
         )
 
@@ -272,8 +277,8 @@ class SnippetServiceImpl(
         val expectedOutputs = objectMapper.readValue(expectedOutputsJson, Array<String>::class.java).toList()
 
         return TestCaseDto(
-            id = testCase.id!!,
-            snippetId = testCase.snippetId,
+            id = testCase.id!!.toString(),
+            snippetId = testCase.snippetId.toString(),
             name = testCase.name,
             inputs = inputs,
             expectedOutputs = expectedOutputs,
@@ -281,15 +286,16 @@ class SnippetServiceImpl(
         )
     }
 
+
     @Transactional(readOnly = true)
-    override fun listTestCases(snippetId: Long): List<TestCaseDto> =
+    override fun listTestCases(snippetId: UUID): List<TestCaseDto> =
         testCaseRepo.findAllBySnippetId(snippetId).map {
             val inputs = objectMapper.readValue(it.inputs, Array<String>::class.java).toList()
             val expectedOutputs = objectMapper.readValue(it.expectedOutputs, Array<String>::class.java).toList()
 
             TestCaseDto(
-                id = it.id!!,
-                snippetId = it.snippetId,
+                id = it.id!!.toString(),
+                snippetId = it.snippetId.toString(),
                 name = it.name,
                 inputs = inputs,
                 expectedOutputs = expectedOutputs,
@@ -298,9 +304,10 @@ class SnippetServiceImpl(
         }
 
     @Transactional
-    override fun deleteTestCase(testCaseId: Long) {
+    override fun deleteTestCase(testCaseId: UUID) {
         testCaseRepo.deleteById(testCaseId)
     }
+
 
     override fun runParse(req: ParseReq): ParseRes = executionClient.parse(req)
     override fun runLint(req: LintReq): LintRes = executionClient.lint(req)

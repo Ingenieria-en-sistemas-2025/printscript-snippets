@@ -7,7 +7,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(
@@ -15,11 +18,15 @@ import java.time.Instant
     uniqueConstraints = [UniqueConstraint(name = "uq_sn_ver", columnNames = ["snippet_id", "version_number"])]
 )
 class SnippetVersion(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    @Id
+    @GeneratedValue
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid")
+    var id: UUID? = null,
 
-    @Column(name = "snippet_id", nullable = false)
-    var snippetId: Long,
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "snippet_id", nullable = false, columnDefinition = "uuid")
+    var snippetId: UUID,
 
     @Column(name = "version_number", nullable = false)
     var versionNumber: Long,

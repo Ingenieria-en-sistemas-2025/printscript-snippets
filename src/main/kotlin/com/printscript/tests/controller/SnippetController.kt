@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 
 @RestController
@@ -18,7 +19,7 @@ class SnippetController(
     private val service: SnippetService
 ) {
     @GetMapping("/{snippetId}")
-    fun getSnippet(@PathVariable snippetId: Long): SnippetDetailDto =
+    fun getSnippet(@PathVariable snippetId: UUID): SnippetDetailDto =
         service.getSnippet(snippetId)
 
     @GetMapping("/all")

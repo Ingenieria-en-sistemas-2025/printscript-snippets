@@ -6,19 +6,27 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(
     name = "test_case"
 )
 class TestCase(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    @Id
+    @GeneratedValue
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid")
+    var id: UUID? = null,
 
     //FK
-    @Column(name = "snippet_id", nullable = false)
-    var snippetId: Long,
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "snippet_id", nullable = false, columnDefinition = "uuid")
+    var snippetId: UUID,
+
 
     @Column(nullable = false, length = 120)
     var name: String,

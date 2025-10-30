@@ -9,7 +9,11 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.annotations.UuidGenerator
+import org.hibernate.type.SqlTypes
 import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(
@@ -18,8 +22,12 @@ import java.time.Instant
 )
 class Snippet(
     //se usa como parte del naming key en el bucket tipo asi snippets/<snippet_id>/v1.ps
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    @Id
+    @GeneratedValue
+    @UuidGenerator
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid")
+    var id: UUID? = null,
 
     @Column(name = "owner_id", nullable = false) //el user id (el sub del token Auth0)
     var ownerId: String,
@@ -36,8 +44,9 @@ class Snippet(
     @Column(nullable = false, length = 10)
     var languageVersion: String,
 
-    @Column(name = "current_version_id")
-    var currentVersionId: Long? = null,
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "current_version_id", columnDefinition = "uuid")
+    var currentVersionId: UUID? = null,
 
     //guarda si la ult version fue validada con exito (tiene la rta de execution)
     @Column(name = "last_is_valid", nullable = false)

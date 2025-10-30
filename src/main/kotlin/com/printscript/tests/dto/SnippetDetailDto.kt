@@ -1,7 +1,7 @@
 package com.printscript.tests.dto
 
 data class SnippetDetailDto(
-    val id: Long,
+    val id: String,
     val name: String,
     val description: String?,
     val language: String,
