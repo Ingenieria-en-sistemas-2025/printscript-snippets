@@ -17,9 +17,12 @@ import com.printscript.tests.dto.SnippetSource
 import com.printscript.tests.dto.SnippetSummaryDto
 import com.printscript.tests.dto.TestCaseDto
 import com.printscript.tests.dto.UpdateSnippetReq
+import com.printscript.tests.error.ApiDiagnostic
+import com.printscript.tests.error.InvalidSnippet
 import com.printscript.tests.error.NotFound
 import com.printscript.tests.error.UnsupportedOperation
 import com.printscript.tests.execution.SnippetExecution
+import com.printscript.tests.execution.dto.DiagnosticDto
 import com.printscript.tests.execution.dto.FormatReq
 import com.printscript.tests.execution.dto.FormatRes
 import com.printscript.tests.execution.dto.LintReq
@@ -54,6 +57,11 @@ class SnippetServiceImpl(
     private fun getLatestVersionNumber(snippetId: UUID): Long =
         versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
 
+    // mapper simple Execution.DiagnosticDto -> ApiDiagnostic
+    private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
+        list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
+
+
     private fun createAndPersistVersion(
         snippet: Snippet,
         content: String
@@ -61,14 +69,15 @@ class SnippetServiceImpl(
         val nextVersion = getLatestVersionNumber(snippet.id!!) + 1
         val contentKey = buildVersionKey(snippet.ownerId, snippet.id!!, nextVersion)
 
-        // subir
-        assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
-
-        // validar
+        //valido sintaxis antes de subir al bucket
         val parseRes = executionClient.parse(ParseReq(snippet.language, snippet.languageVersion, content))
-        val lintRes  = executionClient.lint (LintReq (snippet.language, snippet.languageVersion, content))
+        if (!parseRes.valid) {
+            throw InvalidSnippet(toApiDiagnostics(parseRes.diagnostics))
+        }
 
-        // guardar versión
+        assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
+        val lintRes = executionClient.lint(LintReq(snippet.language, snippet.languageVersion, content))
+
         val version = versionRepo.save(
             SnippetVersion(
                 id = null,
@@ -79,12 +88,11 @@ class SnippetServiceImpl(
                 isFormatted = false,
                 isValid = parseRes.valid && lintRes.violations.isEmpty(),
                 lintIssues = objectMapper.writeValueAsString(lintRes.violations),
-                parseErrors = objectMapper.writeValueAsString(parseRes.diagnostics),
+                parseErrors = "[]",
                 createdAt = Instant.now()
             )
         )
 
-        // actualizar snippet
         snippet.currentVersionId = version.id
         snippet.lastIsValid = version.isValid
         snippet.lastLintCount = lintRes.violations.size
@@ -93,7 +101,6 @@ class SnippetServiceImpl(
         return version
     }
 
-    //dto q usa la ui
     private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
         SnippetDetailDto(
             id = snippet.id!!.toString(),
