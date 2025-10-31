@@ -6,11 +6,14 @@ import com.printscript.tests.execution.dto.LintReq
 import com.printscript.tests.execution.dto.LintRes
 import com.printscript.tests.execution.dto.ParseReq
 import com.printscript.tests.execution.dto.ParseRes
+import com.printscript.tests.execution.dto.RunSingleTestReq
+import com.printscript.tests.execution.dto.RunSingleTestRes
 
 interface SnippetExecution {
     fun parse(req: ParseReq): ParseRes
     fun lint(req: LintReq): LintRes
     fun format(req: FormatReq): FormatRes
+
     // fun run(req: RunReq): RunRes
-    // fun runOneTest(req: RunTestsReq): RunTestsRes
+    fun runSingleTest(req: RunSingleTestReq): RunSingleTestRes
 }

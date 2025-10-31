@@ -7,6 +7,9 @@ import com.printscript.tests.execution.dto.LintReq
 import com.printscript.tests.execution.dto.LintRes
 import com.printscript.tests.execution.dto.ParseReq
 import com.printscript.tests.execution.dto.ParseRes
+import com.printscript.tests.execution.dto.RunSingleTestReq
+import com.printscript.tests.execution.dto.RunSingleTestRes
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -15,7 +18,7 @@ import org.springframework.web.client.RestClient
 
 @Component
 class RemoteSnippetExecution(
-    private val rest: RestClient,
+    @param:Qualifier("restClient") private val rest: RestClient,
     private val m2m: Auth0TokenService,
     @Value("\${execution.base-url}") private val baseUrl: String,
 ) : SnippetExecution {
@@ -37,4 +40,11 @@ class RemoteSnippetExecution(
     override fun format(req: FormatReq): FormatRes =
         rest.post().uri("$baseUrl/format").headers(::auth).body(req).retrieve()
             .body(FormatRes::class.java) ?: error("empty format")
+
+    override fun runSingleTest(req: RunSingleTestReq): RunSingleTestRes =
+        rest.post().uri("$baseUrl/run-test")
+            .headers(::auth)
+            .body(req)
+            .retrieve()
+            .body(RunSingleTestRes::class.java) ?: error("empty run-single-test")
 }

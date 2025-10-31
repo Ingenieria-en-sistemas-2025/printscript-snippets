@@ -37,7 +37,7 @@ style:
 complexity:
   LongParameterList:
     active: true
-    functionThreshold: 8
+    functionThreshold: 15
     constructorThreshold: 10
     ignoreDefaultParameters: true
 

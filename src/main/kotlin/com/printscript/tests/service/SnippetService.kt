@@ -3,7 +3,9 @@ package com.printscript.tests.service
 import com.printscript.tests.dto.CreateSnippetReq
 import com.printscript.tests.dto.CreateTestReq
 import com.printscript.tests.dto.PageDto
+import com.printscript.tests.dto.RelationFilter
 import com.printscript.tests.dto.ShareSnippetReq
+import com.printscript.tests.dto.SingleTestRunResult
 import com.printscript.tests.dto.SnippetDetailDto
 import com.printscript.tests.dto.SnippetSource
 import com.printscript.tests.dto.SnippetSummaryDto
@@ -31,4 +33,12 @@ interface SnippetService {
     fun runParse(req: ParseReq): ParseRes
     fun runLint(req: LintReq): LintRes
     fun runFormat(req: FormatReq): FormatRes
+    fun listAccessibleSnippets(userId: String, page: Int, size: Int, name: String?, language: String?, valid: Boolean?, relation: RelationFilter, sort: String): PageDto<SnippetSummaryDto>
+    fun createSnippetFromFile(ownerId: String, meta: CreateSnippetReq, bytes: ByteArray): SnippetDetailDto
+    fun updateSnippetOwnerAware(userId: String, snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto
+    fun deleteSnippetOwnerAware(userId: String, snippetId: UUID)
+    fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq)
+    fun download(snippetId: UUID, formatted: Boolean): ByteArray
+    fun filename(snippetId: UUID, formatted: Boolean): String
+    fun runOneTestOwnerAware(userId: String, snippetId: UUID, testCaseId: UUID): SingleTestRunResult
 }
