@@ -1,12 +1,14 @@
 package com.printscript.tests.controller
 
 import com.printscript.tests.dto.CreateSnippetReq
+import com.printscript.tests.dto.CreateTestReq
 import com.printscript.tests.dto.PageDto
 import com.printscript.tests.dto.RelationFilter
 import com.printscript.tests.dto.ShareSnippetReq
 import com.printscript.tests.dto.SingleTestRunResult
 import com.printscript.tests.dto.SnippetDetailDto
 import com.printscript.tests.dto.SnippetSummaryDto
+import com.printscript.tests.dto.TestCaseDto
 import com.printscript.tests.dto.UpdateSnippetReq
 import com.printscript.tests.service.SnippetService
 import org.springframework.http.HttpHeaders
@@ -99,6 +101,28 @@ class SnippetController(
             .contentType(MediaType.TEXT_PLAIN)
             .body(bytes)
     }
+
+    @PostMapping("/{snippetId}/tests")
+    fun createTest(
+        principal: JwtAuthenticationToken,
+        @PathVariable snippetId: UUID,
+        @RequestBody req: CreateTestReq
+    ): TestCaseDto {
+        val fixedReq = req.copy(snippetId = snippetId.toString())
+        return service.createTestCase(fixedReq)
+    }
+
+    @GetMapping("/{snippetId}/tests")
+    fun listTests(
+        @PathVariable snippetId: UUID
+    ): List<TestCaseDto> =
+        service.listTestCases(snippetId)
+
+    @DeleteMapping("/tests/{testCaseId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteTest(
+        @PathVariable testCaseId: UUID
+    ) = service.deleteTestCase(testCaseId)
 
     @PostMapping("/{snippetId}/tests/{testCaseId}/run")
     fun runSingleTest(
