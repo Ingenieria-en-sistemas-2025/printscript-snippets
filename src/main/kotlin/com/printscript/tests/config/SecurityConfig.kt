@@ -47,7 +47,6 @@ class SecurityConfig(
                     .requestMatchers(GET, "/snippets/all").hasAuthority("SCOPE_read:snippets")
                     .requestMatchers(GET, "/snippets/*").hasAuthority("SCOPE_read:snippets")
                     .requestMatchers(GET, "/snippets/cases/*").hasAuthority("SCOPE_read:snippets")
-
                     // Escritura/Modificación/Eliminación de snippets y sus tests (write:snippets)
                     .requestMatchers(POST, "/snippets/create").hasAuthority("SCOPE_write:snippets")
                     .requestMatchers(PUT, "/snippets/*").hasAuthority("SCOPE_write:snippets")
@@ -55,20 +54,16 @@ class SecurityConfig(
                     .requestMatchers(POST, "/snippets/share").hasAuthority("SCOPE_write:snippets")
                     .requestMatchers(POST, "/snippets/cases").hasAuthority("SCOPE_write:snippets")
                     .requestMatchers(DELETE, "/snippets/cases/*").hasAuthority("SCOPE_write:snippets")
-
                     // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
                     .requestMatchers(GET, "/snippets/users").hasAuthority("SCOPE_read:users")
-
                     // 2. ENDPOINTS DE REGLAS (RULES) Y CONFIG
                     // Administracion de Reglas/Config (admin:rules)
                     .requestMatchers(GET, "/snippets/rules/*").hasAuthority("SCOPE_admin:rules")
                     .requestMatchers(PUT, "/snippets/rules").hasAuthority("SCOPE_admin:rules")
                     .requestMatchers(GET, "/snippets/config/filetypes").hasAuthority("SCOPE_admin:rules")
-
                     // 3. ENDPOINTS DE EJECUCIÓN (RUN)
                     // POST /snippets/run/* (Formato, Testear, etc.) -> execute:code
                     .requestMatchers(POST, "/snippets/run/*").hasAuthority("SCOPE_execute:code")
-
                     // Fallback: Cualquier otra ruta requiere autenticacion, pero sin scope especifico
                     .anyRequest().authenticated()
             }
@@ -83,15 +78,32 @@ class SecurityConfig(
     // despues veo si hay una mejor forma de solucionarlo
     @Bean
     fun restClient(): RestClient {
-        // Le dice a Spring que registre esta instancia para inyeccion (@Autowired)
-        return RestClient.create()
+        return RestClient.builder()
+            .requestInterceptor { request, body, execution ->
+                // Busca un correlation-id actual (si no hay, crea uno nuevo)
+                val id = org.slf4j.MDC.get("correlation-id")
+                    ?: java.util.UUID.randomUUID().toString()
+
+                // Lo agrega como header en el request
+                request.headers.add("X-Correlation-Id", id)
+
+                // Ejecuta el request
+                execution.execute(request, body)
+            }
+            .build()
     }
+
+    @Bean
+    fun plainRestClient(): RestClient = RestClient.create()
 
     // CORS
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        // Despues cambiar "*" al dominio exacto de la UI ("http://localhost:5173")
+        // configuration.allowedOrigins = listOf(
+        //        "http://localhost:5173",
+        //        "https://printscript-dev.duckdns.org",
+        //        "https://printscript-prod.duckdns.org")
         configuration.allowedOrigins = listOf("*")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
         configuration.allowedHeaders = listOf("*")

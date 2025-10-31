@@ -5,5 +5,5 @@ data class LintReq(
     val version: String,
     val content: String?,
     val configText: String? = null,
-    val configFormat: String? = null
+    val configFormat: String? = null,
 )

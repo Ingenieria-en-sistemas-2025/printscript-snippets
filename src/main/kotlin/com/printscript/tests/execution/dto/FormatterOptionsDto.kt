@@ -8,6 +8,5 @@ data class FormatterOptionsDto(
     val indentSpaces: Int? = null,
     val mandatorySingleSpaceSeparation: Boolean? = null,
     val ifBraceBelowLine: Boolean? = null,
-    val ifBraceSameLine: Boolean? = null
+    val ifBraceSameLine: Boolean? = null,
 )
-
