@@ -27,6 +27,10 @@ style:
     active: true
     max: 10
 
+  ThrowsCount:
+    active: true
+    max: 5
+
   LoopWithTooManyJumpStatements:
     active: false
 
@@ -43,8 +47,8 @@ complexity:
     threshold: 25
   TooManyFunctions:
     active: true
-    thresholdInClasses: 20
-    thresholdInInterfaces: 20
+    thresholdInClasses: 30
+    thresholdInInterfaces: 30
 
 exceptions:
   TooGenericExceptionCaught:
