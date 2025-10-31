@@ -3,6 +3,7 @@ package com.printscript.snippets.redis
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
@@ -17,14 +18,15 @@ class RedisConfiguration(
     @Bean
     fun connectionFactory() = LettuceConnectionFactory(RedisStandaloneConfiguration(host, port))
 
-    @Bean
+    @Bean("redisTemplateString")
+    @Primary
     fun redisTemplate(cf: LettuceConnectionFactory): RedisTemplate<String, String> =
         RedisTemplate<String, String>().apply {
             setConnectionFactory(cf)
             afterPropertiesSet()
         }
 
-    @Bean
+    @Bean("redisTemplateJson")
     fun redisJsonTemplate(cf: LettuceConnectionFactory) =
         RedisTemplate<String, Any>().apply {
             setConnectionFactory(cf)
