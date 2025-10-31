@@ -22,6 +22,9 @@ jobs:
           cache: gradle
 
       - name: Build (tests, detekt, spotless, etc.)
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew --no-daemon clean build
 
       - name: Upload reports
