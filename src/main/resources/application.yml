@@ -4,6 +4,7 @@ server:
 spring:
   profiles:
     active: dev
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/snippets}
     username: ${SPRING_DATASOURCE_USERNAME:snippets}
@@ -11,14 +12,28 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-      properties:
-        # Para mapear JSON a jsonb en Postgres con Hibernate 6
-        hibernate.type.preferred_json_sql_type: JSONB
-        # Evita líos de huso horario (opcional)
-        hibernate.jdbc.time_zone: UTC
+    properties:
+      # Para mapear JSON a jsonb en Postgres con Hibernate 6
+      hibernate.type.preferred_json_sql_type: JSONB
+      # Evita líos de huso horario (opcional)
+      hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
     locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://${auth0.domain}/
+
+
+streams:
+  formatting: ps.formatting
+  linting: ps.linting
 
 asset:
   service:
@@ -37,10 +52,3 @@ auth0:
   client-id: ${AUTH0_CLIENT_ID}
   client-secret: ${AUTH0_CLIENT_SECRET}
   audience: ${AUTH0_AUDIENCE:https://snippet-manager}
-
-  spring:
-    security:
-      oauth2:
-        resourceserver:
-          jwt:
-            issuer-uri: https://${auth0.domain}/

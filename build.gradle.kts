@@ -28,6 +28,15 @@ java {
 
 repositories {
     mavenCentral()
+
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/austral-ingsis/class-redis-streams")
+        credentials {
+            username = (findProperty("gpr.user") as String?) ?: System.getenv("GITHUB_ACTOR")
+            password = (findProperty("gpr.key") as String?) ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 flyway {
@@ -68,6 +77,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test") // JUnit5 + Mockito + MockMvc
     testImplementation("io.mockk:mockk:1.13.12") // mocking para Kotlin
+
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.austral.ingsis:redis-streams-mvc:0.1.13")
 
     "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
     "flyway"("org.postgresql:postgresql:42.7.4")
