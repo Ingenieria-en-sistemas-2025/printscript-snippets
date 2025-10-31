@@ -61,6 +61,23 @@ class SecurityConfig(
                     .requestMatchers(GET, "/snippets/rules/*").hasAuthority("SCOPE_admin:rules")
                     .requestMatchers(PUT, "/snippets/rules").hasAuthority("SCOPE_admin:rules")
                     .requestMatchers(GET, "/snippets/config/filetypes").hasAuthority("SCOPE_admin:rules")
+
+
+                    // --- DESCARGA DE SNIPPET ---
+                    .requestMatchers(GET, "/snippets/*/download").hasAuthority("SCOPE_read:snippets")
+// --- SNIPPET DESDE ARCHIVO (multipart) ---
+                    .requestMatchers(POST, "/snippets/file").hasAuthority("SCOPE_write:snippets")
+                    .requestMatchers(PUT, "/snippets/*/file").hasAuthority("SCOPE_write:snippets")
+
+// --- TEST CASES ---
+                    .requestMatchers(GET, "/snippets/*/tests").hasAuthority("SCOPE_read:snippets")
+                    .requestMatchers(POST, "/snippets/*/tests").hasAuthority("SCOPE_write:snippets")
+                    .requestMatchers(DELETE, "/snippets/tests/*").hasAuthority("SCOPE_write:snippets")
+
+// --- RUN DE TESTS ---
+                    .requestMatchers(POST, "/snippets/*/tests/*/run").hasAuthority("SCOPE_execute:code")
+
+
                     // 3. ENDPOINTS DE EJECUCIÓN (RUN)
                     // POST /snippets/run/* (Formato, Testear, etc.) -> execute:code
                     .requestMatchers(POST, "/snippets/run/*").hasAuthority("SCOPE_execute:code")

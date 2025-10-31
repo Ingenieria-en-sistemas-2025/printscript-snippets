@@ -11,6 +11,7 @@ import com.printscript.tests.dto.SnippetSummaryDto
 import com.printscript.tests.dto.TestCaseDto
 import com.printscript.tests.dto.UpdateSnippetReq
 import com.printscript.tests.service.SnippetService
+import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -54,25 +55,28 @@ class SnippetController(
         service.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     fun createFromEditor(
         principal: JwtAuthenticationToken,
-        @RequestBody req: CreateSnippetReq,
+        @RequestBody @Valid req: CreateSnippetReq,
     ): SnippetDetailDto =
         service.createSnippet(principal.name, req)
 
     @PostMapping(path = ["/file"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @ResponseStatus(HttpStatus.CREATED)
     fun createFromFile(
         principal: JwtAuthenticationToken,
-        @RequestPart("meta") meta: CreateSnippetReq, // same DTO, content=null
+        @RequestPart("meta") @Valid meta: CreateSnippetReq,
         @RequestPart("file") file: MultipartFile,
     ): SnippetDetailDto =
         service.createSnippetFromFile(principal.name, meta, file.bytes)
+
 
     @PutMapping("/{snippetId}")
     fun updateSnippet(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
-        @RequestBody req: UpdateSnippetReq,
+        @RequestBody @Valid req: UpdateSnippetReq,
     ): SnippetDetailDto =
         service.updateSnippetOwnerAware(principal.name, snippetId, req)
 
@@ -103,14 +107,13 @@ class SnippetController(
     }
 
     @PostMapping("/{snippetId}/tests")
+    @ResponseStatus(HttpStatus.CREATED)
     fun createTest(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
-        @RequestBody req: CreateTestReq
-    ): TestCaseDto {
-        val fixedReq = req.copy(snippetId = snippetId.toString())
-        return service.createTestCase(fixedReq)
-    }
+        @RequestBody @Valid req: CreateTestReq
+    ): TestCaseDto =
+        service.createTestCase(req.copy(snippetId = snippetId.toString()))
 
     @GetMapping("/{snippetId}/tests")
     fun listTests(
