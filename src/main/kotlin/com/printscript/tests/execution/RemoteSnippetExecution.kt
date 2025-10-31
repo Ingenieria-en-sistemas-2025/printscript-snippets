@@ -17,7 +17,7 @@ import org.springframework.web.client.RestClient
 class RemoteSnippetExecution(
     private val rest: RestClient,
     private val m2m: Auth0TokenService,
-    @Value("\${execution.base-url}") private val baseUrl: String
+    @Value("\${execution.base-url}") private val baseUrl: String,
 ) : SnippetExecution {
 
     private fun auth(h: HttpHeaders) {

@@ -1,13 +1,13 @@
 package com.printscript.tests.dto
 
 data class SnippetSummaryDto(
-    val id: Long,
+    val id: String,
     val name: String,
     val description: String?,
     val language: String,
     val version: String,
     val ownerId: String,
     val lastIsValid: Boolean,
-    val lastLintCount: Int
+    val lastLintCount: Int,
 )
-//GET /snippets -> PageDto<SnippetSummaryDto>
+// GET /snippets -> PageDto<SnippetSummaryDto>
