@@ -9,7 +9,7 @@ data class SnippetDetailDto(
     val ownerId: String,
     val content: String?,
     val isValid: Boolean,
-    val lintCount: Int
+    val lintCount: Int,
 )
 
-//GET /snippets/{id} -> SnippetDetailDto
+// GET /snippets/{id} -> SnippetDetailDto

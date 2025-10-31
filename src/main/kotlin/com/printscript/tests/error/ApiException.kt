@@ -11,4 +11,3 @@ class UnsupportedOperation(msg: String) :
 
 class RunTimeError(msg: String) :
     ApiException(ApiError("RUNTIME_ERROR", msg), HttpStatus.UNPROCESSABLE_ENTITY)
-

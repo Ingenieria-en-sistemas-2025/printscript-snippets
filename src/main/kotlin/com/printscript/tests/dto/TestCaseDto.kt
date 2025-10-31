@@ -6,5 +6,5 @@ data class TestCaseDto(
     val name: String,
     val inputs: List<String>,
     val expectedOutputs: List<String>,
-    val targetVersionNumber: Long?
+    val targetVersionNumber: Long?,
 )

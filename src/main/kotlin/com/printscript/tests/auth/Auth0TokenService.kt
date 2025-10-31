@@ -41,9 +41,9 @@ class Auth0TokenService(
         return accessToken
     }
 
-
     private fun refreshToken() {
         logger.info("Token M2M expirado o próximo a expirar. Solicitando nuevo token a Auth0.")
+
         val base = if (issuer.endsWith("/")) issuer else "$issuer/"
         val authUrl = base + "oauth/token"
 
@@ -51,15 +51,12 @@ class Auth0TokenService(
             "grant_type" to "client_credentials",
             "client_id" to clientId,
             "client_secret" to clientSecret,
-            "audience" to audience
+            "audience" to audience,
         )
 
         try {
-            val baseUrl = if (issuer.endsWith("/")) issuer else "$issuer/"
-            val url = baseUrl + "oauth/token"
-
             val response = rest.post()
-                .uri(url)
+                .uri(authUrl)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()

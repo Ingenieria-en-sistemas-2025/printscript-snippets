@@ -32,9 +32,9 @@ import com.printscript.tests.execution.dto.ParseRes
 import com.printscript.tests.permission.SnippetPermission
 import com.printscript.tests.permission.dto.PermissionCreateSnippetInput
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
 import java.time.Instant
-import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -45,15 +45,15 @@ class SnippetServiceImpl(
     private val assetClient: SnippetAsset,
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
-): SnippetService {
+) : SnippetService {
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
 
-    //key del archivo en el bucket
+    // key del archivo en el bucket
     private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
         "$ownerId/$snippetId/v$versionNumber.ps"
 
-    //ult nro de version persistido para ese snippet
+    // ult nro de version persistido para ese snippet
     private fun getLatestVersionNumber(snippetId: UUID): Long =
         versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
 
@@ -61,15 +61,14 @@ class SnippetServiceImpl(
     private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
         list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
 
-
     private fun createAndPersistVersion(
         snippet: Snippet,
-        content: String
+        content: String,
     ): SnippetVersion {
         val nextVersion = getLatestVersionNumber(snippet.id!!) + 1
         val contentKey = buildVersionKey(snippet.ownerId, snippet.id!!, nextVersion)
 
-        //valido sintaxis antes de subir al bucket
+        // valido sintaxis antes de subir al bucket
         val parseRes = executionClient.parse(ParseReq(snippet.language, snippet.languageVersion, content))
         if (!parseRes.valid) {
             throw InvalidSnippet(toApiDiagnostics(parseRes.diagnostics))
@@ -89,8 +88,8 @@ class SnippetServiceImpl(
                 isValid = parseRes.valid && lintRes.violations.isEmpty(),
                 lintIssues = objectMapper.writeValueAsString(lintRes.violations),
                 parseErrors = "[]",
-                createdAt = Instant.now()
-            )
+                createdAt = Instant.now(),
+            ),
         )
 
         snippet.currentVersionId = version.id
@@ -111,9 +110,8 @@ class SnippetServiceImpl(
             ownerId = snippet.ownerId,
             content = content,
             isValid = version.isValid,
-            lintCount = snippet.lastLintCount
+            lintCount = snippet.lastLintCount,
         )
-
 
     override fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
         val content = req.content ?: ""
@@ -126,20 +124,19 @@ class SnippetServiceImpl(
                 languageVersion = req.version,
                 currentVersionId = null,
                 lastIsValid = false,
-                lastLintCount = 0
-            )
+                lastLintCount = 0,
+            ),
         )
 
         val version = createAndPersistVersion(snippet, content)
 
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, "OWNER"),
-            token = ""
+            token = "",
         )
 
         return toDetailDto(snippet, version, content)
     }
-
 
     @Transactional(readOnly = true)
     override fun getSnippet(snippetId: UUID): SnippetDetailDto {
@@ -151,10 +148,10 @@ class SnippetServiceImpl(
 
         val content = String(
             assetClient.download(containerName, latestVersion.contentKey),
-            StandardCharsets.UTF_8)
+            StandardCharsets.UTF_8,
+        )
         return toDetailDto(snippet, latestVersion, content)
     }
-
 
     override fun updateSnippet(snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId)
@@ -169,11 +166,11 @@ class SnippetServiceImpl(
 
         val content = String(
             assetClient.download(containerName, latestVersion.contentKey),
-            StandardCharsets.UTF_8)
+            StandardCharsets.UTF_8,
+        )
 
         return toDetailDto(savedSnippet, latestVersion, content)
     }
-
 
     @Transactional
     override fun deleteSnippet(snippetId: UUID) {
@@ -195,7 +192,7 @@ class SnippetServiceImpl(
     override fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto {
         throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
-                    "El enum SnippetSource no contiene el contenido."
+                "El enum SnippetSource no contiene el contenido.",
         )
     }
 
@@ -214,12 +211,11 @@ class SnippetServiceImpl(
         return toDetailDto(snippet, version, content)
     }
 
-
     @Transactional(readOnly = true)
     override fun listMySnippets(
         userId: String,
         page: Int,
-        size: Int
+        size: Int,
     ): PageDto<SnippetSummaryDto> {
         val response = permissionClient
             .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
@@ -228,8 +224,9 @@ class SnippetServiceImpl(
         val snippetIds: List<UUID> = (response?.permissions ?: emptyList())
             .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
 
-        if (snippetIds.isEmpty())
+        if (snippetIds.isEmpty()) {
             return PageDto(emptyList(), 0, page, size)
+        }
 
         val snippets = snippetRepo.findAllById(snippetIds)
         val summaries = snippets.map { s ->
@@ -241,7 +238,7 @@ class SnippetServiceImpl(
                 version = s.languageVersion,
                 ownerId = s.ownerId,
                 lastIsValid = s.lastIsValid,
-                lastLintCount = s.lastLintCount
+                lastLintCount = s.lastLintCount,
             )
         }
 
@@ -249,7 +246,7 @@ class SnippetServiceImpl(
             items = summaries,
             count = response?.count ?: summaries.size.toLong(),
             page = page,
-            pageSize = size
+            pageSize = size,
         )
     }
 
@@ -259,11 +256,12 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                permissionType = req.permissionType
+                permissionType = req.permissionType,
             ),
-            token = ""
+            token = "",
         )
     }
+
     @Transactional
     override fun createTestCase(req: CreateTestReq): TestCaseDto {
         val inputsJson = objectMapper.writeValueAsString(req.inputs)
@@ -277,8 +275,8 @@ class SnippetServiceImpl(
                 inputs = inputsJson,
                 expectedOutputs = expectedOutputsJson,
                 targetVersionNumber = req.targetVersionNumber,
-                createdBy = "system"
-            )
+                createdBy = "system",
+            ),
         )
 
         val inputs = objectMapper.readValue(inputsJson, Array<String>::class.java).toList()
@@ -290,10 +288,9 @@ class SnippetServiceImpl(
             name = testCase.name,
             inputs = inputs,
             expectedOutputs = expectedOutputs,
-            targetVersionNumber = testCase.targetVersionNumber
+            targetVersionNumber = testCase.targetVersionNumber,
         )
     }
-
 
     @Transactional(readOnly = true)
     override fun listTestCases(snippetId: UUID): List<TestCaseDto> =
@@ -307,7 +304,7 @@ class SnippetServiceImpl(
                 name = it.name,
                 inputs = inputs,
                 expectedOutputs = expectedOutputs,
-                targetVersionNumber = it.targetVersionNumber
+                targetVersionNumber = it.targetVersionNumber,
             )
         }
 
@@ -316,9 +313,7 @@ class SnippetServiceImpl(
         testCaseRepo.deleteById(testCaseId)
     }
 
-
     override fun runParse(req: ParseReq): ParseRes = executionClient.parse(req)
     override fun runLint(req: LintReq): LintRes = executionClient.lint(req)
     override fun runFormat(req: FormatReq): FormatRes = executionClient.format(req)
-
 }

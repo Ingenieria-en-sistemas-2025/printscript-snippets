@@ -5,5 +5,5 @@ data class CreateTestReq(
     val name: String,
     val inputs: List<String> = emptyList(),
     val expectedOutputs: List<String> = emptyList(),
-    val targetVersionNumber: Long? = null
+    val targetVersionNumber: Long? = null,
 )

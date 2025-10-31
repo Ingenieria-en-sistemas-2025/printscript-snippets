@@ -8,7 +8,7 @@ import org.springframework.web.client.RestClient
 @Component
 class RemoteSnippetAsset(
     private val rest: RestClient,
-    @Value("\${asset.service.base-url}") private val baseUrl: String
+    @Value("\${asset.service.base-url}") private val baseUrl: String,
 ) : SnippetAsset {
 
     private fun buildUrl(container: String, key: String): String {

@@ -8,6 +8,6 @@ data class SnippetSummaryDto(
     val version: String,
     val ownerId: String,
     val lastIsValid: Boolean,
-    val lastLintCount: Int
+    val lastLintCount: Int,
 )
-//GET /snippets -> PageDto<SnippetSummaryDto>
+// GET /snippets -> PageDto<SnippetSummaryDto>

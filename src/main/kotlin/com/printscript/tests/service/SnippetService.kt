@@ -31,5 +31,4 @@ interface SnippetService {
     fun runParse(req: ParseReq): ParseRes
     fun runLint(req: LintReq): LintRes
     fun runFormat(req: FormatReq): FormatRes
-
 }

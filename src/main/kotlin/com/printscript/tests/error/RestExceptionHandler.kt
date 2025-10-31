@@ -19,6 +19,16 @@ import java.net.SocketTimeoutException
 @RestControllerAdvice
 class RestExceptionHandler {
 
+    companion object {
+        private const val HTTP_401 = 401
+        private const val HTTP_403 = 403
+        private const val HTTP_404 = 404
+        private const val HTTP_409 = 409
+        private const val HTTP_413 = 413
+        private const val HTTP_5XX_START = 500
+        private const val HTTP_5XX_END = 599
+    }
+
     @ExceptionHandler(ApiException::class)
     fun handleApi(ex: ApiException): ResponseEntity<ApiError> =
         ResponseEntity.status(ex.status).body(ex.error)
@@ -29,7 +39,7 @@ class RestExceptionHandler {
         MissingServletRequestPartException::class,
         MethodArgumentNotValidException::class,
         HttpMessageNotReadableException::class,
-        MethodArgumentTypeMismatchException::class
+        MethodArgumentTypeMismatchException::class,
     )
     fun badRequest(ex: Exception): ResponseEntity<ApiError> =
         ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -55,15 +65,14 @@ class RestExceptionHandler {
         ResponseEntity.status(ex.statusCode)
             .body(ApiError(code = ex.statusCode.value().toString(), message = ex.reason ?: "Error"))
 
-
     @ExceptionHandler(RestClientResponseException::class)
     fun upstream(ex: RestClientResponseException): ResponseEntity<ApiError> =
         ResponseEntity.status(mapUpstreamStatus(ex))
             .body(
                 ApiError(
                     code = "UPSTREAM_ERROR",
-                    message = "Servicio externo respondió ${ex.statusCode.value()}"
-                )
+                    message = "Servicio externo respondió ${ex.statusCode.value()}",
+                ),
             )
 
     @ExceptionHandler(SocketTimeoutException::class)
@@ -78,12 +87,12 @@ class RestExceptionHandler {
 
     private fun mapUpstreamStatus(ex: RestClientResponseException): HttpStatus =
         when (ex.statusCode.value()) {
-            401 -> HttpStatus.UNAUTHORIZED
-            403 -> HttpStatus.FORBIDDEN
-            404 -> HttpStatus.NOT_FOUND
-            409 -> HttpStatus.CONFLICT
-            413 -> HttpStatus.PAYLOAD_TOO_LARGE
-            in 500..599 -> HttpStatus.BAD_GATEWAY
+            HTTP_401 -> HttpStatus.UNAUTHORIZED
+            HTTP_403 -> HttpStatus.FORBIDDEN
+            HTTP_404 -> HttpStatus.NOT_FOUND
+            HTTP_409 -> HttpStatus.CONFLICT
+            HTTP_413 -> HttpStatus.PAYLOAD_TOO_LARGE
+            in HTTP_5XX_START..HTTP_5XX_END -> HttpStatus.BAD_GATEWAY
             else -> HttpStatus.BAD_GATEWAY
         }
 }
