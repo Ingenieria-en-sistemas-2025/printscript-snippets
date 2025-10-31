@@ -149,9 +149,9 @@ class SnippetServiceImpl(
         val latestVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet $snippetId has no versions")
 
-        val content = assetClient.download(containerName, latestVersion.contentKey)
-            .toString(StandardCharsets.UTF_8)
-
+        val content = String(
+            assetClient.download(containerName, latestVersion.contentKey),
+            StandardCharsets.UTF_8)
         return toDetailDto(snippet, latestVersion, content)
     }
 
@@ -167,8 +167,9 @@ class SnippetServiceImpl(
         val latestVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
 
-        val content = assetClient.download(containerName, latestVersion.contentKey)
-            .toString(StandardCharsets.UTF_8)
+        val content = String(
+            assetClient.download(containerName, latestVersion.contentKey),
+            StandardCharsets.UTF_8)
 
         return toDetailDto(savedSnippet, latestVersion, content)
     }
@@ -208,7 +209,7 @@ class SnippetServiceImpl(
     @Transactional
     fun addVersionFromUploadedFile(snippetId: UUID, fileBytes: ByteArray): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        val content = fileBytes.toString(StandardCharsets.UTF_8)
+        val content = String(fileBytes, StandardCharsets.UTF_8)
         val version = createAndPersistVersion(snippet, content)
         return toDetailDto(snippet, version, content)
     }

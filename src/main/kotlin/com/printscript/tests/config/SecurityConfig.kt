@@ -83,9 +83,23 @@ class SecurityConfig(
     // despues veo si hay una mejor forma de solucionarlo
     @Bean
     fun restClient(): RestClient {
-        // Le dice a Spring que registre esta instancia para inyeccion (@Autowired)
-        return RestClient.create()
+        return RestClient.builder()
+            .requestInterceptor { request, body, execution ->
+                //Busca un correlation-id actual (si no hay, crea uno nuevo)
+                val id = org.slf4j.MDC.get("correlation-id")
+                    ?: java.util.UUID.randomUUID().toString()
+
+                //Lo agrega como header en el request
+                request.headers.add("X-Correlation-Id", id)
+
+                //Ejecuta el request
+                execution.execute(request, body)
+            }
+            .build()
     }
+
+    @Bean
+    fun plainRestClient(): RestClient = RestClient.create()
 
     // CORS
     @Bean

@@ -22,7 +22,7 @@ spring:
 
 asset:
   service:
-    base-url: ${ASSET_BASE_URL:http://localhost:8080}
+    base-url: ${ASSET_SERVICE_BASE_URL:http://localhost:8080}
 
 execution:
   base-url: ${EXECUTION_BASE_URL:http://localhost:8082}

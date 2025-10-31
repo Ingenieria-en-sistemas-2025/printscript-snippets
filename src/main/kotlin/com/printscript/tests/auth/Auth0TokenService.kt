@@ -3,6 +3,7 @@ package com.printscript.tests.auth
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.printscript.tests.error.RunTimeError
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
@@ -18,6 +19,8 @@ class Auth0TokenService(
     private val clientSecret: String,
     @param:Value("\${auth0.audience}")
     private val audience: String,
+    @Qualifier("plainRestClient")
+    private val rest: RestClient,
 ) {
     private val logger = LoggerFactory.getLogger(Auth0TokenService::class.java)
     private var accessToken: String = ""
@@ -43,8 +46,12 @@ class Auth0TokenService(
         )
 
         try {
-            val response = RestClient.create().post()
+            val base = if (issuer.endsWith("/")) issuer else "$issuer/"
+            val authUrl = base + "oauth/token"
+
+            val response = rest.post()
                 .uri(authUrl)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
                 .body(TokenResponse::class.java)
