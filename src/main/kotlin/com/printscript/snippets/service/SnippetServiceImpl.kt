@@ -353,7 +353,7 @@ class SnippetServiceImpl(
             "name" -> filtered.sortedBy { it.name.lowercase() }
             "language" -> filtered.sortedBy { it.language.lowercase() }
             "valid" -> filtered.sortedBy { it.lastIsValid }
-            "updatedAt" -> filtered.sortedBy { it.updatedAt ?: it.createdAt }
+            "updatedAt" -> filtered.sortedBy { it.updatedAt }
             else -> filtered.sortedBy { it.name.lowercase() }
         }.let { if (dir.equals("DESC", true)) it.reversed() else it }
 

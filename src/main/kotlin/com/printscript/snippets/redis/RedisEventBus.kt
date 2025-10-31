@@ -1,7 +1,6 @@
 package com.printscript.snippets.redis
 
 import com.printscript.snippets.redis.events.DomainEvent
-import org.austral.ingsis.redis.RedisStreamProducer
 import org.springframework.core.env.Environment
 import org.springframework.data.redis.connection.stream.StreamRecords
 import org.springframework.data.redis.core.RedisTemplate

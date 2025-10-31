@@ -34,5 +34,4 @@ class RedisConfiguration(
             hashValueSerializer = valueSerializer
             afterPropertiesSet()
         }
-
 }

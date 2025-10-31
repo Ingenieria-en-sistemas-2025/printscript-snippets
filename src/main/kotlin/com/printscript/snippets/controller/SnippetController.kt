@@ -71,7 +71,6 @@ class SnippetController(
     ): SnippetDetailDto =
         service.createSnippetFromFile(principal.name, meta, file.bytes)
 
-
     @PutMapping("/{snippetId}")
     fun updateSnippet(
         principal: JwtAuthenticationToken,
@@ -109,22 +108,21 @@ class SnippetController(
     @PostMapping("/{snippetId}/tests")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTest(
-        principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
-        @RequestBody @Valid req: CreateTestReq
+        @RequestBody @Valid req: CreateTestReq,
     ): TestCaseDto =
         service.createTestCase(req.copy(snippetId = snippetId.toString()))
 
     @GetMapping("/{snippetId}/tests")
     fun listTests(
-        @PathVariable snippetId: UUID
+        @PathVariable snippetId: UUID,
     ): List<TestCaseDto> =
         service.listTestCases(snippetId)
 
     @DeleteMapping("/tests/{testCaseId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteTest(
-        @PathVariable testCaseId: UUID
+        @PathVariable testCaseId: UUID,
     ) = service.deleteTestCase(testCaseId)
 
     @PostMapping("/{snippetId}/tests/{testCaseId}/run")
