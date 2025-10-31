@@ -7,6 +7,13 @@ plugins {
     id("jacoco")
     id("com.diffplug.spotless") version "6.25.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
+    id("org.flywaydb.flyway") version "11.7.2"
+}
+
+buildscript {
+    dependencies {
+        classpath("org.flywaydb:flyway-database-postgresql:11.7.2")
+    }
 }
 
 group = "com.printscript"
@@ -23,6 +30,19 @@ repositories {
     mavenCentral()
 }
 
+flyway {
+    url = "jdbc:postgresql://localhost:5432/snippets"
+    user = "snippets"
+    password = "snippets"
+    driver = "org.postgresql.Driver"
+    locations = arrayOf("filesystem:src/main/resources/db/migration")
+    schemas = arrayOf("public")
+}
+
+configurations {
+    create("flyway")
+}
+
 dependencies {
     implementation("org.postgresql:postgresql:42.7.4")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -33,6 +53,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -45,6 +68,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test") // JUnit5 + Mockito + MockMvc
     testImplementation("io.mockk:mockk:1.13.12") // mocking para Kotlin
+
+    "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
+    "flyway"("org.postgresql:postgresql:42.7.4")
 }
 
 kotlin {
