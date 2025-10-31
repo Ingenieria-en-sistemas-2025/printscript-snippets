@@ -13,8 +13,14 @@ interface SnippetRepo : JpaRepository<Snippet, UUID> {
     fun existsByOwnerIdAndName(ownerId: String, name: String): Boolean
 
     @Query("select s.id from Snippet s")
-    fun findAllIds(): List<Long>
+    fun findAllIds(): List<UUID>
 
-    @Query("select s.language as language, s.languageVersion as languageVersion from Snippet s where s.id = :id")
-    fun getLangAndVersion(@Param("id") id: Long): LangVerProjection
+    @Query(
+        """
+    select s.language as language, s.languageVersion as languageVersion
+    from Snippet s
+    where s.id = :id
+""",
+    )
+    fun getLangAndVersion(@Param("id") id: UUID): LangVerProjection
 }
