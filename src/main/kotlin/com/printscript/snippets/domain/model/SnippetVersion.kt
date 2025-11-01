@@ -38,7 +38,13 @@ class SnippetVersion(
 
     @Column(name = "is_formatted", nullable = false) var isFormatted: Boolean = false,
     @Column(name = "is_valid", nullable = false) var isValid: Boolean = false,
-    @Column(name = "lint_issues", columnDefinition = "JSONB") var lintIssues: String = "[]",
-    @Column(name = "parse_errors", columnDefinition = "JSONB") var parseErrors: String = "[]",
-    @Column(name = "created_at", nullable = false) var createdAt: Instant = Instant.now(),
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "lint_issues", columnDefinition = "jsonb", nullable = false)
+    var lintIssues: String = "[]",
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "parse_errors", columnDefinition = "jsonb", nullable = false)
+    var parseErrors: String = "[]",
+
+    @Column(name = "created_at", nullable = false)
+    var createdAt: Instant = Instant.now(),
 )
