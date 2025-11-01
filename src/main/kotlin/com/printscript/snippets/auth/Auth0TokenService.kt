@@ -34,7 +34,7 @@ class Auth0TokenService(
     }
 
     fun getAccessToken(): String {
-        // Renueva el token si expira en menos de 60 segundos
+        // Renuevaa el token si expira en menos de 60 segundos
         if (Instant.now().isAfter(expiresAt.minusSeconds(TOKEN_RENEW_WINDOW_SEC))) {
             refreshToken()
         }
