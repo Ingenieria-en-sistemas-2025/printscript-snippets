@@ -202,7 +202,7 @@ class SnippetServiceImpl(
     override fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto {
         throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
-                    "El enum SnippetSource no contiene el contenido.",
+                "El enum SnippetSource no contiene el contenido.",
         )
     }
 
@@ -478,7 +478,7 @@ class SnippetServiceImpl(
 
         // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
         val canAccess = snippet.ownerId == userId ||
-                (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
+            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
 
         if (!canAccess) throw UnsupportedOperation("You don't have permission to run tests for this snippet")
 
