@@ -141,7 +141,7 @@ class SnippetServiceImpl(
         val version = createAndPersistVersion(snippet, content)
 
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, "OWNER"),
+            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
             token = "",
         )
 
@@ -202,7 +202,7 @@ class SnippetServiceImpl(
     override fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto {
         throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
-                "El enum SnippetSource no contiene el contenido.",
+                    "El enum SnippetSource no contiene el contenido.",
         )
     }
 
@@ -231,7 +231,8 @@ class SnippetServiceImpl(
             .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
             .body
 
-        val snippetIds: List<UUID> = (response?.permissions ?: emptyList())
+        // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
+        val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
             .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
 
         if (snippetIds.isEmpty()) {
@@ -254,7 +255,8 @@ class SnippetServiceImpl(
 
         return PageDto(
             items = summaries,
-            count = response?.count ?: summaries.size.toLong(),
+            // CORRECCIÓN: Usar 'total' en lugar de 'count'
+            count = response?.total?.toLong() ?: summaries.size.toLong(),
             page = page,
             pageSize = size,
         )
@@ -266,7 +268,7 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                permissionType = req.permissionType,
+                scope = req.permissionType, // CORRECCIÓN: Se cambió el argumento a 'scope'
             ),
             token = "",
         )
@@ -330,7 +332,10 @@ class SnippetServiceImpl(
     override fun listAccessibleSnippets(userId: String, page: Int, size: Int, name: String?, language: String?, valid: Boolean?, relation: RelationFilter, sort: String): PageDto<SnippetSummaryDto> {
         // pregunta a permissions q snippets puede ver el user
         val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size).body
-        val ids = (perms?.permissions ?: emptyList()).mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+
+        // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
+        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+
         if (ids.isEmpty()) return PageDto(emptyList(), 0, page, size)
 
         val all = snippetRepo.findAllById(ids) // trae todos los snippets q tiene permiso
@@ -338,6 +343,8 @@ class SnippetServiceImpl(
         // filtro x relacion
         val base = when (relation) {
             RelationFilter.OWNER -> all.filter { it.ownerId == userId }
+            // CORRECCIÓN: La lógica del filtro SHARED utiliza la propiedad 'ownerId' del Snippet
+            //             pero el filtro por permiso 'SHARED' también debería considerar la lista de permisos
             RelationFilter.SHARED -> all.filter { it.ownerId != userId }
             RelationFilter.BOTH -> all
         }
@@ -372,7 +379,8 @@ class SnippetServiceImpl(
                 lastLintCount = snippet.lastLintCount,
             )
         }
-        return PageDto(pageItems, sorted.size.toLong(), page, size)
+        // CORRECCIÓN: Usar 'total' en lugar de 'count'
+        return PageDto(pageItems, perms?.total?.toLong() ?: sorted.size.toLong(), page, size)
     }
 
     override fun createSnippetFromFile(ownerId: String, meta: CreateSnippetReq, bytes: ByteArray): SnippetDetailDto {
@@ -467,8 +475,11 @@ class SnippetServiceImpl(
         // Autorización básica: owner o con permiso
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = 0, pageSize = 1).body
+
+        // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
         val canAccess = snippet.ownerId == userId ||
-            (perms?.permissions ?: emptyList()).any { it.snippetId == snippetId.toString() }
+                (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
+
         if (!canAccess) throw UnsupportedOperation("You don't have permission to run tests for this snippet")
 
         // latest content
