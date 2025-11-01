@@ -1,7 +1,8 @@
 package com.printscript.snippets.permission.dto
 
 data class PermissionSnippet(
+    val id: String,
     val snippetId: String,
-    val authorId: String,
-    val permissionType: String, // "OWNER", "READER", "EDITOR"
+    val ownerId: String,
+    val scope: String,
 )
