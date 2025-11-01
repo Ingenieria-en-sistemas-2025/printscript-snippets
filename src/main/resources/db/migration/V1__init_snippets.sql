@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE snippet (
                          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                          owner_id VARCHAR(120) NOT NULL,
