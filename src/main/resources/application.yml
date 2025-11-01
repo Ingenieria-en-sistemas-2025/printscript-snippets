@@ -28,7 +28,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://${auth0.domain}/
+          issuer-uri: ${AUTH0_ISSUER_URI:https://dev-c2gyaqqsxa2v3nig.us.auth0.com/}
 
 
 streams:
