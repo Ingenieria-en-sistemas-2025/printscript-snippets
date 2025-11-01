@@ -27,15 +27,17 @@ class Auth0TokenService(
 ) {
     private val logger = LoggerFactory.getLogger(Auth0TokenService::class.java)
     private var accessToken: String = ""
-    private var expiresAt: Instant = Instant.MIN
+    private var expiresAt: Instant = Instant.EPOCH
 
     companion object {
         private const val TOKEN_RENEW_WINDOW_SEC: Long = 60
     }
 
     fun getAccessToken(): String {
-        // Renuevaa el token si expira en menos de 60 segundos
-        if (Instant.now().isAfter(expiresAt.minusSeconds(TOKEN_RENEW_WINDOW_SEC))) {
+        val needsRefresh = accessToken.isBlank() ||
+            Instant.now().plusSeconds(TOKEN_RENEW_WINDOW_SEC).isAfter(expiresAt)
+
+        if (needsRefresh) {
             refreshToken()
         }
         return accessToken
