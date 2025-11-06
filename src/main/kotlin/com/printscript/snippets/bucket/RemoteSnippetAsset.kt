@@ -4,17 +4,23 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import org.springframework.web.util.UriComponentsBuilder
 
 @Component
 class RemoteSnippetAsset(
     @Qualifier("plainRestClient") private val rest: RestClient,
-    @Value("\${asset.service.base-url}") private val baseUrl: String,
+    @Value("\${asset.service.base-url:http://asset-service:8080}")
+    private val baseUrl: String,
 ) : SnippetAsset {
 
     private fun buildUrl(container: String, key: String): String {
-        val encContainer = java.net.URLEncoder.encode(container, Charsets.UTF_8)
-        val encKey = java.net.URLEncoder.encode(key, Charsets.UTF_8) // incluye ownerId y '/'
-        return "$baseUrl/v1/asset/$encContainer/$encKey"
+        val url = UriComponentsBuilder
+            .fromUriString(baseUrl)
+            .pathSegment("v1", "asset", container)
+            .path("/$key")
+            .build(false)
+            .toUriString()
+        return url
     }
 
     override fun upload(container: String, key: String, bytes: ByteArray) {
