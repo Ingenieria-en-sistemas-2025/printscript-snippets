@@ -35,6 +35,7 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
@@ -50,6 +51,7 @@ class SnippetServiceImpl(
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
 ) : SnippetService {
+    private val logger = LoggerFactory.getLogger(SnippetServiceImpl::class.java)
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
 
@@ -76,13 +78,19 @@ class SnippetServiceImpl(
         val nextVersion = getLatestVersionNumber(snippet.id!!) + 1
         val contentKey = buildVersionKey(snippet.ownerId, snippet.id!!, nextVersion)
 
+        logger.info("Starting version creation for snippet ${snippet.id}, next version: $nextVersion")
+
         // valido sintaxis antes de subir al bucket
         val parseRes = executionClient.parse(ParseReq(snippet.language, snippet.languageVersion, content))
         if (!parseRes.valid) {
+            logger.error("Snippet version creation failed due to syntax errors. Count: ${parseRes.diagnostics.size}")
             throw InvalidSnippet(toApiDiagnostics(parseRes.diagnostics))
         }
 
+        logger.debug("Uploading content to asset client with key: $contentKey")
         assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
+
+        logger.debug("Calling execution service for linting...")
         val lintRes = executionClient.lint(LintReq(snippet.language, snippet.languageVersion, content))
 
         val version = versionRepo.save(
@@ -104,7 +112,7 @@ class SnippetServiceImpl(
         snippet.lastIsValid = version.isValid
         snippet.lastLintCount = lintRes.violations.size
         snippetRepo.save(snippet)
-
+        logger.info("Snippet version $nextVersion created successfully")
         return version
     }
 
@@ -122,6 +130,7 @@ class SnippetServiceImpl(
         )
 
     override fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
+        logger.info("Request to create snippet '${req.name}' by user $ownerId")
         val content = (req.content ?: "").also {
             if (it.isBlank()) throw InvalidRequest("El contenido del snippet no puede estar vacío")
         }
@@ -140,10 +149,12 @@ class SnippetServiceImpl(
 
         val version = createAndPersistVersion(snippet, content)
 
+        logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
             token = "",
         )
+        logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
         return toDetailDto(snippet, version, content)
     }
