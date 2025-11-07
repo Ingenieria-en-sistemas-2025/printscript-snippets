@@ -151,7 +151,7 @@ class SnippetServiceImpl(
 
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!, ownerId, scope = "OWNER"),
+            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"),
             token = "",
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
@@ -195,7 +195,7 @@ class SnippetServiceImpl(
 
     @Transactional
     override fun deleteSnippet(snippetId: UUID) {
-        permissionClient.deleteSnippetPermissions(snippetId, token = "")
+        permissionClient.deleteSnippetPermissions(snippetId.toString(), token = "")
 
         // borrar files del bucket
         val versions = versionRepo.findAllBySnippetId(snippetId)
@@ -242,14 +242,16 @@ class SnippetServiceImpl(
             .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
             .body
 
-        val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
-            .map { it.snippetId }
+        val snippetIds: List<String> = (response?.authorizations ?: emptyList())
+            .map { it.snippetId.toString() }
 
         if (snippetIds.isEmpty()) {
             return PageDto(emptyList(), 0, page, size)
         }
 
-        val snippets = snippetRepo.findAllById(snippetIds)
+        val uuids = snippetIds.map(UUID::fromString)
+        val snippets = snippetRepo.findAllById(uuids)
+
         val summaries = snippets.map { s ->
             SnippetSummaryDto(
                 id = s.id!!.toString(),
@@ -276,7 +278,7 @@ class SnippetServiceImpl(
     override fun shareSnippet(req: ShareSnippetReq) {
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(
-                snippetId = UUID.fromString(req.snippetId),
+                snippetId = req.snippetId,
                 userId = req.userId,
                 scope = req.permissionType,
             ),
@@ -349,13 +351,13 @@ class SnippetServiceImpl(
 
         if (ids.isEmpty()) return PageDto(emptyList(), 0, page, size)
 
-        val all = snippetRepo.findAllById(ids) // trae todos los snippets q tiene permiso
+        val uuidIds = ids.map(UUID::fromString)
+
+        val all = snippetRepo.findAllById(uuidIds) // trae todos los snippets q tiene permiso
 
         // filtro x relacion
         val base = when (relation) {
             RelationFilter.OWNER -> all.filter { it.ownerId == userId }
-            // CORRECCIÓN: La lógica del filtro SHARED utiliza la propiedad 'ownerId' del Snippet
-            //             pero el filtro por permiso 'SHARED' también debería considerar la lista de permisos
             RelationFilter.SHARED -> all.filter { it.ownerId != userId }
             RelationFilter.BOTH -> all
         }
@@ -390,7 +392,6 @@ class SnippetServiceImpl(
                 lastLintCount = snippet.lastLintCount,
             )
         }
-        // CORRECCIÓN: Usar 'total' en lugar de 'count'
         return PageDto(pageItems, perms?.total?.toLong() ?: sorted.size.toLong(), page, size)
     }
 
@@ -487,9 +488,8 @@ class SnippetServiceImpl(
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = 0, pageSize = 1).body
 
-        // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
         val canAccess = snippet.ownerId == userId ||
-            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId }
+            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
 
         if (!canAccess) throw UnsupportedOperation("You don't have permission to run tests for this snippet")
 

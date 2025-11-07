@@ -1,10 +1,8 @@
 package com.printscript.snippets.permission.dto
 
-import java.util.UUID
-
 data class PermissionSnippet(
-    val id: UUID,
-    val snippetId: UUID,
+    val id: String,
+    val snippetId: String,
     val ownerId: String,
     val scope: String,
 )
