@@ -149,12 +149,12 @@ class SnippetServiceImpl(
 
         val version = createAndPersistVersion(snippet, content)
 
-        logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
-        permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"),
-            token = "",
-        )
-        logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
+//        logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
+//        permissionClient.createAuthorization(
+//            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"),
+//            token = "",
+//        )
+//        logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
         return toDetailDto(snippet, version, content)
     }

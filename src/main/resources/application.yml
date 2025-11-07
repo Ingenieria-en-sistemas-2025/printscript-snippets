@@ -44,7 +44,7 @@ execution:
 
 authorization:
   service:
-    url: ${AUTHORIZATION_BASE_URL:http://authorization:8081}
+    url: ${AUTHORIZATION_BASE_URL:http://authorization:8080}
 
 # Auth0
 auth0:
