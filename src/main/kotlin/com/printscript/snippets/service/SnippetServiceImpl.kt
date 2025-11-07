@@ -151,7 +151,7 @@ class SnippetServiceImpl(
 
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
+            PermissionCreateSnippetInput(snippet.id!!, ownerId, scope = "OWNER"),
             token = "",
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
@@ -195,7 +195,7 @@ class SnippetServiceImpl(
 
     @Transactional
     override fun deleteSnippet(snippetId: UUID) {
-        permissionClient.deleteSnippetPermissions(snippetId.toString(), token = "")
+        permissionClient.deleteSnippetPermissions(snippetId, token = "")
 
         // borrar files del bucket
         val versions = versionRepo.findAllBySnippetId(snippetId)
@@ -242,9 +242,8 @@ class SnippetServiceImpl(
             .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
             .body
 
-        // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
-            .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+            .map { it.snippetId }
 
         if (snippetIds.isEmpty()) {
             return PageDto(emptyList(), 0, page, size)
@@ -277,9 +276,9 @@ class SnippetServiceImpl(
     override fun shareSnippet(req: ShareSnippetReq) {
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(
-                snippetId = req.snippetId,
+                snippetId = UUID.fromString(req.snippetId),
                 userId = req.userId,
-                scope = req.permissionType, // CORRECCIÓN: Se cambió el argumento a 'scope'
+                scope = req.permissionType,
             ),
             token = "",
         )
@@ -345,7 +344,8 @@ class SnippetServiceImpl(
         val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size).body
 
         // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
-        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+        val ids = (perms?.authorizations ?: emptyList())
+            .map { it.snippetId }
 
         if (ids.isEmpty()) return PageDto(emptyList(), 0, page, size)
 
@@ -489,7 +489,7 @@ class SnippetServiceImpl(
 
         // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
         val canAccess = snippet.ownerId == userId ||
-            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
+            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId }
 
         if (!canAccess) throw UnsupportedOperation("You don't have permission to run tests for this snippet")
 

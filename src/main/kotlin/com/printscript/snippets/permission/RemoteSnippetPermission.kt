@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.util.UriComponentsBuilder
+import java.util.UUID
 
 @Component
 class RemoteSnippetPermission(
@@ -31,7 +32,7 @@ class RemoteSnippetPermission(
             .toEntity(String::class.java)
     }
 
-    override fun getAuthorBySnippetId(snippetId: String, token: String): ResponseEntity<String> {
+    override fun getAuthorBySnippetId(snippetId: UUID, token: String): ResponseEntity<String> {
         val m2mToken = auth0TokenService.getAccessToken()
 
         return restClient.get()
@@ -62,7 +63,7 @@ class RemoteSnippetPermission(
             .toEntity(SnippetPermissionListResponse::class.java)
     }
 
-    override fun deleteSnippetPermissions(snippetId: String, token: String): ResponseEntity<Unit> {
+    override fun deleteSnippetPermissions(snippetId: UUID, token: String): ResponseEntity<Unit> {
         val m2mToken = auth0TokenService.getAccessToken()
         restClient.delete()
             .uri("$permissionServiceUrl/authorization/snippet/$snippetId")
