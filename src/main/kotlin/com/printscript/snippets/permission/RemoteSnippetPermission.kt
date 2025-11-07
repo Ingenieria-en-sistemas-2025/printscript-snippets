@@ -35,7 +35,7 @@ class RemoteSnippetPermission(
                 .toEntity(String::class.java)
         } catch (ex: RestClientException) {
             logger.error("Failed to create authorization for snippet ${input.snippetId}: ${ex.message}", ex)
-            throw RuntimeException("Authorization service unavailable", ex)
+            throw ex
         }
     }
 
@@ -52,7 +52,7 @@ class RemoteSnippetPermission(
                 .toEntity(String::class.java)
         } catch (ex: RestClientException) {
             logger.error("Failed to get owner for snippet $snippetId: ${ex.message}", ex)
-            throw RuntimeException("Authorization service unavailable", ex)
+            throw ex
         }
     }
 
@@ -77,7 +77,7 @@ class RemoteSnippetPermission(
                 .toEntity(SnippetPermissionListResponse::class.java)
         } catch (ex: RestClientException) {
             logger.error("Failed to get permissions for user $userId: ${ex.message}", ex)
-            throw RuntimeException("Authorization service unavailable", ex)
+            throw ex
         }
     }
 
@@ -96,7 +96,7 @@ class RemoteSnippetPermission(
             ResponseEntity.ok().build()
         } catch (ex: RestClientException) {
             logger.error("Failed to delete permissions for snippet $snippetId: ${ex.message}", ex)
-            throw RuntimeException("Authorization service unavailable", ex)
+            throw ex
         }
     }
 }
