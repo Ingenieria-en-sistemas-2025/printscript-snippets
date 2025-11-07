@@ -151,7 +151,7 @@ class SnippetServiceImpl(
 
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
+            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'scope'
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
@@ -289,7 +289,7 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                scope = req.permissionType,
+                scope = req.scope,
             ),
         )
     }
@@ -359,32 +359,13 @@ class SnippetServiceImpl(
         relation: RelationFilter,
         sort: String,
     ): PageDto<SnippetSummaryDto> {
-        // 1. Pedí TODOS los permisos del usuario (sin paginación en el servicio remoto)
-        val perms = permissionClient.getAllSnippetsPermission(
-            userId,
-            pageNum = 0, // ← Siempre página 0
-            pageSize = Int.MAX_VALUE, // ← Todos los permisos
-        ).body
-
-        val allAuthorizations = perms?.authorizations ?: emptyList()
-
-        if (allAuthorizations.isEmpty()) {
-            return PageDto(emptyList(), 0, page, size)
-        }
-
-        // 2. Convertí todos los snippetIds a UUID
-        val ids = allAuthorizations.mapNotNull {
+        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE).body
+        val ids = (perms?.authorizations ?: emptyList()).mapNotNull {
             runCatching { UUID.fromString(it.snippetId) }.getOrNull()
         }
 
-        if (ids.isEmpty()) {
-            return PageDto(emptyList(), 0, page, size)
-        }
-
-        // 3. Traé todos los snippets de la DB
         val all = snippetRepo.findAllById(ids)
 
-        // 4. Filtro por relación (OWNER/SHARED/BOTH)
         val base = when (relation) {
             RelationFilter.OWNER -> all.filter { it.ownerId == userId }
             RelationFilter.SHARED -> all.filter { it.ownerId != userId }
