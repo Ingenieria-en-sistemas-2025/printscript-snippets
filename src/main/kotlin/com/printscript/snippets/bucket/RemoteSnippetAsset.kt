@@ -19,13 +19,12 @@ class RemoteSnippetAsset(
 ) : SnippetAsset {
 
     private fun buildUrl(container: String, key: String): String {
-        val url = UriComponentsBuilder
+        val encodedKey = java.net.URLEncoder.encode(key, Charsets.UTF_8)
+        return UriComponentsBuilder
             .fromUriString(baseUrl)
-            .pathSegment("v1", "asset", container)
-            .path("/$key")
+            .pathSegment("v1", "asset", container, encodedKey)
             .build(false)
             .toUriString()
-        return url
     }
 
     @PutMapping("/v1/asset/{container}/{key:.+}")
