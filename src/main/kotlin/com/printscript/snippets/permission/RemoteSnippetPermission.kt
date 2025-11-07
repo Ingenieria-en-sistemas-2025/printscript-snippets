@@ -17,56 +17,59 @@ class RemoteSnippetPermission(
     @param:Value("\${authorization.service.url}") private val permissionServiceUrl: String,
 ) : SnippetPermission {
 
+    private fun bearer(h: HttpHeaders) {
+        h.set(HttpHeaders.AUTHORIZATION, "Bearer ${auth0TokenService.getAccessToken()}")
+    }
+
+    private fun trimSlash(base: String) =
+        if (base.endsWith("/")) base.dropLast(1) else base
+
     override fun createAuthorization(
         input: PermissionCreateSnippetInput,
-        token: String, // M2M
+        token: String,
     ): ResponseEntity<String> {
-        val m2mToken = auth0TokenService.getAccessToken()
-
+        val url = "${trimSlash(permissionServiceUrl)}/authorization/create"
         return restClient.post()
-            .uri("$permissionServiceUrl/authorization/create")
-            .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
+            .uri(url)
+            .headers(::bearer)
             .body(input)
             .retrieve()
             .toEntity(String::class.java)
     }
 
     override fun getAuthorBySnippetId(snippetId: String, token: String): ResponseEntity<String> {
-        val m2mToken = auth0TokenService.getAccessToken()
-
+        val url = "${trimSlash(permissionServiceUrl)}/authorization/owner/$snippetId"
         return restClient.get()
-            .uri("$permissionServiceUrl/authorization/owner/$snippetId")
-            .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
+            .uri(url)
+            .headers(::bearer)
             .retrieve()
             .toEntity(String::class.java)
     }
 
     override fun getAllSnippetsPermission(
-        userId: String,
+        userId: String, // ignorado por el controller
         token: String,
         pageNum: Int,
         pageSize: Int,
     ): ResponseEntity<SnippetPermissionListResponse> {
-        val m2mToken = auth0TokenService.getAccessToken()
-
-        val uri = UriComponentsBuilder.fromUriString("$permissionServiceUrl/authorization/my")
-            .queryParam("userId", userId)
-            .queryParam("pageNum", pageNum)
-            .queryParam("pageSize", pageSize)
+        val url = UriComponentsBuilder
+            .fromUriString("${trimSlash(permissionServiceUrl)}/authorization/my")
+            .queryParam("page", pageNum)
+            .queryParam("size", pageSize)
             .toUriString()
 
         return restClient.get()
-            .uri(uri)
-            .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
+            .uri(url)
+            .headers(::bearer)
             .retrieve()
             .toEntity(SnippetPermissionListResponse::class.java)
     }
 
     override fun deleteSnippetPermissions(snippetId: String, token: String): ResponseEntity<Unit> {
-        val m2mToken = auth0TokenService.getAccessToken()
+        val url = "${trimSlash(permissionServiceUrl)}/authorization/snippet/$snippetId"
         restClient.delete()
-            .uri("$permissionServiceUrl/authorization/snippet/$snippetId")
-            .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
+            .uri(url)
+            .headers(::bearer)
             .retrieve()
             .toBodilessEntity()
 
