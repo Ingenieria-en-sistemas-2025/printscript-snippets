@@ -152,7 +152,6 @@ class SnippetServiceImpl(
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
             PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
-            token = "",
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
@@ -195,7 +194,7 @@ class SnippetServiceImpl(
 
     @Transactional
     override fun deleteSnippet(snippetId: UUID) {
-        permissionClient.deleteSnippetPermissions(snippetId.toString(), token = "")
+        permissionClient.deleteSnippetPermissions(snippetId.toString())
 
         // borrar files del bucket
         val versions = versionRepo.findAllBySnippetId(snippetId)
@@ -239,7 +238,7 @@ class SnippetServiceImpl(
         size: Int,
     ): PageDto<SnippetSummaryDto> {
         val response = permissionClient
-            .getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size)
+            .getAllSnippetsPermission(userId, pageNum = page, pageSize = size)
             .body
 
         // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
@@ -281,7 +280,6 @@ class SnippetServiceImpl(
                 userId = req.userId,
                 scope = req.permissionType, // CORRECCIÓN: Se cambió el argumento a 'scope'
             ),
-            token = "",
         )
     }
 
@@ -342,7 +340,7 @@ class SnippetServiceImpl(
 
     override fun listAccessibleSnippets(userId: String, page: Int, size: Int, name: String?, language: String?, valid: Boolean?, relation: RelationFilter, sort: String): PageDto<SnippetSummaryDto> {
         // pregunta a permissions q snippets puede ver el user
-        val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = page, pageSize = size).body
+        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = page, pageSize = size).body
 
         // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
         val ids = (perms?.authorizations ?: emptyList()).mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
@@ -485,7 +483,7 @@ class SnippetServiceImpl(
     ): SingleTestRunResult {
         // Autorización básica: owner o con permiso
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        val perms = permissionClient.getAllSnippetsPermission(userId, token = "", pageNum = 0, pageSize = 1).body
+        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1).body
 
         // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
         val canAccess = snippet.ownerId == userId ||
