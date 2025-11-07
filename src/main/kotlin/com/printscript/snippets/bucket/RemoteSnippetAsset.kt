@@ -3,6 +3,11 @@ package com.printscript.snippets.bucket
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.client.RestClient
 import org.springframework.web.util.UriComponentsBuilder
 
@@ -23,22 +28,35 @@ class RemoteSnippetAsset(
         return url
     }
 
-    override fun upload(container: String, key: String, bytes: ByteArray) {
+    @PutMapping("/v1/asset/{container}/{key:.+}")
+    override fun upload(
+        @PathVariable container: String,
+        @PathVariable("key") key: String,
+        @RequestBody body: ByteArray,
+    ) {
         rest.put()
             .uri(buildUrl(container, key))
             .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
-            .body(bytes)
+            .body(body)
             .retrieve()
             .toBodilessEntity()
     }
 
-    override fun download(container: String, key: String): ByteArray =
+    @GetMapping("/v1/asset/{container}/{key:.+}")
+    override fun download(
+        @PathVariable container: String,
+        @PathVariable("key") key: String,
+    ): ByteArray =
         rest.get()
             .uri(buildUrl(container, key))
             .retrieve()
             .body(ByteArray::class.java) ?: error("empty body")
 
-    override fun delete(container: String, key: String) {
+    @DeleteMapping("/v1/asset/{container}/{key:.+}")
+    override fun delete(
+        @PathVariable container: String,
+        @PathVariable("key") key: String,
+    ) {
         rest.delete()
             .uri(buildUrl(container, key))
             .retrieve()
