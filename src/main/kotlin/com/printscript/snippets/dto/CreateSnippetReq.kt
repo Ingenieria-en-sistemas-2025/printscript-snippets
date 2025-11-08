@@ -5,6 +5,7 @@ data class CreateSnippetReq(
     val description: String? = null,
     val language: String,
     val version: String,
+    val extension: String,
     val content: String? = null, // codigo en si
     val source: SnippetSource = SnippetSource.INLINE, // origen del codigo
     val fileName: String? = null, // si vino por archivo

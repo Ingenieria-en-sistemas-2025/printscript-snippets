@@ -9,4 +9,5 @@ interface SnippetPermission {
     fun getAuthorBySnippetId(snippetId: String): ResponseEntity<String>
     fun getAllSnippetsPermission(userId: String, pageNum: Int, pageSize: Int): ResponseEntity<SnippetPermissionListResponse>
     fun deleteSnippetPermissions(snippetId: String): ResponseEntity<Unit>
+    fun getUserScopeForSnippet(userId: String, snippetId: String): String?
 }

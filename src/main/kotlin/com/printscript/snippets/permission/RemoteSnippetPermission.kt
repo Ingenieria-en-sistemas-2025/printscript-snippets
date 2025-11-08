@@ -21,9 +21,7 @@ class RemoteSnippetPermission(
 
     private val logger = LoggerFactory.getLogger(RemoteSnippetPermission::class.java)
 
-    override fun createAuthorization(
-        input: PermissionCreateSnippetInput,
-    ): ResponseEntity<String> {
+    override fun createAuthorization(input: PermissionCreateSnippetInput): ResponseEntity<String> {
         return try {
             val m2mToken = auth0TokenService.getAccessToken()
 
@@ -39,9 +37,7 @@ class RemoteSnippetPermission(
         }
     }
 
-    override fun getAuthorBySnippetId(
-        snippetId: String,
-    ): ResponseEntity<String> {
+    override fun getAuthorBySnippetId(snippetId: String): ResponseEntity<String> {
         return try {
             val m2mToken = auth0TokenService.getAccessToken()
 
@@ -81,9 +77,7 @@ class RemoteSnippetPermission(
         }
     }
 
-    override fun deleteSnippetPermissions(
-        snippetId: String,
-    ): ResponseEntity<Unit> {
+    override fun deleteSnippetPermissions(snippetId: String): ResponseEntity<Unit> {
         return try {
             val m2mToken = auth0TokenService.getAccessToken()
 
@@ -96,6 +90,18 @@ class RemoteSnippetPermission(
             ResponseEntity.ok().build()
         } catch (ex: RestClientException) {
             logger.error("Failed to delete permissions for snippet $snippetId: ${ex.message}", ex)
+            throw ex
+        }
+    }
+
+    override fun getUserScopeForSnippet(userId: String, snippetId: String): String? {
+        return try {
+            val res = getAllSnippetsPermission(userId, 0, Int.MAX_VALUE).body
+            res?.authorizations
+                ?.firstOrNull { it.snippetId.equals(snippetId, ignoreCase = true) }
+                ?.scope
+        } catch (ex: RestClientException) {
+            logger.error("Failed to resolve scope for user $userId on snippet $snippetId: ${ex.message}", ex)
             throw ex
         }
     }

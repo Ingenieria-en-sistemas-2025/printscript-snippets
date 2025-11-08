@@ -2,6 +2,7 @@ package com.printscript.snippets.controller
 
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
+import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
 import com.printscript.snippets.dto.RelationFilter
 import com.printscript.snippets.dto.RuleDto
@@ -213,4 +214,10 @@ class SnippetController(
     fun getLintRules(): ResponseEntity<List<RuleDto>> {
         return ResponseEntity.ok(rulesStateService.getLintAsRules())
     }
+
+    @GetMapping("/config/filetypes")
+    fun getFileTypes(): List<FileTypeDto> =
+        listOf(
+            FileTypeDto("printscript", listOf("1.1", "1.0"), "prs"),
+        )
 }

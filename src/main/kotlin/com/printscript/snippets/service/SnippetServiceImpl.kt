@@ -53,6 +53,8 @@ class SnippetServiceImpl(
     private val permissionClient: SnippetPermission,
     private val rulesStateService: RulesStateService
 ) : SnippetService {
+
+    private val authorization = SnippetAuthorization(permissionClient)
     private val logger = LoggerFactory.getLogger(SnippetServiceImpl::class.java)
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
@@ -68,10 +70,6 @@ class SnippetServiceImpl(
     // mapper simple Execution.DiagnosticDto -> ApiDiagnostic
     private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
         list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
-
-    private fun assertOwner(userId: String, snippet: Snippet) {
-        if (snippet.ownerId != userId) throw UnsupportedOperation("Only owner can modify snippet")
-    }
 
     private fun createAndPersistVersion(
         snippet: Snippet,
@@ -153,7 +151,7 @@ class SnippetServiceImpl(
 
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'scope'
+            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"),
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
@@ -210,7 +208,6 @@ class SnippetServiceImpl(
         snippetRepo.deleteById(snippetId)
     }
 
-    @Transactional
     override fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto {
         throw UnsupportedOperation(
             "Use addVersionFromInlineContent(...) o addVersionFromUploadedFile(...). " +
@@ -239,13 +236,17 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
-        logger.info("Listing snippets for user: $userId (page: $page, size: $size)")
+        val decodedUserId = java.net.URLDecoder.decode(userId, "UTF-8")
 
         val response = permissionClient
-            .getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE)
+            .getAllSnippetsPermission(decodedUserId, pageNum = 0, pageSize = Int.MAX_VALUE)
             .body
 
-        logger.debug("Authorization service response: $response")
+        logger.info("Authorization service response received")
+        logger.info("Response is null: ${response == null}")
+        logger.info("Authorizations list: ${response?.authorizations}")
+        logger.info("Authorizations count: ${response?.authorizations?.size ?: 0}")
+        logger.info("Total from response: ${response?.total}")
 
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
             .mapNotNull { authView ->
@@ -264,14 +265,11 @@ class SnippetServiceImpl(
             return PageDto(emptyList(), 0, page, size)
         }
 
-        // Obtener los snippets de la base de datos
         val snippets = snippetRepo.findAllById(snippetIds)
         logger.info("Retrieved ${snippets.size} snippets from database")
 
-        // Ordenar por fecha de actualización (más reciente primero)
         val sorted = snippets.sortedByDescending { it.updatedAt }
 
-        // Paginación local
         val total = sorted.size
         val from = (page * size).coerceAtMost(total)
         val to = (from + size).coerceAtMost(total)
@@ -369,6 +367,7 @@ class SnippetServiceImpl(
     override fun runLint(req: LintReq): LintRes = executionClient.lint(req)
     override fun runFormat(req: FormatReq): FormatRes = executionClient.format(req)
 
+    @Transactional(readOnly = true)
     override fun listAccessibleSnippets(
         userId: String,
         page: Int,
@@ -383,7 +382,6 @@ class SnippetServiceImpl(
         val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
             runCatching { UUID.fromString(authView.snippetId) }
                 .onFailure {
-                    // Log the error for debugging purposes before getting null
                     logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
                 }
                 .getOrNull()
@@ -397,13 +395,11 @@ class SnippetServiceImpl(
             RelationFilter.BOTH -> all
         }
 
-        // 5. Aplicá filtros adicionales
         val filtered = base
             .filter { name == null || it.name.contains(name, ignoreCase = true) }
             .filter { language == null || it.language.equals(language, ignoreCase = true) }
             .filter { valid == null || it.lastIsValid == valid }
 
-        // 6. Ordenamiento
         val (field, dir) = sort.split(",", limit = 2).let {
             it.getOrNull(0) to (it.getOrNull(1) ?: "ASC")
         }
@@ -416,7 +412,6 @@ class SnippetServiceImpl(
             else -> filtered.sortedBy { it.name.lowercase() }
         }.let { if (dir.equals("DESC", true)) it.reversed() else it }
 
-        // 7. Paginación LOCAL (después de todos los filtros)
         val totalFiltered = sorted.size
         val from = (page * size).coerceAtMost(totalFiltered)
         val to = (from + size).coerceAtMost(totalFiltered)
@@ -448,12 +443,13 @@ class SnippetServiceImpl(
         return createSnippet(ownerId, meta.copy(content = content, source = SnippetSource.FILE_UPLOAD))
     }
 
+    @Transactional
     override fun updateSnippetOwnerAware(userId: String, snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        assertOwner(userId, snippet) // para verificar owner
+        authorization.requireEditorOrOwner(userId, snippet)
 
-        req.name?.let { snippet.name = it } // si el req trae nuevo name actualiza
-        req.description?.let { snippet.description = it } // lo mismo con descr
+        req.name?.let { snippet.name = it }
+        req.description?.let { snippet.description = it }
 
         val langProvided = req.language != null
         val verProvided = req.version != null
@@ -473,10 +469,9 @@ class SnippetServiceImpl(
 
         snippetRepo.save(snippet)
 
-        // si mando nuveo content o cambio leng o version creo nueva version
-        if (req.content != null || langChanged) { // si req.content tiene contenido lo uso
+        if (req.content != null || langChanged) {
             val content = req.content ?: run {
-                val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) // sino uso el ultimo
+                val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
                     ?: throw NotFound("Snippet without versions")
                 String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
             }
@@ -485,7 +480,6 @@ class SnippetServiceImpl(
             return toDetailDto(snippet, version, content)
         }
 
-        // si no hay cambios de content ni de leng/version devuelvo  SnippetDetailDto actualizado pero con mismo content
         val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
         val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
@@ -495,7 +489,7 @@ class SnippetServiceImpl(
     @Transactional
     override fun deleteSnippetOwnerAware(userId: String, snippetId: UUID) {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        assertOwner(userId, snippet)
+        authorization.requireOwner(userId, snippet)
         deleteSnippet(snippetId)
     }
 
@@ -503,12 +497,14 @@ class SnippetServiceImpl(
     override fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq) {
         val snippet = snippetRepo.findById(UUID.fromString(req.snippetId))
             .orElseThrow { NotFound("Snippet not found") }
-        assertOwner(ownerId, snippet)
+        authorization.requireOwner(ownerId, snippet)
         shareSnippet(req)
     }
 
     @Transactional(readOnly = true)
     override fun download(snippetId: UUID, formatted: Boolean): ByteArray {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+
         val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
         val key = if (formatted && version.isFormatted && version.formattedKey != null) version.formattedKey!! else version.contentKey
@@ -530,29 +526,19 @@ class SnippetServiceImpl(
         snippetId: UUID,
         testCaseId: UUID,
     ): SingleTestRunResult {
-        // Autorización básica: owner o con permiso
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1).body
+        authorization.requireReaderOrAbove(userId, snippet)
 
-        // CORRECCIÓN: Usar 'authorizations' y las nuevas propiedades del DTO de permiso
-        val canAccess = snippet.ownerId == userId ||
-            (perms?.authorizations ?: emptyList()).any { it.snippetId == snippetId.toString() }
-
-        if (!canAccess) throw UnsupportedOperation("You don't have permission to run tests for this snippet")
-
-        // latest content
         val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
         val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        // test case
         val tc = testCaseRepo.findById(testCaseId).orElseThrow { NotFound("Test case not found") }
         if (tc.snippetId != snippetId) throw InvalidRequest("El test no pertenece a este snippet")
 
         val inputs = objectMapper.readValue(tc.inputs, Array<String>::class.java).toList()
         val expected = objectMapper.readValue(tc.expectedOutputs, Array<String>::class.java).toList()
 
-        // armar request execution /run-test
         val execReq = RunSingleTestReq(
             language = snippet.language,
             version = snippet.languageVersion,
