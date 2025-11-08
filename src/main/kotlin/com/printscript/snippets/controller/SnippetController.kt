@@ -194,7 +194,7 @@ class SnippetController(
     @GetMapping("/config/filetypes")
     fun getFileTypes(): List<FileTypeDto> =
         listOf(
-            FileTypeDto("printscript", "1.1","prs"),
-            FileTypeDto("printscript", "1.0","prs"),
+            FileTypeDto("printscript", "1.1", "prs"),
+            FileTypeDto("printscript", "1.0", "prs"),
         )
 }
