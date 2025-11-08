@@ -29,11 +29,13 @@ class TestCase(
     @Column(nullable = false, length = 120)
     var name: String,
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "inputs", columnDefinition = "jsonb", nullable = false)
-    var inputs: String = "[]",
+    var inputs: List<String> = emptyList(),
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "expected_outputs", columnDefinition = "jsonb", nullable = false)
-    var expectedOutputs: String = "[]",
+    var expectedOutputs: List<String> = emptyList(),
 
     // la version correspondiente al snippet que aplica este test case
     @Column(name = "target_version_number")

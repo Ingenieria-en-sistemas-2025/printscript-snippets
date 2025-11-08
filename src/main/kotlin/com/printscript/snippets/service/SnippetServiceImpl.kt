@@ -312,30 +312,23 @@ class SnippetServiceImpl(
 
     @Transactional
     override fun createTestCase(req: CreateTestReq): TestCaseDto {
-        val inputsJson = objectMapper.writeValueAsString(req.inputs)
-        val expectedOutputsJson = objectMapper.writeValueAsString(req.expectedOutputs)
-
         val testCase = testCaseRepo.save(
             TestCase(
-                id = null,
-                snippetId = UUID.fromString(req.snippetId),
+                snippetId = UUID.fromString(req.snippetId!!),
                 name = req.name,
-                inputs = inputsJson,
-                expectedOutputs = expectedOutputsJson,
+                inputs = req.inputs,
+                expectedOutputs = req.expectedOutputs,
                 targetVersionNumber = req.targetVersionNumber,
                 createdBy = "system",
             ),
         )
 
-        val inputs = objectMapper.readValue(inputsJson, Array<String>::class.java).toList()
-        val expectedOutputs = objectMapper.readValue(expectedOutputsJson, Array<String>::class.java).toList()
-
         return TestCaseDto(
             id = testCase.id!!.toString(),
             snippetId = testCase.snippetId.toString(),
             name = testCase.name,
-            inputs = inputs,
-            expectedOutputs = expectedOutputs,
+            inputs = testCase.inputs,
+            expectedOutputs = testCase.expectedOutputs,
             targetVersionNumber = testCase.targetVersionNumber,
         )
     }
@@ -343,15 +336,12 @@ class SnippetServiceImpl(
     @Transactional(readOnly = true)
     override fun listTestCases(snippetId: UUID): List<TestCaseDto> =
         testCaseRepo.findAllBySnippetId(snippetId).map {
-            val inputs = objectMapper.readValue(it.inputs, Array<String>::class.java).toList()
-            val expectedOutputs = objectMapper.readValue(it.expectedOutputs, Array<String>::class.java).toList()
-
             TestCaseDto(
                 id = it.id!!.toString(),
                 snippetId = it.snippetId.toString(),
                 name = it.name,
-                inputs = inputs,
-                expectedOutputs = expectedOutputs,
+                inputs = it.inputs,
+                expectedOutputs = it.expectedOutputs,
                 targetVersionNumber = it.targetVersionNumber,
             )
         }
@@ -534,8 +524,8 @@ class SnippetServiceImpl(
         val tc = testCaseRepo.findById(testCaseId).orElseThrow { NotFound("Test case not found") }
         if (tc.snippetId != snippetId) throw InvalidRequest("El test no pertenece a este snippet")
 
-        val inputs = objectMapper.readValue(tc.inputs, Array<String>::class.java).toList()
-        val expected = objectMapper.readValue(tc.expectedOutputs, Array<String>::class.java).toList()
+        val inputs = tc.inputs
+        val expected = tc.expectedOutputs
 
         val execReq = RunSingleTestReq(
             language = snippet.language,
@@ -545,6 +535,7 @@ class SnippetServiceImpl(
             expectedOutputs = expected,
             options = null,
         )
+
         val execRes = executionClient.runSingleTest(execReq)
 
         return SingleTestRunResult(
