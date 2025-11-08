@@ -48,7 +48,7 @@ class SecurityConfig(
                     .requestMatchers(GET, "/snippets/*").permitAll()
                     .requestMatchers(GET, "/snippets/cases/*").permitAll()
                     // Escritura/Modificación/Eliminación de snippets y sus tests (write:snippets)
-                    .requestMatchers(POST, "/snippets/create").permitAll()
+                    .requestMatchers(POST, "/snippets").permitAll()
                     .requestMatchers(PUT, "/snippets/*").permitAll()
                     .requestMatchers(DELETE, "/snippets/*").permitAll()
                     .requestMatchers(POST, "/snippets/share").permitAll()
