@@ -139,7 +139,7 @@ class RulesStateService(
         rulesStateRepo.save(row)
     }
 
-    //Reconstruyen una lista para la UI: List<RuleDto> con enabled (on/off)
+    // Reconstruyen una lista para la UI: List<RuleDto> con enabled (on/off)
     fun getFormatAsRules(): List<RuleDto> {
         val enabled = readEnabled(RulesType.FORMAT).ifEmpty { defaultFormatEnabled() }
         val values = readOptions(RulesType.FORMAT).ifEmpty { defaultFormatValues() }
@@ -155,7 +155,7 @@ class RulesStateService(
         return lintRules.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
     }
 
-    //Devuelven el archivo de config crudo que haya guardado el admin, se pasa tal cual al Execution
+    // Devuelven el archivo de config crudo que haya guardado el admin, se pasa tal cual al Execution
     fun currentFormatConfig(): Pair<String?, String?> {
         val row = rulesStateRepo.findByType(RulesType.FORMAT).orElse(null)
         return row?.configText to row?.configFormat
@@ -165,7 +165,4 @@ class RulesStateService(
         val row = rulesStateRepo.findByType(RulesType.LINT).orElse(null)
         return row?.configText to row?.configFormat
     }
-
-
-
 }

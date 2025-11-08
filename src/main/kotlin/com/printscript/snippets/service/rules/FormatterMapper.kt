@@ -8,12 +8,12 @@ object FormatterMapper {
         FormatterOptionsDto(
             // Si está activa -> true; si no -> null (no tocar)
             spaceBeforeColonInDecl = if (rules.any { it.id == "enforce-spacing-before-colon-in-declaration" && it.enabled }) true else null,
-            spaceAfterColonInDecl  = if (rules.any { it.id == "enforce-spacing-after-colon-in-declaration"  && it.enabled }) true else null,
+            spaceAfterColonInDecl = if (rules.any { it.id == "enforce-spacing-after-colon-in-declaration" && it.enabled }) true else null,
 
             // Mutuamente excluyentes; si ninguna está activa -> null
             spaceAroundAssignment = when {
-                rules.any { it.id == "enforce-spacing-around-equals"      && it.enabled } -> true
-                rules.any { it.id == "enforce-no-spacing-around-equals"   && it.enabled } -> false
+                rules.any { it.id == "enforce-spacing-around-equals" && it.enabled } -> true
+                rules.any { it.id == "enforce-no-spacing-around-equals" && it.enabled } -> false
                 else -> null
             },
 
@@ -28,7 +28,7 @@ object FormatterMapper {
 
             // Otros flags → true si están activos; null si no (no tocar)
             mandatorySingleSpaceSeparation = if (rules.any { it.id == "mandatory-single-space-separation" && it.enabled }) true else null,
-            ifBraceBelowLine               = if (rules.any { it.id == "if-brace-below-line"              && it.enabled }) true else null,
-            ifBraceSameLine                = if (rules.any { it.id == "if-brace-same-line"               && it.enabled }) true else null,
+            ifBraceBelowLine = if (rules.any { it.id == "if-brace-below-line" && it.enabled }) true else null,
+            ifBraceSameLine = if (rules.any { it.id == "if-brace-same-line" && it.enabled }) true else null,
         )
 }

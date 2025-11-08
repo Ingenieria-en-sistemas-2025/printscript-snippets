@@ -54,7 +54,7 @@ class SnippetServiceImpl(
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
     private val userService: UserService,
-    private val rulesStateService: RulesStateService
+    private val rulesStateService: RulesStateService,
 ) : SnippetService {
 
     private val authorization = SnippetAuthorization(permissionClient)
@@ -586,7 +586,6 @@ class SnippetServiceImpl(
         snippetRepo.save(s)
     }
 
-
     @Transactional
     override fun formatOne(snippetId: UUID): SnippetDetailDto {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
@@ -595,7 +594,7 @@ class SnippetServiceImpl(
 
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        //Rules -> FormatterOptionsDto
+        // Rules -> FormatterOptionsDto
         val rules = rulesStateService.getFormatAsRules()
         val options = FormatterMapper.toFormatterOptionsDto(rules)
 
@@ -607,7 +606,7 @@ class SnippetServiceImpl(
             content = original,
             options = options,
             configText = cfgText,
-            configFormat = cfgFmt
+            configFormat = cfgFmt,
         )
         val res = executionClient.format(req)
 
@@ -632,7 +631,7 @@ class SnippetServiceImpl(
             version = snippet.languageVersion,
             content = original,
             configText = cfgText,
-            configFormat = cfgFmt
+            configFormat = cfgFmt,
         )
         val res = executionClient.lint(req)
 

@@ -221,7 +221,7 @@ class SnippetController(
 
     @PostMapping("/{snippetId}/format")
     fun formatOne(
-        @PathVariable snippetId: UUID
+        @PathVariable snippetId: UUID,
     ): ResponseEntity<SnippetDetailDto> {
         val dto = service.formatOne(snippetId)
         return ResponseEntity.ok(dto)
