@@ -12,6 +12,7 @@ import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.service.SnippetService
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -36,11 +37,14 @@ import java.util.UUID
 class SnippetController(
     private val service: SnippetService,
 ) {
-    @GetMapping("/{snippetId}")
-    fun getSnippet(@PathVariable snippetId: UUID): SnippetDetailDto =
-        service.getSnippet(snippetId)
+    private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
-    // caso 5
+    @GetMapping("/{snippetId}")
+    fun getSnippet(@PathVariable snippetId: UUID): SnippetDetailDto {
+        logger.info("GET /snippets/$snippetId")
+        return service.getSnippet(snippetId)
+    }
+
     @GetMapping("/all")
     fun listAccessible(
         principal: JwtAuthenticationToken,
@@ -51,16 +55,52 @@ class SnippetController(
         @RequestParam(required = false) valid: Boolean?,
         @RequestParam(defaultValue = "BOTH") relation: RelationFilter,
         @RequestParam(defaultValue = "updatedAt,DESC") sort: String,
-    ): PageDto<SnippetSummaryDto> =
-        service.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
+    ): PageDto<SnippetSummaryDto> {
+        logger.info("========================================")
+        logger.info("GET /snippets/all CALLED")
+        logger.info("========================================")
+        logger.info("User (principal.name): ${principal.name}")
+        logger.info("Parameters:")
+        logger.info("  - page: $page")
+        logger.info("  - size: $size")
+        logger.info("  - name: $name")
+        logger.info("  - language: $language")
+        logger.info("  - valid: $valid")
+        logger.info("  - relation: $relation")
+        logger.info("  - sort: $sort")
+        logger.info("========================================")
+
+        val result = service.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
+
+        logger.info("Result from service:")
+        logger.info("  - count: ${result.count}")
+        logger.info("  - items: ${result.items.size}")
+        logger.info("========================================")
+
+        return result
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createFromEditor(
         principal: JwtAuthenticationToken,
         @RequestBody @Valid req: CreateSnippetReq,
-    ): SnippetDetailDto =
-        service.createSnippet(principal.name, req)
+    ): SnippetDetailDto {
+        logger.info("========================================")
+        logger.info("POST /snippets CALLED")
+        logger.info("User (principal.name): ${principal.name}")
+        logger.info("Request: name=${req.name}, language=${req.language}, version=${req.version}")
+        logger.info("========================================")
+
+        val result = service.createSnippet(principal.name, req)
+
+        logger.info("Snippet created successfully:")
+        logger.info("  - id: ${result.id}")
+        logger.info("  - ownerId: ${result.ownerId}")
+        logger.info("========================================")
+
+        return result
+    }
 
     @PostMapping(path = ["/file"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
