@@ -233,7 +233,7 @@ class SnippetController(
         @PathVariable id: UUID,
         auth: JwtAuthenticationToken,
     ): ResponseEntity<SnippetDetailDto> {
-        val dto = service.formatOne(snippetId)
+        val dto = service.formatOne(id)
         return ResponseEntity.ok(dto)
     }
 
