@@ -51,7 +51,7 @@ class SecurityConfig(
                     .requestMatchers(POST, "/snippets").permitAll()
                     .requestMatchers(PUT, "/snippets/*").authenticated()
                     .requestMatchers(DELETE, "/snippets/*").permitAll()
-                    .requestMatchers(POST, "/snippets/share").permitAll()
+                    .requestMatchers(POST, "/api/share").authenticated()
                     .requestMatchers(POST, "/snippets/cases").permitAll()
                     .requestMatchers(DELETE, "/snippets/cases/*").permitAll()
                     // GET /snippets/users -> Listar Usuarios/Amigos (read:users)

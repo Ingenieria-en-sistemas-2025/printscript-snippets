@@ -15,6 +15,7 @@ import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
+import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -232,8 +233,11 @@ class SnippetController(
         @PathVariable id: UUID,
         auth: JwtAuthenticationToken,
     ): ResponseEntity<SnippetDetailDto> {
-        val userId = auth.token.subject
-        val dto = service.lintOneOwnerAware(userId, id)
+        val dto = service.formatOne(snippetId)
         return ResponseEntity.ok(dto)
     }
+
+    @PostMapping("/run/{snippetId}/lint")
+    fun lintOne(@PathVariable snippetId: UUID): ResponseEntity<SnippetDetailDto> =
+        ResponseEntity.ok(service.lintOne(snippetId))
 }
