@@ -35,6 +35,7 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
+import jdk.internal.vm.ThreadContainers.container
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -521,5 +522,33 @@ class SnippetServiceImpl(
             mismatchAt = execRes.mismatchAt,
             diagnostic = execRes.diagnostic,
         )
+    }
+
+    override fun saveFormatted(snippetId: UUID, formatted: String) {
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+        val formattedKey = "snippets/$snippetId/v${latest.versionNumber}.formatted.ps"
+        assetClient.upload(containerName, formattedKey, formatted.toByteArray(Charsets.UTF_8))
+        latest.formattedKey = formattedKey
+        latest.isFormatted = true
+        versionRepo.save(latest)
+    }
+
+    override fun saveLint(
+        snippetId: UUID,
+        violations: List<DiagnosticDto>
+    ) {
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+        val json = jacksonObjectMapper().writeValueAsString(violations)
+        latest.lintIssues = json
+        latest.isValid = latest.isValid && violations.isEmpty()
+        versionRepo.save(latest)
+        val s = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        s.lastLintCount = violations.size
+        s.lastIsValid = latest.isValid
+        snippetRepo.save(s)
     }
 }
