@@ -152,7 +152,7 @@ class SnippetServiceImpl(
 
         logger.debug("Calling permission client to set OWNER for snippet ${snippet.id}")
         permissionClient.createAuthorization(
-            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'permissionType'
+            PermissionCreateSnippetInput(snippet.id!!.toString(), ownerId, scope = "OWNER"), // CORRECCIÓN: 'scope' en lugar de 'scope'
         )
         logger.info("Snippet ${snippet.id} created and OWNER permission granted.")
 
@@ -238,36 +238,65 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
+        logger.info("Listing snippets for user: $userId (page: $page, size: $size)")
+
         val response = permissionClient
-            .getAllSnippetsPermission(userId, pageNum = page, pageSize = size)
+            .getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE)
             .body
 
-        // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
+        logger.debug("Authorization service response: $response")
+
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
-            .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+            .mapNotNull { authView ->
+                try {
+                    UUID.fromString(authView.snippetId)
+                } catch (e: IllegalArgumentException) {
+                    logger.warn("Invalid UUID format for snippetId: ${authView.snippetId}", e)
+                    null
+                }
+            }
+
+        logger.info("Found ${snippetIds.size} snippet IDs with permissions for user $userId")
 
         if (snippetIds.isEmpty()) {
+            logger.info("No snippets found for user $userId, returning empty page")
             return PageDto(emptyList(), 0, page, size)
         }
 
+        // Obtener los snippets de la base de datos
         val snippets = snippetRepo.findAllById(snippetIds)
-        val summaries = snippets.map { s ->
-            SnippetSummaryDto(
-                id = s.id!!.toString(),
-                name = s.name,
-                description = s.description,
-                language = s.language,
-                version = s.languageVersion,
-                ownerId = s.ownerId,
-                lastIsValid = s.lastIsValid,
-                lastLintCount = s.lastLintCount,
-            )
+        logger.info("Retrieved ${snippets.size} snippets from database")
+
+        // Ordenar por fecha de actualización (más reciente primero)
+        val sorted = snippets.sortedByDescending { it.updatedAt }
+
+        // Paginación local
+        val total = sorted.size
+        val from = (page * size).coerceAtMost(total)
+        val to = (from + size).coerceAtMost(total)
+
+        val pageItems = if (from < total) {
+            sorted.subList(from, to).map { s ->
+                SnippetSummaryDto(
+                    id = s.id!!.toString(),
+                    name = s.name,
+                    description = s.description,
+                    language = s.language,
+                    version = s.languageVersion,
+                    ownerId = s.ownerId,
+                    lastIsValid = s.lastIsValid,
+                    lastLintCount = s.lastLintCount,
+                )
+            }
+        } else {
+            emptyList()
         }
 
+        logger.info("Returning page $page with ${pageItems.size} items (total: $total)")
+
         return PageDto(
-            items = summaries,
-            // CORRECCIÓN: Usar 'total' en lugar de 'count'
-            count = response?.total?.toLong() ?: summaries.size.toLong(),
+            items = pageItems,
+            count = total.toLong(),
             page = page,
             pageSize = size,
         )
@@ -279,7 +308,7 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                scope = req.permissionType, // CORRECCIÓN: Se cambió el argumento a 'scope'
+                scope = req.scope,
             ),
         )
     }
@@ -292,7 +321,7 @@ class SnippetServiceImpl(
         val testCase = testCaseRepo.save(
             TestCase(
                 id = null,
-                snippetId = UUID.fromString(req.snippetId), // si viene como String
+                snippetId = UUID.fromString(req.snippetId),
                 name = req.name,
                 inputs = inputsJson,
                 expectedOutputs = expectedOutputsJson,
@@ -339,33 +368,45 @@ class SnippetServiceImpl(
     override fun runLint(req: LintReq): LintRes = executionClient.lint(req)
     override fun runFormat(req: FormatReq): FormatRes = executionClient.format(req)
 
-    override fun listAccessibleSnippets(userId: String, page: Int, size: Int, name: String?, language: String?, valid: Boolean?, relation: RelationFilter, sort: String): PageDto<SnippetSummaryDto> {
-        // pregunta a permissions q snippets puede ver el user
-        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = page, pageSize = size).body
+    override fun listAccessibleSnippets(
+        userId: String,
+        page: Int,
+        size: Int,
+        name: String?,
+        language: String?,
+        valid: Boolean?,
+        relation: RelationFilter,
+        sort: String,
+    ): PageDto<SnippetSummaryDto> {
+        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE).body
+        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
+            runCatching { UUID.fromString(authView.snippetId) }
+                .onFailure {
+                    // Log the error for debugging purposes before getting null
+                    logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
+                }
+                .getOrNull()
+        }
 
-        // CORRECCIÓN: Usar 'authorizations' en lugar de 'permissions'
-        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+        val all = snippetRepo.findAllById(ids)
 
-        if (ids.isEmpty()) return PageDto(emptyList(), 0, page, size)
-
-        val all = snippetRepo.findAllById(ids) // trae todos los snippets q tiene permiso
-
-        // filtro x relacion
         val base = when (relation) {
             RelationFilter.OWNER -> all.filter { it.ownerId == userId }
-            // CORRECCIÓN: La lógica del filtro SHARED utiliza la propiedad 'ownerId' del Snippet
-            //             pero el filtro por permiso 'SHARED' también debería considerar la lista de permisos
             RelationFilter.SHARED -> all.filter { it.ownerId != userId }
             RelationFilter.BOTH -> all
         }
 
+        // 5. Aplicá filtros adicionales
         val filtered = base
             .filter { name == null || it.name.contains(name, ignoreCase = true) }
             .filter { language == null || it.language.equals(language, ignoreCase = true) }
             .filter { valid == null || it.lastIsValid == valid }
 
-        // ordeno
-        val (field, dir) = sort.split(",", limit = 2).let { it.getOrNull(0) to (it.getOrNull(1) ?: "ASC") }
+        // 6. Ordenamiento
+        val (field, dir) = sort.split(",", limit = 2).let {
+            it.getOrNull(0) to (it.getOrNull(1) ?: "ASC")
+        }
+
         val sorted = when (field) {
             "name" -> filtered.sortedBy { it.name.lowercase() }
             "language" -> filtered.sortedBy { it.language.lowercase() }
@@ -374,23 +415,29 @@ class SnippetServiceImpl(
             else -> filtered.sortedBy { it.name.lowercase() }
         }.let { if (dir.equals("DESC", true)) it.reversed() else it }
 
-        val from = (page * size).coerceAtMost(sorted.size)
-        val to = (from + size).coerceAtMost(sorted.size)
+        // 7. Paginación LOCAL (después de todos los filtros)
+        val totalFiltered = sorted.size
+        val from = (page * size).coerceAtMost(totalFiltered)
+        val to = (from + size).coerceAtMost(totalFiltered)
 
-        val pageItems = sorted.subList(from, to).map { snippet ->
-            SnippetSummaryDto(
-                id = snippet.id!!.toString(),
-                name = snippet.name,
-                description = snippet.description,
-                language = snippet.language,
-                version = snippet.languageVersion,
-                ownerId = snippet.ownerId,
-                lastIsValid = snippet.lastIsValid,
-                lastLintCount = snippet.lastLintCount,
-            )
+        val pageItems = if (from < totalFiltered) {
+            sorted.subList(from, to).map { snippet ->
+                SnippetSummaryDto(
+                    id = snippet.id!!.toString(),
+                    name = snippet.name,
+                    description = snippet.description,
+                    language = snippet.language,
+                    version = snippet.languageVersion,
+                    ownerId = snippet.ownerId,
+                    lastIsValid = snippet.lastIsValid,
+                    lastLintCount = snippet.lastLintCount,
+                )
+            }
+        } else {
+            emptyList()
         }
-        // CORRECCIÓN: Usar 'total' en lugar de 'count'
-        return PageDto(pageItems, perms?.total?.toLong() ?: sorted.size.toLong(), page, size)
+
+        return PageDto(pageItems, totalFiltered.toLong(), page, size)
     }
 
     override fun createSnippetFromFile(ownerId: String, meta: CreateSnippetReq, bytes: ByteArray): SnippetDetailDto {
