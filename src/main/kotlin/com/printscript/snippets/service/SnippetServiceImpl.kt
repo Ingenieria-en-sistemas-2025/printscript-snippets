@@ -5,6 +5,7 @@ import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.TestCaseRepo
+import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.domain.model.TestCase
@@ -106,6 +107,7 @@ class SnippetServiceImpl(
                 isFormatted = false,
                 isValid = parseRes.valid && lintRes.violations.isEmpty(),
                 lintIssues = objectMapper.writeValueAsString(lintRes.violations),
+                lintStatus = LintStatus.DONE,
                 parseErrors = "[]",
                 createdAt = Instant.now(),
             ),
@@ -114,6 +116,9 @@ class SnippetServiceImpl(
         snippet.currentVersionId = version.id
         snippet.lastIsValid = version.isValid
         snippet.lastLintCount = lintRes.violations.size
+        snippet.compliance = ComplianceCalculator.compute(
+            LintStatus.DONE, version.isValid, lintRes.violations.size,
+        )
         snippetRepo.save(snippet)
         logger.info("Snippet version $nextVersion created successfully")
         return version
@@ -291,6 +296,7 @@ class SnippetServiceImpl(
                     ownerEmail = authorEmail,
                     lastIsValid = s.lastIsValid,
                     lastLintCount = s.lastLintCount,
+                    compliance = s.compliance.name,
                 )
             }
         } else {
@@ -426,6 +432,7 @@ class SnippetServiceImpl(
                     ownerEmail = authorEmail,
                     lastIsValid = snippet.lastIsValid,
                     lastLintCount = snippet.lastLintCount,
+                    compliance = snippet.compliance.name,
                 )
             }
         } else {
@@ -579,10 +586,12 @@ class SnippetServiceImpl(
         val json = jacksonObjectMapper().writeValueAsString(violations)
         latest.lintIssues = json
         latest.isValid = latest.isValid && violations.isEmpty()
+        latest.lintStatus = LintStatus.DONE
         versionRepo.save(latest)
         val s = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         s.lastLintCount = violations.size
         s.lastIsValid = latest.isValid
+        s.compliance = ComplianceCalculator.compute(LintStatus.DONE, latest.isValid, violations.size)
         snippetRepo.save(s)
     }
 
@@ -595,10 +604,10 @@ class SnippetServiceImpl(
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
         // Rules -> FormatterOptionsDto
-        val rules = rulesStateService.getFormatAsRules()
+        val rules = rulesStateService.getFormatAsRules(snippet.ownerId)
         val options = FormatterMapper.toFormatterOptionsDto(rules)
 
-        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfig()
+        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfig(snippet.ownerId)
 
         val req = FormatReq(
             language = snippet.language,
@@ -624,7 +633,7 @@ class SnippetServiceImpl(
 
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig()
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig(snippet.ownerId)
 
         val req = LintReq(
             language = snippet.language,
@@ -639,5 +648,61 @@ class SnippetServiceImpl(
 
         val updatedVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
         return toDetailDto(snippet, updatedVersion, content = original)
+    }
+
+    @Transactional
+    override fun formatOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        authorization.requireOwner(userId, snippet)
+
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+
+        val rules = rulesStateService.getFormatAsRules(snippet.ownerId)
+        val options = FormatterMapper.toFormatterOptionsDto(rules)
+        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfig(snippet.ownerId)
+
+        val req = FormatReq(
+            language = snippet.language,
+            version = snippet.languageVersion,
+            content = original,
+            options = options,
+            configText = cfgText,
+            configFormat = cfgFmt,
+        )
+        val res = executionClient.format(req)
+
+        saveFormatted(snippetId, res.formattedContent)
+        val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
+        return toDetailDto(snippet, updated, res.formattedContent)
+    }
+
+    @Transactional
+    override fun lintOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        authorization.requireOwner(userId, snippet)
+
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig(snippet.ownerId)
+
+        val req = LintReq(
+            language = snippet.language,
+            version = snippet.languageVersion,
+            content = original,
+            configText = cfgText,
+            configFormat = cfgFmt,
+        )
+        val res = executionClient.lint(req)
+
+        saveLint(snippetId, res.violations)
+
+        val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
+        return toDetailDto(snippet, updated, original)
     }
 }

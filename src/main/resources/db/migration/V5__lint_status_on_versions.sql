@@ -1,0 +1,2 @@
+ALTER TABLE snippet_version
+    ADD COLUMN lint_status VARCHAR(16) NOT NULL DEFAULT 'PENDING';

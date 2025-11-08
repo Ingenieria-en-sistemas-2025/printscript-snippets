@@ -10,5 +10,6 @@ data class SnippetSummaryDto(
     val ownerEmail: String,
     val lastIsValid: Boolean,
     val lastLintCount: Int,
+    val compliance: String,
 )
 // GET /snippets -> PageDto<SnippetSummaryDto>

@@ -2,6 +2,8 @@ package com.printscript.snippets.domain.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.PrePersist
@@ -54,6 +56,10 @@ class Snippet(
     // nro de advertencias en la ultima version de lint
     @Column(name = "last_lint_count", nullable = false)
     var lastLintCount: Int = 0,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "compliance", nullable = false, length = 32)
+    var compliance: Compliance = Compliance.PENDING,
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),

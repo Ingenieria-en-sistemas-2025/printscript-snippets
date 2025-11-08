@@ -1,5 +1,10 @@
 package com.printscript.snippets.redis.controllers
 
+import com.printscript.snippets.domain.SnippetRepo
+import com.printscript.snippets.domain.SnippetVersionRepo
+import com.printscript.snippets.domain.model.Compliance
+import com.printscript.snippets.domain.model.LintStatus
+import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.execution.dto.DiagnosticDto
 import com.printscript.snippets.service.SnippetServiceImpl
 import org.springframework.web.bind.annotation.PathVariable
@@ -11,7 +16,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/internal/snippets")
-class InternalWriteController(private val results: SnippetServiceImpl) {
+class InternalWriteController(private val results: SnippetServiceImpl, private val versionRepo: SnippetVersionRepo, private val snippetRepo: SnippetRepo) {
     @PostMapping("/{id}/format")
     fun saveFmt(@PathVariable id: UUID, @RequestBody body: Map<String, String>) {
         val formatted = body["content"] ?: throw IllegalArgumentException("content is required")
@@ -21,5 +26,17 @@ class InternalWriteController(private val results: SnippetServiceImpl) {
     @PostMapping("/{id}/lint")
     fun saveLint(@PathVariable id: UUID, @RequestBody v: List<DiagnosticDto>) {
         results.saveLint(id, v)
+    }
+
+    @PostMapping("/{id}/lint-failed")
+    fun markLintFailed(@PathVariable id: UUID) {
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id)
+            ?: throw NotFound("Snippet $id has no versions")
+
+        latest.lintStatus = LintStatus.FAILED
+        versionRepo.save(latest)
+        val s = snippetRepo.findById(id).orElseThrow { NotFound("Snippet not found") }
+        s.compliance = Compliance.FAILED
+        snippetRepo.save(s)
     }
 }

@@ -15,7 +15,6 @@ import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
-import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -185,32 +184,31 @@ class SnippetController(
     )
 
     @PutMapping("/rules/format")
-    fun saveAndPublishFormat(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
-        rulesStateService.saveFormatState(body.rules, body.configText, body.configFormat) // persiste el estado de las rules en la tabla rules_state
-
-        val options = FormatterMapper.toFormatterOptionsDto(body.rules) // traduce RuleDto a un FormatterOptionsDto
-        bulkRulesService.onFormattingRulesChanged(body.configText, body.configFormat, options) // publica evento a redis
-
+    fun saveAndPublishFormat(auth: JwtAuthenticationToken, @RequestBody body: SaveRulesReq): ResponseEntity<Void> {
+        val ownerId = auth.token.subject
+        rulesStateService.saveFormatState(ownerId, body.rules, body.configText, body.configFormat)
+        bulkRulesService.onFormattingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()
     }
 
     @PutMapping("/rules/linting")
-    fun saveAndPublishLint(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
-        rulesStateService.saveLintState(body.rules, body.configText, body.configFormat)
-
-        bulkRulesService.onLintingRulesChanged(body.configText, body.configFormat)
-
+    fun saveAndPublishLint(auth: JwtAuthenticationToken, @RequestBody body: SaveRulesReq): ResponseEntity<Void> {
+        val ownerId = auth.token.subject
+        rulesStateService.saveLintState(ownerId, body.rules, body.configText, body.configFormat)
+        bulkRulesService.onLintingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()
     }
 
     @GetMapping("/rules/format")
-    fun getFmtRules(): ResponseEntity<List<RuleDto>> {
-        return ResponseEntity.ok(rulesStateService.getFormatAsRules())
+    fun getFmtRules(auth: JwtAuthenticationToken): ResponseEntity<List<RuleDto>> {
+        val ownerId = auth.token.subject
+        return ResponseEntity.ok(rulesStateService.getFormatAsRules(ownerId))
     }
 
     @GetMapping("/rules/linting")
-    fun getLintRules(): ResponseEntity<List<RuleDto>> {
-        return ResponseEntity.ok(rulesStateService.getLintAsRules())
+    fun getLintRules(auth: JwtAuthenticationToken): ResponseEntity<List<RuleDto>> {
+        val ownerId = auth.token.subject
+        return ResponseEntity.ok(rulesStateService.getLintAsRules(ownerId))
     }
 
     @GetMapping("/config/filetypes")
@@ -219,15 +217,23 @@ class SnippetController(
             FileTypeDto("printscript", listOf("1.1", "1.0"), "prs"),
         )
 
-    @PostMapping("/run/{snippetId}/format")
+    @PostMapping("/run/{id}/format")
     fun formatOne(
-        @PathVariable snippetId: UUID,
+        @PathVariable id: UUID,
+        auth: JwtAuthenticationToken,
     ): ResponseEntity<SnippetDetailDto> {
-        val dto = service.formatOne(snippetId)
+        val userId = auth.token.subject
+        val dto = service.formatOneOwnerAware(userId, id)
         return ResponseEntity.ok(dto)
     }
 
-    @PostMapping("/run/{snippetId}/lint")
-    fun lintOne(@PathVariable snippetId: UUID): ResponseEntity<SnippetDetailDto> =
-        ResponseEntity.ok(service.lintOne(snippetId))
+    @PostMapping("/run/{id}/lint")
+    fun lintOne(
+        @PathVariable id: UUID,
+        auth: JwtAuthenticationToken,
+    ): ResponseEntity<SnippetDetailDto> {
+        val userId = auth.token.subject
+        val dto = service.lintOneOwnerAware(userId, id)
+        return ResponseEntity.ok(dto)
+    }
 }

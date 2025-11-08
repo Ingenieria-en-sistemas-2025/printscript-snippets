@@ -61,28 +61,40 @@ class RulesStateService(
         "PrintlnSimpleArgRuleStreaming",
     )
 
+    private fun findRow(type: RulesType, ownerId: String?): RulesState? =
+        rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElseGet {
+            rulesStateRepo.findByTypeAndOwnerId(type, null).orElse(null)
+        }
+
+    private fun upsertRow(type: RulesType, ownerId: String?): RulesState =
+        rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElse(
+            RulesState(
+                id = null,
+                type = type,
+                ownerId = ownerId,
+                enabledJson = "[]",
+                optionsJson = null,
+                configText = null,
+                configFormat = null,
+            ),
+        )
+
     // Lee desde la tabla rules_state -> enabledJson y lo parsea a Set<String>
     // Si no hay registro (Optional.empty), volvemos emptySet() y arriba aplicamos defaults.
-    private fun readEnabled(type: RulesType): Set<String> =
-        rulesStateRepo.findByType(type)
-            .map { s -> om.readValue(s.enabledJson, Set::class.java) } // parsea json
-            .orElse(emptySet<Any>())
-            .map { it.toString() } // lo paso a string
-            .toSet()
+    private fun readEnabled(type: RulesType, ownerId: String?): Set<String> =
+        findRow(type, ownerId)
+            ?.let { s -> om.readValue(s.enabledJson, Set::class.java) }
+            ?.map { it.toString() }
+            ?.toSet()
+            ?: emptySet()
 
     // Lee desde la tabla rules_state -> optionsJson y lo parsea a Map<String, Int>
     // Admitimos que el JSON pueda venir con números o strings numéricos (por eso el when).
-    private fun readOptions(type: RulesType): Map<String, Int> {
-        val json = rulesStateRepo.findByType(type).map { it.optionsJson }.orElse(null) // para quedarse solo con el campo optionsJson
-            ?: return emptyMap()
-
-        val raw: Map<String, Any?> = om.readValue( // convierte json en map
-            json,
-            object : TypeReference<Map<String, Any?>>() {},
-        )
-
-        return raw.mapNotNull { (k, v) -> //
-            when (v) { // normaliza los valores del JSON para asegurarse de que todos sean Int
+    private fun readOptions(type: RulesType, ownerId: String?): Map<String, Int> {
+        val json = findRow(type, ownerId)?.optionsJson ?: return emptyMap()
+        val raw: Map<String, Any?> = om.readValue(json, object : TypeReference<Map<String, Any?>>() {})
+        return raw.mapNotNull { (k, v) ->
+            when (v) {
                 is Number -> k to v.toInt()
                 is String -> v.toIntOrNull()?.let { k to it }
                 else -> null
@@ -90,59 +102,32 @@ class RulesStateService(
         }.toMap()
     }
 
-    fun saveFormatState(rules: List<RuleDto>, configText: String?, configFormat: String?) {
-        // habilitadas = ids de reglas con enabled = true
+    fun saveFormatState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
-
-        // options numéricas: solo las que traen value
         val options: Map<String, Int> = rules.mapNotNull { r -> r.value?.let { v -> r.id to v } }.toMap()
 
-        // upsert en la tabla
-        val row = rulesStateRepo.findByType(RulesType.FORMAT).orElse(
-            com.printscript.snippets.domain.model.RulesState(
-                id = null,
-                type = RulesType.FORMAT,
-                enabledJson = "[]",
-                optionsJson = null,
-                configText = null,
-                configFormat = null,
-            ),
-        )
-
+        val row = upsertRow(RulesType.FORMAT, ownerId)
         row.enabledJson = om.writeValueAsString(enabled)
         row.optionsJson = om.writeValueAsString(options)
         row.configText = configText
         row.configFormat = configFormat
-
         rulesStateRepo.save(row)
     }
 
-    fun saveLintState(rules: List<RuleDto>, configText: String?, configFormat: String?) {
+    fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
 
-        val row = rulesStateRepo.findByType(RulesType.LINT).orElse(
-            RulesState(
-                id = null,
-                type = RulesType.LINT,
-                enabledJson = "[]",
-                optionsJson = null,
-                configText = null,
-                configFormat = null,
-            ),
-        )
-
+        val row = upsertRow(RulesType.LINT, ownerId)
         row.enabledJson = om.writeValueAsString(enabled)
         row.optionsJson = null
         row.configText = configText
         row.configFormat = configFormat
-
         rulesStateRepo.save(row)
     }
 
-    // Reconstruyen una lista para la UI: List<RuleDto> con enabled (on/off)
-    fun getFormatAsRules(): List<RuleDto> {
-        val enabled = readEnabled(RulesType.FORMAT).ifEmpty { defaultFormatEnabled() }
-        val values = readOptions(RulesType.FORMAT).ifEmpty { defaultFormatValues() }
+    fun getFormatAsRules(ownerId: String): List<RuleDto> {
+        val enabled = readEnabled(RulesType.FORMAT, ownerId).ifEmpty { defaultFormatEnabled() }
+        val values = readOptions(RulesType.FORMAT, ownerId).ifEmpty { defaultFormatValues() }
 
         return allFormatIds.map { id ->
             val value = if (fmtNumericDefaults.containsKey(id)) values[id] ?: fmtNumericDefaults[id] else null
@@ -150,19 +135,18 @@ class RulesStateService(
         }
     }
 
-    fun getLintAsRules(): List<RuleDto> {
-        val enabled = readEnabled(RulesType.LINT).ifEmpty { defaultLintEnabled() }
+    fun getLintAsRules(ownerId: String): List<RuleDto> {
+        val enabled = readEnabled(RulesType.LINT, ownerId).ifEmpty { defaultLintEnabled() }
         return lintRules.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
     }
 
-    // Devuelven el archivo de config crudo que haya guardado el admin, se pasa tal cual al Execution
-    fun currentFormatConfig(): Pair<String?, String?> {
-        val row = rulesStateRepo.findByType(RulesType.FORMAT).orElse(null)
+    fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
+        val row = findRow(RulesType.FORMAT, ownerId)
         return row?.configText to row?.configFormat
     }
 
-    fun currentLintConfig(): Pair<String?, String?> {
-        val row = rulesStateRepo.findByType(RulesType.LINT).orElse(null)
+    fun currentLintConfig(ownerId: String): Pair<String?, String?> {
+        val row = findRow(RulesType.LINT, ownerId)
         return row?.configText to row?.configFormat
     }
 }
