@@ -10,6 +10,9 @@ import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
+import com.printscript.snippets.redis.controllers.UpdateFmtRulesReq
+import com.printscript.snippets.redis.controllers.UpdateLintRulesReq
+import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -36,6 +39,7 @@ import java.util.UUID
 @RequestMapping("/snippets")
 class SnippetController(
     private val service: SnippetService,
+    private val bulkRulesService: BulkRulesService,
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -137,8 +141,8 @@ class SnippetController(
         @PathVariable snippetId: UUID,
         @RequestParam(defaultValue = "false") formatted: Boolean,
     ): ResponseEntity<ByteArray> {
-        val bytes = service.download(snippetId, formatted)
-        val filename = service.filename(snippetId, formatted)
+        val bytes = service.download(snippetId, formatted) // trae los bytes del bucket
+        val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
             .contentType(MediaType.TEXT_PLAIN)
@@ -175,4 +179,14 @@ class SnippetController(
         snippetId,
         testCaseId,
     )
+
+    @PutMapping("/rules/format")
+    fun updateFmt(@RequestBody b: UpdateFmtRulesReq) = bulkRulesService
+        .onFormattingRulesChanged(b.configText, b.configFormat, b.options)
+        .let { ResponseEntity.accepted().build<Void>() }
+
+    @PutMapping("/rules/linting")
+    fun updateLint(@RequestBody b: UpdateLintRulesReq) = bulkRulesService
+        .onLintingRulesChanged(b.configText, b.configFormat)
+        .let { ResponseEntity.accepted().build<Void>() }
 }

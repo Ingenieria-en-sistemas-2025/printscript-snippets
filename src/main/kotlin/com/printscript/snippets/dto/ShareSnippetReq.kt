@@ -4,5 +4,5 @@ package com.printscript.snippets.dto
 data class ShareSnippetReq(
     val snippetId: String,
     val userId: String,
-    val scope: String,
+    val permissionType: String? = "reader",
 )

@@ -11,6 +11,7 @@ import com.printscript.snippets.dto.SnippetSource
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
+import com.printscript.snippets.execution.dto.DiagnosticDto
 import com.printscript.snippets.execution.dto.FormatReq
 import com.printscript.snippets.execution.dto.FormatRes
 import com.printscript.snippets.execution.dto.LintReq
@@ -41,4 +42,6 @@ interface SnippetService {
     fun download(snippetId: UUID, formatted: Boolean): ByteArray
     fun filename(snippetId: UUID, formatted: Boolean): String
     fun runOneTestOwnerAware(userId: String, snippetId: UUID, testCaseId: UUID): SingleTestRunResult
+    fun saveFormatted(snippetId: UUID, formatted: String)
+    fun saveLint(snippetId: UUID, violations: List<DiagnosticDto>)
 }

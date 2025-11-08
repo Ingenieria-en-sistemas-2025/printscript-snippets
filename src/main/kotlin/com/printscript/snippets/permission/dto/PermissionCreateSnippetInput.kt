@@ -15,5 +15,5 @@ data class PermissionCreateSnippetInput(
         regexp = "^(OWNER|READER|EDITOR)$",
         message = "Scope must be OWNER, READER, or EDITOR",
     )
-    val scope: String,
+    val scope: String?,
 )

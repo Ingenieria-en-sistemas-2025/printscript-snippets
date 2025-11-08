@@ -326,7 +326,7 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                scope = req.scope,
+                scope = req.permissionType,
             ),
         )
     }
@@ -587,5 +587,33 @@ class SnippetServiceImpl(
             mismatchAt = execRes.mismatchAt,
             diagnostic = execRes.diagnostic,
         )
+    }
+
+    override fun saveFormatted(snippetId: UUID, formatted: String) {
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+        val formattedKey = "snippets/$snippetId/v${latest.versionNumber}.formatted.ps"
+        assetClient.upload(containerName, formattedKey, formatted.toByteArray(Charsets.UTF_8))
+        latest.formattedKey = formattedKey
+        latest.isFormatted = true
+        versionRepo.save(latest)
+    }
+
+    override fun saveLint(
+        snippetId: UUID,
+        violations: List<DiagnosticDto>,
+    ) {
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+        val json = jacksonObjectMapper().writeValueAsString(violations)
+        latest.lintIssues = json
+        latest.isValid = latest.isValid && violations.isEmpty()
+        versionRepo.save(latest)
+        val s = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        s.lastLintCount = violations.size
+        s.lastIsValid = latest.isValid
+        snippetRepo.save(s)
     }
 }

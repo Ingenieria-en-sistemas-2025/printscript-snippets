@@ -1,7 +1,7 @@
 package com.printscript.snippets.redis.controllers
 
 import com.printscript.snippets.execution.dto.DiagnosticDto
-import com.printscript.snippets.redis.service.SnippetResultsService
+import com.printscript.snippets.service.SnippetServiceImpl
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -11,7 +11,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/internal/snippets")
-class InternalWriteController(private val results: SnippetResultsService) {
+class InternalWriteController(private val results: SnippetServiceImpl) {
     @PostMapping("/{id}/format")
     fun saveFmt(@PathVariable id: UUID, @RequestBody body: Map<String, String>) {
         val formatted = body["content"] ?: throw IllegalArgumentException("content is required")
