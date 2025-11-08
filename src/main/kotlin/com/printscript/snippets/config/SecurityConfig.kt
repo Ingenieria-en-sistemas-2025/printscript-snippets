@@ -55,7 +55,7 @@ class SecurityConfig(
                     .requestMatchers(POST, "/snippets/cases").permitAll()
                     .requestMatchers(DELETE, "/snippets/cases/*").permitAll()
                     // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
-                    .requestMatchers(GET, "/api/users").permitAll()
+                    .requestMatchers(GET, "/users").permitAll()
                     // 2. ENDPOINTS DE REGLAS (RULES) Y CONFIG
                     // Administracion de Reglas/Config (admin:rules)
                     .requestMatchers(GET, "/snippets/rules/*").permitAll()

@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("users")
 class UserController
 @Autowired
 constructor(
     private val userService: UserService,
 ) {
-    @GetMapping
+    @GetMapping("/all")
     fun getAllUsers(
         @AuthenticationPrincipal jwt: Jwt,
     ): ResponseEntity<List<User>> {
