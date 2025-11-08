@@ -237,7 +237,6 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
-        // IMPORTANTE: Decodificar el userId por si viene URL encoded
         val decodedUserId = java.net.URLDecoder.decode(userId, "UTF-8")
 
         logger.info("=== LIST MY SNIPPETS DEBUG ===")
@@ -254,15 +253,6 @@ class SnippetServiceImpl(
         logger.info("Authorizations list: ${response?.authorizations}")
         logger.info("Authorizations count: ${response?.authorizations?.size ?: 0}")
         logger.info("Total from response: ${response?.total}")
-
-        // CORRECCIÓN: Usar 'authorizations' en lugar de 'items'
-        // El DTO AuthorizationPage tiene:
-        // - authorizations: List<AuthorizationView>
-        // - total: Long
-        // Cada AuthorizationView tiene:
-        // - id: Long
-        // - snippetId: String
-        // - scope: String
 
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
             .mapNotNull { authView ->
