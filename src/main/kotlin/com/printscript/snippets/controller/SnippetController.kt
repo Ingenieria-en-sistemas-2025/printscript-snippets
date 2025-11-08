@@ -39,7 +39,7 @@ import java.util.UUID
 @RequestMapping("/snippets")
 class SnippetController(
     private val service: SnippetService,
-    private val bulkRulesService: BulkRulesService
+    private val bulkRulesService: BulkRulesService,
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -141,8 +141,8 @@ class SnippetController(
         @PathVariable snippetId: UUID,
         @RequestParam(defaultValue = "false") formatted: Boolean,
     ): ResponseEntity<ByteArray> {
-        val bytes = service.download(snippetId, formatted) //trae los bytes del bucket
-        val filename = service.filename(snippetId, formatted) //arma el nombre del archivo
+        val bytes = service.download(snippetId, formatted) // trae los bytes del bucket
+        val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
             .contentType(MediaType.TEXT_PLAIN)
@@ -180,8 +180,6 @@ class SnippetController(
         testCaseId,
     )
 
-
-
     @PutMapping("/rules/format")
     fun updateFmt(@RequestBody b: UpdateFmtRulesReq) = bulkRulesService
         .onFormattingRulesChanged(b.configText, b.configFormat, b.options)
@@ -191,5 +189,4 @@ class SnippetController(
     fun updateLint(@RequestBody b: UpdateLintRulesReq) = bulkRulesService
         .onLintingRulesChanged(b.configText, b.configFormat)
         .let { ResponseEntity.accepted().build<Void>() }
-
 }

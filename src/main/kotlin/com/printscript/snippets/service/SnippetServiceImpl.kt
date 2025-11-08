@@ -35,7 +35,6 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
-import jdk.internal.vm.ThreadContainers.container
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -308,7 +307,7 @@ class SnippetServiceImpl(
             PermissionCreateSnippetInput(
                 snippetId = req.snippetId,
                 userId = req.userId,
-                scope = req.scope,
+                scope = req.permissionType,
             ),
         )
     }
@@ -584,7 +583,7 @@ class SnippetServiceImpl(
 
     override fun saveLint(
         snippetId: UUID,
-        violations: List<DiagnosticDto>
+        violations: List<DiagnosticDto>,
     ) {
         val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet $snippetId has no versions")

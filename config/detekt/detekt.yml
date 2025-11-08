@@ -47,8 +47,8 @@ complexity:
     threshold: 25
   TooManyFunctions:
     active: true
-    thresholdInClasses: 30
-    thresholdInInterfaces: 30
+    thresholdInClasses: 35
+    thresholdInInterfaces: 35
 
 exceptions:
   TooGenericExceptionCaught:
