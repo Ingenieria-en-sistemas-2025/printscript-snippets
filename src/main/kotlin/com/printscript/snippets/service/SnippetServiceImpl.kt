@@ -35,6 +35,8 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
+import com.printscript.snippets.service.rules.FormatterMapper
+import com.printscript.snippets.service.rules.RulesStateService
 import com.printscript.snippets.user.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -52,6 +54,7 @@ class SnippetServiceImpl(
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
     private val userService: UserService,
+    private val rulesStateService: RulesStateService
 ) : SnippetService {
 
     private val authorization = SnippetAuthorization(permissionClient)
@@ -581,5 +584,61 @@ class SnippetServiceImpl(
         s.lastLintCount = violations.size
         s.lastIsValid = latest.isValid
         snippetRepo.save(s)
+    }
+
+
+    @Transactional
+    override fun formatOne(snippetId: UUID): SnippetDetailDto {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+
+        //Rules -> FormatterOptionsDto
+        val rules = rulesStateService.getFormatAsRules()
+        val options = FormatterMapper.toFormatterOptionsDto(rules)
+
+        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfig()
+
+        val req = FormatReq(
+            language = snippet.language,
+            version = snippet.languageVersion,
+            content = original,
+            options = options,
+            configText = cfgText,
+            configFormat = cfgFmt
+        )
+        val res = executionClient.format(req)
+
+        saveFormatted(snippetId, res.formattedContent)
+
+        val updatedVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
+        return toDetailDto(snippet, updatedVersion, res.formattedContent)
+    }
+
+    @Transactional
+    override fun lintOne(snippetId: UUID): SnippetDetailDto {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig()
+
+        val req = LintReq(
+            language = snippet.language,
+            version = snippet.languageVersion,
+            content = original,
+            configText = cfgText,
+            configFormat = cfgFmt
+        )
+        val res = executionClient.lint(req)
+
+        saveLint(snippetId, res.violations)
+
+        val updatedVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
+        return toDetailDto(snippet, updatedVersion, content = original)
     }
 }
