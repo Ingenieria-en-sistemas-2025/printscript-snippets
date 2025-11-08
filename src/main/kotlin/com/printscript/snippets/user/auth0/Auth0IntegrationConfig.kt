@@ -1,6 +1,5 @@
 package com.printscript.snippets.user.auth0
 
-import com.printscript.snippets.auth.Auth0TokenService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -16,12 +15,12 @@ constructor(
     @Bean
     fun identityProviderClient(
         restTemplate: RestTemplate,
-        auth0TokenService: Auth0TokenService,
+        auth0ManagementTokenService: Auth0ManagementTokenService,
     ): IdentityProviderClient {
         return Auth0Client(
             auth0IssuerUri,
             restTemplate,
-            auth0TokenService,
+            auth0ManagementTokenService,
         )
     }
 

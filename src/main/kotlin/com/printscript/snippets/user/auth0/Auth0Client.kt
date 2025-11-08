@@ -1,6 +1,5 @@
 package com.printscript.snippets.user.auth0
 
-import com.printscript.snippets.auth.Auth0TokenService
 import com.printscript.snippets.user.User
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -12,7 +11,7 @@ import org.springframework.web.client.exchange
 class Auth0Client(
     private val auth0Url: String,
     private val restTemplate: RestTemplate,
-    private val auth0TokenService: Auth0TokenService,
+    private val auth0ManagementTokenService: Auth0ManagementTokenService,
 ) : IdentityProviderClient {
 
     override fun getAllUsers(): List<User> {
@@ -39,7 +38,8 @@ class Auth0Client(
     }
 
     private fun getJsonHeader(): HttpHeaders {
-        val token = auth0TokenService.getAccessToken()
+        // [CAMBIADO] Usa el nuevo servicio para obtener el token
+        val token = auth0ManagementTokenService.getAccessToken()
 
         val headers =
             HttpHeaders().apply {
