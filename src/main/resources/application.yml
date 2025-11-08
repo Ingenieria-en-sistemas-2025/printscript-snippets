@@ -56,3 +56,9 @@ auth0:
 newrelic:
   logs:
     enabled: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.oauth2: DEBUG

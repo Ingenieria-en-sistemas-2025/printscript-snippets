@@ -1,7 +1,7 @@
 package com.printscript.snippets.dto
 
 data class CreateTestReq(
-    val snippetId: String,
+    val snippetId: String? = null,
     val name: String,
     val inputs: List<String> = emptyList(),
     val expectedOutputs: List<String> = emptyList(),
