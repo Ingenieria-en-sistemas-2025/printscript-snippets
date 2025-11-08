@@ -3,6 +3,7 @@ package com.printscript.snippets.service.rules
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.execution.dto.FormatterOptionsDto
 
+// traduce las RuleDto que vienen de la ui para el DTO que entiende el servicio de execution cuando le pedís que formatee código.
 object FormatterMapper {
     fun toFormatterOptionsDto(rules: List<RuleDto>): FormatterOptionsDto =
         FormatterOptionsDto(

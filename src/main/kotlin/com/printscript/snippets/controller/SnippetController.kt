@@ -219,7 +219,7 @@ class SnippetController(
             FileTypeDto("printscript", listOf("1.1", "1.0"), "prs"),
         )
 
-    @PostMapping("/{snippetId}/format")
+    @PostMapping("/run/{snippetId}/format")
     fun formatOne(
         @PathVariable snippetId: UUID,
     ): ResponseEntity<SnippetDetailDto> {
@@ -227,7 +227,7 @@ class SnippetController(
         return ResponseEntity.ok(dto)
     }
 
-    @PostMapping("/{snippetId}/lint")
+    @PostMapping("/run/{snippetId}/lint")
     fun lintOne(@PathVariable snippetId: UUID): ResponseEntity<SnippetDetailDto> =
         ResponseEntity.ok(service.lintOne(snippetId))
 }
