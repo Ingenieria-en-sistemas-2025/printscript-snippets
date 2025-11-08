@@ -497,7 +497,14 @@ class SnippetServiceImpl(
         val snippet = snippetRepo.findById(UUID.fromString(req.snippetId))
             .orElseThrow { NotFound("Snippet not found") }
         authorization.requireOwner(ownerId, snippet)
-        shareSnippet(req)
+
+        permissionClient.createAuthorization(
+            PermissionCreateSnippetInput(
+                snippetId = req.snippetId,
+                userId = req.userId,
+                scope = req.permissionType,
+            ),
+        )
     }
 
     @Transactional(readOnly = true)
