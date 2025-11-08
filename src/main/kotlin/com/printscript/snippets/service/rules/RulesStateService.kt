@@ -7,15 +7,20 @@ import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.domain.model.RulesType
 import com.printscript.snippets.dto.RuleDto
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class RulesStateService(
-    private val rulesStateRepo: RulesStateRepo
+    private val rulesStateRepo: RulesStateRepo,
 ) {
     private val om = jacksonObjectMapper()
 
-    private val FORMAT_BOOL_RULES = setOf(
+    private companion object {
+        private const val DEFAULT_INDENT = 3
+        private const val DEFAULT_TABSIZE = 3
+        private const val DEFAULT_PRINTLN_BREAKS = 0
+    }
+
+    private val fmtBoolRules = setOf(
         "enforce-spacing-around-equals",
         "enforce-no-spacing-around-equals",
         "enforce-spacing-after-colon-in-declaration",
@@ -27,59 +32,57 @@ class RulesStateService(
     )
 
     // Numéricas (con valor editable en UI)  los vals van en optionsJson
-    private val FORMAT_NUMERIC_DEFAULTS = mapOf(
-        "indent_size" to 3,
-        "indent-spaces" to 3,
-        "tabsize" to 3,
-        "line-breaks-after-println" to 0,
-        "line_breaks_after_println" to 0,
+    private val fmtNumericDefaults = mapOf(
+        "indent_size" to DEFAULT_INDENT,
+        "indent-spaces" to DEFAULT_INDENT,
+        "tabsize" to DEFAULT_TABSIZE,
+        "line-breaks-after-println" to DEFAULT_PRINTLN_BREAKS,
+        "line_breaks_after_println" to DEFAULT_PRINTLN_BREAKS,
     )
 
-    private val LINT_RULES = listOf(
+    private val lintRules = listOf(
         "IdentifierStyleRuleStreaming",
         "PrintlnSimpleArgRuleStreaming",
-        "ReadInputSimpleArgRuleStreaming"
+        "ReadInputSimpleArgRuleStreaming",
     )
 
-    private val ALL_FORMAT_IDS = (FORMAT_BOOL_RULES + FORMAT_NUMERIC_DEFAULTS.keys).toList().sorted()
+    private val allFormatIds = (fmtBoolRules + fmtNumericDefaults.keys).toList().sorted()
 
     private fun defaultFormatEnabled(): Set<String> = setOf(
         "indent-spaces",
         "mandatory-single-space-separation",
-        "if-brace-same-line"
+        "if-brace-same-line",
     )
 
-    private fun defaultFormatValues(): Map<String, Int> = FORMAT_NUMERIC_DEFAULTS
+    private fun defaultFormatValues(): Map<String, Int> = fmtNumericDefaults
 
     private fun defaultLintEnabled(): Set<String> = setOf(
         "IdentifierStyleRuleStreaming",
-        "PrintlnSimpleArgRuleStreaming"
+        "PrintlnSimpleArgRuleStreaming",
     )
-
 
     // Lee desde la tabla rules_state -> enabledJson y lo parsea a Set<String>
     // Si no hay registro (Optional.empty), volvemos emptySet() y arriba aplicamos defaults.
     private fun readEnabled(type: RulesType): Set<String> =
         rulesStateRepo.findByType(type)
-            .map { s -> om.readValue(s.enabledJson, Set::class.java) } //parsea json
+            .map { s -> om.readValue(s.enabledJson, Set::class.java) } // parsea json
             .orElse(emptySet<Any>())
-            .map { it.toString() } //lo paso a string
+            .map { it.toString() } // lo paso a string
             .toSet()
 
     // Lee desde la tabla rules_state -> optionsJson y lo parsea a Map<String, Int>
     // Admitimos que el JSON pueda venir con números o strings numéricos (por eso el when).
     private fun readOptions(type: RulesType): Map<String, Int> {
-
-        val json = rulesStateRepo.findByType(type).map { it.optionsJson }.orElse(null) //para quedarse solo con el campo optionsJson
+        val json = rulesStateRepo.findByType(type).map { it.optionsJson }.orElse(null) // para quedarse solo con el campo optionsJson
             ?: return emptyMap()
 
-        val raw: Map<String, Any?> = om.readValue( //convierte json en map
+        val raw: Map<String, Any?> = om.readValue( // convierte json en map
             json,
-            object : TypeReference<Map<String, Any?>>() {}
+            object : TypeReference<Map<String, Any?>>() {},
         )
 
         return raw.mapNotNull { (k, v) -> //
-            when (v) { //normaliza los valores del JSON para asegurarse de que todos sean Int
+            when (v) { // normaliza los valores del JSON para asegurarse de que todos sean Int
                 is Number -> k to v.toInt()
                 is String -> v.toIntOrNull()?.let { k to it }
                 else -> null
@@ -102,8 +105,8 @@ class RulesStateService(
                 enabledJson = "[]",
                 optionsJson = null,
                 configText = null,
-                configFormat = null
-            )
+                configFormat = null,
+            ),
         )
 
         row.enabledJson = om.writeValueAsString(enabled)
@@ -118,14 +121,14 @@ class RulesStateService(
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
 
         val row = rulesStateRepo.findByType(RulesType.LINT).orElse(
-RulesState(
+            RulesState(
                 id = null,
                 type = RulesType.LINT,
                 enabledJson = "[]",
                 optionsJson = null,
                 configText = null,
-                configFormat = null
-            )
+                configFormat = null,
+            ),
         )
 
         row.enabledJson = om.writeValueAsString(enabled)
@@ -140,17 +143,14 @@ RulesState(
         val enabled = readEnabled(RulesType.FORMAT).ifEmpty { defaultFormatEnabled() }
         val values = readOptions(RulesType.FORMAT).ifEmpty { defaultFormatValues() }
 
-        return ALL_FORMAT_IDS.map { id ->
-            val value = if (FORMAT_NUMERIC_DEFAULTS.containsKey(id)) {
-                values[id] ?: FORMAT_NUMERIC_DEFAULTS[id]
-            } else null
+        return allFormatIds.map { id ->
+            val value = if (fmtNumericDefaults.containsKey(id)) values[id] ?: fmtNumericDefaults[id] else null
             RuleDto(id = id, enabled = enabled.contains(id), value = value)
         }
     }
 
     fun getLintAsRules(): List<RuleDto> {
         val enabled = readEnabled(RulesType.LINT).ifEmpty { defaultLintEnabled() }
-        return LINT_RULES.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
+        return lintRules.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
     }
-
 }

@@ -11,17 +11,16 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "rules_state")
-
 class RulesState(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
-    var type: RulesType,            // FORMAT | LINT
+    var type: RulesType, // FORMAT | LINT
 
     @Column(name = "enabled_json", nullable = false, columnDefinition = "text")
-    var enabledJson: String,        // JSON array de ids habilitados
+    var enabledJson: String, // JSON array de ids habilitados
 
     @Column(name = "options_json", columnDefinition = "text")
     var optionsJson: String? = null, // JSON con parámetros (indentSpaces, maxLineLength, etc.)
@@ -30,7 +29,7 @@ class RulesState(
     var configText: String? = null,
 
     @Column(name = "config_format", length = 32)
-    var configFormat: String? = null
+    var configFormat: String? = null,
 )
 
 enum class RulesType { FORMAT, LINT }

@@ -21,6 +21,6 @@ object FormatterMapper {
             }?.value,
             mandatorySingleSpaceSeparation = rules.any { it.id == "mandatory-single-space-separation" && it.enabled },
             ifBraceBelowLine = rules.any { it.id == "if-brace-below-line" && it.enabled },
-            ifBraceSameLine = rules.any { it.id == "if-brace-same-line" && it.enabled }
+            ifBraceSameLine = rules.any { it.id == "if-brace-same-line" && it.enabled },
         )
 }

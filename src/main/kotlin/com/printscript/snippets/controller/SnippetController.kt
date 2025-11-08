@@ -13,8 +13,6 @@ import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
-import com.printscript.snippets.redis.controllers.UpdateFmtRulesReq
-import com.printscript.snippets.redis.controllers.UpdateLintRulesReq
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
 import com.printscript.snippets.service.rules.FormatterMapper
@@ -45,7 +43,7 @@ import java.util.UUID
 class SnippetController(
     private val service: SnippetService,
     private val bulkRulesService: BulkRulesService,
-    private val rulesStateService: RulesStateService
+    private val rulesStateService: RulesStateService,
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -188,10 +186,10 @@ class SnippetController(
 
     @PutMapping("/rules/format")
     fun saveAndPublishFormat(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
-        rulesStateService.saveFormatState(body.rules, body.configText, body.configFormat) //persiste el estado de las rules en la tabla rules_state
+        rulesStateService.saveFormatState(body.rules, body.configText, body.configFormat) // persiste el estado de las rules en la tabla rules_state
 
-        val options = FormatterMapper.toFormatterOptionsDto(body.rules)//traduce RuleDto a un FormatterOptionsDto
-        bulkRulesService.onFormattingRulesChanged(body.configText, body.configFormat, options) //publica evento a redis
+        val options = FormatterMapper.toFormatterOptionsDto(body.rules) // traduce RuleDto a un FormatterOptionsDto
+        bulkRulesService.onFormattingRulesChanged(body.configText, body.configFormat, options) // publica evento a redis
 
         return ResponseEntity.accepted().build()
     }
