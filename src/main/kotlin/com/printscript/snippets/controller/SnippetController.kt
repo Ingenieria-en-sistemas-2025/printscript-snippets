@@ -4,6 +4,8 @@ import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.PageDto
 import com.printscript.snippets.dto.RelationFilter
+import com.printscript.snippets.dto.RuleDto
+import com.printscript.snippets.dto.SaveRulesReq
 import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.dto.SingleTestRunResult
 import com.printscript.snippets.dto.SnippetDetailDto
@@ -14,6 +16,8 @@ import com.printscript.snippets.redis.controllers.UpdateFmtRulesReq
 import com.printscript.snippets.redis.controllers.UpdateLintRulesReq
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
+import com.printscript.snippets.service.rules.FormatterMapper
+import com.printscript.snippets.service.rules.RulesStateService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
@@ -40,6 +44,7 @@ import java.util.UUID
 class SnippetController(
     private val service: SnippetService,
     private val bulkRulesService: BulkRulesService,
+    private val rulesStateService: RulesStateService
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -181,12 +186,31 @@ class SnippetController(
     )
 
     @PutMapping("/rules/format")
-    fun updateFmt(@RequestBody b: UpdateFmtRulesReq) = bulkRulesService
-        .onFormattingRulesChanged(b.configText, b.configFormat, b.options)
-        .let { ResponseEntity.accepted().build<Void>() }
+    fun saveAndPublishFormat(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
+        rulesStateService.saveFormatState(body.rules, body.configText, body.configFormat) //persiste el estado de las rules en la tabla rules_state
+
+        val options = FormatterMapper.toFormatterOptionsDto(body.rules)//traduce RuleDto a un FormatterOptionsDto
+        bulkRulesService.onFormattingRulesChanged(body.configText, body.configFormat, options) //publica evento a redis
+
+        return ResponseEntity.accepted().build()
+    }
 
     @PutMapping("/rules/linting")
-    fun updateLint(@RequestBody b: UpdateLintRulesReq) = bulkRulesService
-        .onLintingRulesChanged(b.configText, b.configFormat)
-        .let { ResponseEntity.accepted().build<Void>() }
+    fun saveAndPublishLint(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
+        rulesStateService.saveLintState(body.rules, body.configText, body.configFormat)
+
+        bulkRulesService.onLintingRulesChanged(body.configText, body.configFormat)
+
+        return ResponseEntity.accepted().build()
+    }
+
+    @GetMapping("/rules/format")
+    fun getFmtRules(): ResponseEntity<List<RuleDto>> {
+        return ResponseEntity.ok(rulesStateService.getFormatAsRules())
+    }
+
+    @GetMapping("/rules/linting")
+    fun getLintRules(): ResponseEntity<List<RuleDto>> {
+        return ResponseEntity.ok(rulesStateService.getLintAsRules())
+    }
 }

@@ -35,6 +35,7 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
+import com.printscript.snippets.service.rules.RulesStateService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -50,6 +51,7 @@ class SnippetServiceImpl(
     private val assetClient: SnippetAsset,
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
+    private val rulesStateService: RulesStateService
 ) : SnippetService {
     private val logger = LoggerFactory.getLogger(SnippetServiceImpl::class.java)
     private val containerName = "snippets"
