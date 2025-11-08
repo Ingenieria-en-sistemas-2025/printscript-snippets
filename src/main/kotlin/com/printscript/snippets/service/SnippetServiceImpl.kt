@@ -237,23 +237,39 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
+        logger.info("Listing snippets for user: $userId (page: $page, size: $size)")
+
         val response = permissionClient
             .getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE)
             .body
 
+        logger.debug("Authorization service response: $response")
+
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
-            .mapNotNull { runCatching { UUID.fromString(it.snippetId) }.getOrNull() }
+            .mapNotNull { authView ->
+                try {
+                    UUID.fromString(authView.snippetId)
+                } catch (e: IllegalArgumentException) {
+                    logger.warn("Invalid UUID format for snippetId: ${authView.snippetId}")
+                    null
+                }
+            }
+
+        logger.info("Found ${snippetIds.size} snippet IDs with permissions for user $userId")
 
         if (snippetIds.isEmpty()) {
+            logger.info("No snippets found for user $userId, returning empty page")
             return PageDto(emptyList(), 0, page, size)
         }
 
+        // Obtener los snippets de la base de datos
         val snippets = snippetRepo.findAllById(snippetIds)
+        logger.info("Retrieved ${snippets.size} snippets from database")
 
-        // Ordenar por algo (ej: nombre o fecha)
+        // Ordenar por fecha de actualización (más reciente primero)
         val sorted = snippets.sortedByDescending { it.updatedAt }
 
-        // Paginar localmente
+        // Paginación local
         val total = sorted.size
         val from = (page * size).coerceAtMost(total)
         val to = (from + size).coerceAtMost(total)
@@ -274,6 +290,8 @@ class SnippetServiceImpl(
         } else {
             emptyList()
         }
+
+        logger.info("Returning page $page with ${pageItems.size} items (total: $total)")
 
         return PageDto(
             items = pageItems,
