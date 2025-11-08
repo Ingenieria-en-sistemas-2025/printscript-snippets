@@ -2,6 +2,7 @@ package com.printscript.snippets.controller
 
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
+import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
 import com.printscript.snippets.dto.RelationFilter
 import com.printscript.snippets.dto.ShareSnippetReq
@@ -189,4 +190,10 @@ class SnippetController(
     fun updateLint(@RequestBody b: UpdateLintRulesReq) = bulkRulesService
         .onLintingRulesChanged(b.configText, b.configFormat)
         .let { ResponseEntity.accepted().build<Void>() }
+
+    @GetMapping("/config/filetypes")
+    fun getFileTypes(): List<FileTypeDto> =
+        listOf(
+            FileTypeDto("printscript", "prs")
+        )
 }
