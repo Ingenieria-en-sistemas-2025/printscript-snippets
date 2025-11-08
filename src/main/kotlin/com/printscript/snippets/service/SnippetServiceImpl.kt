@@ -250,7 +250,7 @@ class SnippetServiceImpl(
                 try {
                     UUID.fromString(authView.snippetId)
                 } catch (e: IllegalArgumentException) {
-                    logger.warn("Invalid UUID format for snippetId: ${authView.snippetId}")
+                    logger.warn("Invalid UUID format for snippetId: ${authView.snippetId}", e)
                     null
                 }
             }
