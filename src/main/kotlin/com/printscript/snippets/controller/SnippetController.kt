@@ -196,6 +196,6 @@ class SnippetController(
         listOf(
             FileTypeDto("printscript", "prs"),
             FileTypeDto("python", "py"),
-            FileTypeDto("java", "java")
+            FileTypeDto("java", "java"),
         )
 }
