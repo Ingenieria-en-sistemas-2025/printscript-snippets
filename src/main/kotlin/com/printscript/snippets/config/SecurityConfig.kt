@@ -110,18 +110,18 @@ class SecurityConfig(
     // CORS
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        // configuration.allowedOrigins = listOf(
-        //        "http://localhost:5173",
-        //        "https://printscript-dev.duckdns.org",
-        //        "https://printscript-prod.duckdns.org")
-        configuration.allowedOrigins = listOf("*")
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        configuration.allowedHeaders = listOf("*")
-        configuration.allowCredentials = true
+        val c = CorsConfiguration()
+        c.allowedOrigins = listOf(
+            "http://localhost:5173",
+            "https://printscript-prod.duckdns.org",
+            "https://printscript-dev.duckdns.org",
+        )
+        c.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        c.allowedHeaders = listOf("*")
+        c.allowCredentials = true
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration) // Aplica la configuracion a todas las rutas
+        source.registerCorsConfiguration("/**", c)
         return source
     }
 
