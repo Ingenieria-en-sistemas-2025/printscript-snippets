@@ -35,6 +35,7 @@ import com.printscript.snippets.execution.dto.ParseRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
+import com.printscript.snippets.user.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -50,6 +51,7 @@ class SnippetServiceImpl(
     private val assetClient: SnippetAsset,
     private val executionClient: SnippetExecution,
     private val permissionClient: SnippetPermission,
+    private val userService: UserService,
 ) : SnippetService {
 
     private val authorization = SnippetAuthorization(permissionClient)
@@ -274,6 +276,8 @@ class SnippetServiceImpl(
 
         val pageItems = if (from < total) {
             sorted.subList(from, to).map { s ->
+                val authorEmail = userService.getEmailById(s.ownerId)
+
                 SnippetSummaryDto(
                     id = s.id!!.toString(),
                     name = s.name,
@@ -281,6 +285,7 @@ class SnippetServiceImpl(
                     language = s.language,
                     version = s.languageVersion,
                     ownerId = s.ownerId,
+                    ownerEmail = authorEmail,
                     lastIsValid = s.lastIsValid,
                     lastLintCount = s.lastLintCount,
                 )
@@ -416,6 +421,8 @@ class SnippetServiceImpl(
 
         val pageItems = if (from < totalFiltered) {
             sorted.subList(from, to).map { snippet ->
+                val authorEmail = userService.getEmailById(snippet.ownerId)
+
                 SnippetSummaryDto(
                     id = snippet.id!!.toString(),
                     name = snippet.name,
@@ -423,6 +430,7 @@ class SnippetServiceImpl(
                     language = snippet.language,
                     version = snippet.languageVersion,
                     ownerId = snippet.ownerId,
+                    ownerEmail = authorEmail,
                     lastIsValid = snippet.lastIsValid,
                     lastLintCount = snippet.lastLintCount,
                 )

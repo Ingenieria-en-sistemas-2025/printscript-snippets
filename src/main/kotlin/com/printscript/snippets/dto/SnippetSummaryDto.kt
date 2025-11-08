@@ -7,6 +7,7 @@ data class SnippetSummaryDto(
     val language: String,
     val version: String,
     val ownerId: String,
+    val ownerEmail: String,
     val lastIsValid: Boolean,
     val lastLintCount: Int,
 )
