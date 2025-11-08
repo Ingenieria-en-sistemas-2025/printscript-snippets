@@ -378,8 +378,13 @@ class SnippetServiceImpl(
         sort: String,
     ): PageDto<SnippetSummaryDto> {
         val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE).body
-        val ids = (perms?.authorizations ?: emptyList()).mapNotNull {
-            runCatching { UUID.fromString(it.snippetId) }.getOrNull()
+        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
+            runCatching { UUID.fromString(authView.snippetId) }
+                .onFailure {
+                    // Log the error for debugging purposes before getting null
+                    logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
+                }
+                .getOrNull()
         }
 
         val all = snippetRepo.findAllById(ids)
