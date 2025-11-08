@@ -237,13 +237,32 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
-        logger.info("Listing snippets for user: $userId (page: $page, size: $size)")
+        // IMPORTANTE: Decodificar el userId por si viene URL encoded
+        val decodedUserId = java.net.URLDecoder.decode(userId, "UTF-8")
 
+        logger.info("=== LIST MY SNIPPETS DEBUG ===")
+        logger.info("Listing snippets for user (original): $userId")
+        logger.info("Listing snippets for user (decoded): $decodedUserId (page: $page, size: $size)")
+
+        // Llamar al servicio de autorización
         val response = permissionClient
-            .getAllSnippetsPermission(userId, pageNum = 0, pageSize = Int.MAX_VALUE)
+            .getAllSnippetsPermission(decodedUserId, pageNum = 0, pageSize = Int.MAX_VALUE)
             .body
 
-        logger.debug("Authorization service response: $response")
+        logger.info("Authorization service response received")
+        logger.info("Response is null: ${response == null}")
+        logger.info("Authorizations list: ${response?.authorizations}")
+        logger.info("Authorizations count: ${response?.authorizations?.size ?: 0}")
+        logger.info("Total from response: ${response?.total}")
+
+        // CORRECCIÓN: Usar 'authorizations' en lugar de 'items'
+        // El DTO AuthorizationPage tiene:
+        // - authorizations: List<AuthorizationView>
+        // - total: Long
+        // Cada AuthorizationView tiene:
+        // - id: Long
+        // - snippetId: String
+        // - scope: String
 
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
             .mapNotNull { authView ->
