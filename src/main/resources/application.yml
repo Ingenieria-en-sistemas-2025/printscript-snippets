@@ -30,18 +30,17 @@ spring:
         jwt:
           issuer-uri: ${AUTH0_ISSUER_URI:https://dev-c2gyaqqsxa2v3nig.us.auth0.com/}
 
-
 streams:
   enabled: true
   formatting:
-    key: ps.formatting
-    group: formatting-workers
+    key: ${STREAMS_FORMATTING_KEY:ps.formatting}
+    group: ${STREAMS_FORMATTING_GROUP:formatting-workers}
   linting:
-    key: ps.linting
-    group: linting-workers
+    key: ${STREAMS_LINTING_KEY:ps.linting}
+    group: ${STREAMS_LINTING_GROUP:linting-workers}
   dlq:
-    formatting: ps.dlq.formatting
-    linting: ps.dlq.linting
+    formatting: ${STREAMS_DLQ_FORMATTING:ps.dlq.formatting}
+    linting: ${STREAMS_DLQ_LINTING:ps.dlq.linting}
 
 asset:
   service:
