@@ -27,7 +27,7 @@ class BulkRulesService(
             val lv = snippetRepo.getLangAndVersion(snippetId)
             bus.publish(
                 Channel.FORMATTING,
-                SnippetsFormattingRulesUpdated(corr, snippetId, lv.language(), lv.languageVersion(), cfg, fmt),
+                SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfg, fmt),
             )
         }
     }
@@ -49,7 +49,7 @@ class BulkRulesService(
             val lv = snippetRepo.getLangAndVersion(id)
             bus.publish(
                 Channel.LINTING,
-                SnippetsLintingRulesUpdated(corr, id, lv.language(), lv.languageVersion(), cfg, fmt),
+                SnippetsLintingRulesUpdated(corr, id, lv.language, lv.languageVersion, cfg, fmt),
             )
         }
     }
