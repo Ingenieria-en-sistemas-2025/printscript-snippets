@@ -1,2 +1,2 @@
 ALTER TABLE snippet
-    ADD COLUMN compliance VARCHAR(32) NOT NULL DEFAULT 'pending';
+    ADD COLUMN IF NOT EXISTS compliance VARCHAR(32) NOT NULL DEFAULT 'pending';
