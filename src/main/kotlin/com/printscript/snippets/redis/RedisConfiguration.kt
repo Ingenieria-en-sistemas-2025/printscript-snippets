@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
@@ -27,14 +28,17 @@ class RedisConfiguration(
         }
 
     @Bean("redisTemplateJson")
-    fun redisJsonTemplate(cf: LettuceConnectionFactory): RedisTemplate<String, Any> =
-        RedisTemplate<String, Any>().apply {
-            setConnectionFactory(cf)
-            val json = GenericJackson2JsonRedisSerializer()
-            keySerializer = StringRedisSerializer()
-            valueSerializer = json
-            hashKeySerializer = keySerializer
-            hashValueSerializer = valueSerializer
-            afterPropertiesSet()
-        }
+    fun redisTemplateJson(cf: RedisConnectionFactory): RedisTemplate<String, Any> {
+        val template = RedisTemplate<String, Any>()
+        template.setConnectionFactory(cf)
+
+        val json = GenericJackson2JsonRedisSerializer()
+        template.keySerializer = StringRedisSerializer()
+        template.valueSerializer = json
+        template.hashKeySerializer = template.keySerializer
+        template.hashValueSerializer = template.valueSerializer
+
+        template.afterPropertiesSet()
+        return template
+    }
 }
