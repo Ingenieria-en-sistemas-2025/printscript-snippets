@@ -643,7 +643,7 @@ class SnippetServiceImpl(
 
         val json = jacksonObjectMapper().writeValueAsString(violations)
         latest.lintIssues = json
-        latest.isValid = latest.isValid && violations.isEmpty()
+        latest.isValid = violations.isEmpty()
         latest.lintStatus = LintStatus.DONE
         versionRepo.save(latest)
         val s = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
