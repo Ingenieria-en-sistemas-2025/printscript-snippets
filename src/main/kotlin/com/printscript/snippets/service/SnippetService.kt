@@ -40,6 +40,11 @@ interface SnippetService {
     fun deleteSnippetOwnerAware(userId: String, snippetId: UUID)
     fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq)
     fun download(snippetId: UUID, formatted: Boolean): ByteArray
+    fun checkPermissions(
+        userId: String,
+        snippetId: UUID,
+        min: SnippetAuthorization.AccessLevel = SnippetAuthorization.AccessLevel.READER,
+    )
     fun filename(snippetId: UUID, formatted: Boolean): String
     fun runOneTestOwnerAware(userId: String, snippetId: UUID, testCaseId: UUID): SingleTestRunResult
     fun saveFormatted(snippetId: UUID, formatted: String)

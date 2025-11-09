@@ -41,10 +41,10 @@ complexity:
     constructorThreshold: 10
     ignoreDefaultParameters: true
 
-
   CyclomaticComplexMethod:
     active: true
     threshold: 25
+
   TooManyFunctions:
     active: true
     thresholdInClasses: 40
@@ -53,6 +53,10 @@ complexity:
   LongMethod:
     active: true
     threshold: 120
+
+  LargeClass:
+    active: true
+    threshold: 5000
 
 exceptions:
   TooGenericExceptionCaught:

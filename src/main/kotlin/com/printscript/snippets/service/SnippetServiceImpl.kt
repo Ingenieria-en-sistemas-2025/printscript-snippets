@@ -575,13 +575,32 @@ class SnippetServiceImpl(
         return assetClient.download(containerName, key)
     }
 
+    override fun checkPermissions(
+        userId: String,
+        snippetId: UUID,
+        min: SnippetAuthorization.AccessLevel,
+    ) {
+        val snippet = snippetRepo.findById(snippetId)
+            .orElseThrow { NotFound("Snippet not found") }
+
+        when (min) {
+            SnippetAuthorization.AccessLevel.READER -> authorization.requireReaderOrAbove(userId, snippet)
+            SnippetAuthorization.AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, snippet)
+            SnippetAuthorization.AccessLevel.OWNER -> authorization.requireOwner(userId, snippet)
+        }
+    }
+
     @Transactional(readOnly = true)
     override fun filename(snippetId: UUID, formatted: Boolean): String {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
         val base = "${snippet.name}-v${version.versionNumber}"
-        return if (formatted && version.isFormatted && version.formattedKey != null) "$base.formatted.ps" else "$base.ps"
+        return if (formatted && version.isFormatted && version.formattedKey != null) {
+            "$base.formatted.prs"
+        } else {
+            "$base.prs"
+        }
     }
 
     @Transactional(readOnly = true)
