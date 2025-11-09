@@ -39,7 +39,7 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 
 @RestController
-@RequestMapping("")
+@RequestMapping("/snippets")
 class SnippetController(
     private val service: SnippetService,
     private val bulkRulesService: BulkRulesService,
@@ -53,7 +53,7 @@ class SnippetController(
         return service.getSnippet(snippetId)
     }
 
-    @GetMapping("/snippets/all")
+    @GetMapping("/all")
     fun listAccessible(
         principal: JwtAuthenticationToken,
         @RequestParam(defaultValue = "0") page: Int,
@@ -88,7 +88,7 @@ class SnippetController(
         return result
     }
 
-    @PostMapping("/snippets")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun createFromEditor(
         principal: JwtAuthenticationToken,
@@ -110,7 +110,7 @@ class SnippetController(
         return result
     }
 
-    @PostMapping(path = ["/snippets/file"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping(path = ["/file"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createFromFile(
         principal: JwtAuthenticationToken,
@@ -119,7 +119,7 @@ class SnippetController(
     ): SnippetDetailDto =
         service.createSnippetFromFile(principal.name, meta, file.bytes)
 
-    @PutMapping("/snippets/{snippetId}")
+    @PutMapping("/{snippetId}")
     fun updateSnippet(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
@@ -127,20 +127,20 @@ class SnippetController(
     ): SnippetDetailDto =
         service.updateSnippetOwnerAware(principal.name, snippetId, req)
 
-    @DeleteMapping("/snippets/{snippetId}")
+    @DeleteMapping("/{snippetId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSnippet(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
     ) = service.deleteSnippetOwnerAware(principal.name, snippetId)
 
-    @PostMapping("/api/share")
+    @PostMapping("/share")
     fun share(
         principal: JwtAuthenticationToken,
         @RequestBody req: ShareSnippetReq,
     ) = service.shareSnippetOwnerAware(principal.name, req)
 
-    @GetMapping("/snippets/{snippetId}/download")
+    @GetMapping("/{snippetId}/download")
     fun download(
         @PathVariable snippetId: UUID,
         @RequestParam(defaultValue = "false") formatted: Boolean,
@@ -153,7 +153,7 @@ class SnippetController(
             .body(bytes)
     }
 
-    @PostMapping("/snippets/{snippetId}/tests")
+    @PostMapping("/{snippetId}/tests")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTest(
         @PathVariable snippetId: UUID,
@@ -161,19 +161,19 @@ class SnippetController(
     ): TestCaseDto =
         service.createTestCase(req.copy(snippetId = snippetId.toString()))
 
-    @GetMapping("/snippets/{snippetId}/tests")
+    @GetMapping("/{snippetId}/tests")
     fun listTests(
         @PathVariable snippetId: UUID,
     ): List<TestCaseDto> =
         service.listTestCases(snippetId)
 
-    @DeleteMapping("/snippets/tests/{testCaseId}")
+    @DeleteMapping("/tests/{testCaseId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteTest(
         @PathVariable testCaseId: UUID,
     ) = service.deleteTestCase(testCaseId)
 
-    @PostMapping("/snippets/{snippetId}/tests/{testCaseId}/run")
+    @PostMapping("/{snippetId}/tests/{testCaseId}/run")
     fun runSingleTest(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
@@ -184,7 +184,7 @@ class SnippetController(
         testCaseId,
     )
 
-    @PutMapping("/snippets/rules/format")
+    @PutMapping("/rules/format")
     fun saveAndPublishFormat(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
         rulesStateService.saveFormatState(body.rules, body.configText, body.configFormat) // persiste el estado de las rules en la tabla rules_state
 
@@ -194,7 +194,7 @@ class SnippetController(
         return ResponseEntity.accepted().build()
     }
 
-    @PutMapping("/snippets/rules/linting")
+    @PutMapping("/rules/linting")
     fun saveAndPublishLint(@RequestBody body: SaveRulesReq): ResponseEntity<Void> {
         rulesStateService.saveLintState(body.rules, body.configText, body.configFormat)
 
@@ -203,23 +203,23 @@ class SnippetController(
         return ResponseEntity.accepted().build()
     }
 
-    @GetMapping("/snippets/rules/format")
+    @GetMapping("/rules/format")
     fun getFmtRules(): ResponseEntity<List<RuleDto>> {
         return ResponseEntity.ok(rulesStateService.getFormatAsRules())
     }
 
-    @GetMapping("/snippets/rules/linting")
+    @GetMapping("/rules/linting")
     fun getLintRules(): ResponseEntity<List<RuleDto>> {
         return ResponseEntity.ok(rulesStateService.getLintAsRules())
     }
 
-    @GetMapping("/snippets/config/filetypes")
+    @GetMapping("/config/filetypes")
     fun getFileTypes(): List<FileTypeDto> =
         listOf(
             FileTypeDto("printscript", listOf("1.1", "1.0"), "prs"),
         )
 
-    @PostMapping("/snippets/run/{snippetId}/format")
+    @PostMapping("/run/{snippetId}/format")
     fun formatOne(
         @PathVariable snippetId: UUID,
     ): ResponseEntity<SnippetDetailDto> {
@@ -227,7 +227,7 @@ class SnippetController(
         return ResponseEntity.ok(dto)
     }
 
-    @PostMapping("/snippets/run/{snippetId}/lint")
+    @PostMapping("/run/{snippetId}/lint")
     fun lintOne(@PathVariable snippetId: UUID): ResponseEntity<SnippetDetailDto> =
         ResponseEntity.ok(service.lintOne(snippetId))
 }
