@@ -44,6 +44,7 @@ class SecurityConfig(
                 it
                     // 1. ENDPOINTS DE SNIPPETS (CRUD)
                     // Lectura de snippets y sus tests (read:snippets)
+                    .requestMatchers("/internal/**").permitAll()
                     .requestMatchers(POST, "/snippets/share").authenticated()
                     .requestMatchers(GET, "/snippets/all").permitAll()
                     .requestMatchers(GET, "/snippets/*").permitAll()
