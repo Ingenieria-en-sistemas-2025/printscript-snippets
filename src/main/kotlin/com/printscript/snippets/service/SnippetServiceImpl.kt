@@ -244,46 +244,90 @@ class SnippetServiceImpl(
         page: Int,
         size: Int,
     ): PageDto<SnippetSummaryDto> {
-        val decodedUserId = java.net.URLDecoder.decode(userId, "UTF-8")
+        logger.info("=== START listMySnippets ===")
+        logger.info("Input userId: '$userId'")
+        logger.info("Requested page: $page, size: $size")
 
+        val decodedUserId = java.net.URLDecoder.decode(userId, "UTF-8")
+        logger.info("Decoded userId: '$decodedUserId'")
+
+        logger.info("Calling permission service...")
         val response = permissionClient
             .getAllSnippetsPermission(decodedUserId, pageNum = 0, pageSize = Int.MAX_VALUE)
             .body
 
-        logger.info("Authorization service response received")
+        logger.info("=== Permission Service Response ===")
         logger.info("Response is null: ${response == null}")
-        logger.info("Authorizations list: ${response?.authorizations}")
-        logger.info("Authorizations count: ${response?.authorizations?.size ?: 0}")
         logger.info("Total from response: ${response?.total}")
+        logger.info("Authorizations count: ${response?.authorizations?.size ?: 0}")
+
+        response?.authorizations?.forEachIndexed { index, auth ->
+            logger.info("  [$index] SnippetId: ${auth.snippetId}, Scope: ${auth.scope}")
+        }
+        logger.info("===================================")
 
         val snippetIds: List<UUID> = (response?.authorizations ?: emptyList())
             .mapNotNull { authView ->
                 try {
-                    UUID.fromString(authView.snippetId)
+                    val uuid = UUID.fromString(authView.snippetId)
+                    logger.debug("Parsed UUID successfully: ${authView.snippetId}")
+                    uuid
                 } catch (e: IllegalArgumentException) {
                     logger.warn("Invalid UUID format for snippetId: ${authView.snippetId}", e)
                     null
                 }
             }
 
-        logger.info("Found ${snippetIds.size} snippet IDs with permissions for user $userId")
+        logger.info("=== UUID Parsing Results ===")
+        logger.info("Successfully parsed ${snippetIds.size} snippet IDs")
+        snippetIds.forEachIndexed { index, id ->
+            logger.info("  [$index] UUID: $id")
+        }
+        logger.info("============================")
 
         if (snippetIds.isEmpty()) {
-            logger.info("No snippets found for user $userId, returning empty page")
+            logger.warn("No valid snippet IDs found for user $decodedUserId")
+            logger.info("=== END listMySnippets (empty result) ===")
             return PageDto(emptyList(), 0, page, size)
         }
 
+        logger.info("Querying snippet repository with ${snippetIds.size} IDs...")
         val snippets = snippetRepo.findAllById(snippetIds)
-        logger.info("Retrieved ${snippets.size} snippets from database")
+
+        logger.info("=== Database Query Results ===")
+        logger.info("Snippets found in database: ${snippets.size}")
+        snippets.forEachIndexed { index, s ->
+            logger.info("  [$index] ID: ${s.id}, Name: '${s.name}', Owner: ${s.ownerId}, Updated: ${s.updatedAt}")
+        }
+        logger.info("==============================")
+
+        // Verificar si hay snippets que no se encontraron
+        val foundIds = snippets.map { it.id }.toSet()
+        val missingIds = snippetIds.filterNot { it in foundIds }
+        if (missingIds.isNotEmpty()) {
+            logger.warn("=== Missing Snippets ===")
+            logger.warn("${missingIds.size} snippet(s) have permissions but don't exist in database:")
+            missingIds.forEach { id ->
+                logger.warn("  - Missing snippet ID: $id")
+            }
+            logger.warn("=======================")
+        }
 
         val sorted = snippets.sortedByDescending { it.updatedAt }
+        logger.info("Snippets sorted by updatedAt (descending)")
 
         val total = sorted.size
         val from = (page * size).coerceAtMost(total)
         val to = (from + size).coerceAtMost(total)
 
+        logger.info("=== Pagination ===")
+        logger.info("Total snippets: $total")
+        logger.info("From index: $from, To index: $to")
+        logger.info("==================")
+
         val pageItems = if (from < total) {
             sorted.subList(from, to).map { s ->
+                logger.debug("Fetching email for owner: ${s.ownerId}")
                 val authorEmail = userService.getEmailById(s.ownerId)
 
                 SnippetSummaryDto(
@@ -300,10 +344,17 @@ class SnippetServiceImpl(
                 )
             }
         } else {
+            logger.warn("From index ($from) >= total ($total), returning empty list")
             emptyList()
         }
 
+        logger.info("=== Final Result ===")
         logger.info("Returning page $page with ${pageItems.size} items (total: $total)")
+        pageItems.forEachIndexed { index, item ->
+            logger.info("  [$index] ${item.id}: '${item.name}' (owner: ${item.ownerEmail})")
+        }
+        logger.info("====================")
+        logger.info("=== END listMySnippets ===")
 
         return PageDto(
             items = pageItems,
