@@ -49,8 +49,6 @@ interface SnippetService {
     fun runOneTestOwnerAware(userId: String, snippetId: UUID, testCaseId: UUID): SingleTestRunResult
     fun saveFormatted(snippetId: UUID, formatted: String)
     fun saveLint(snippetId: UUID, violations: List<DiagnosticDto>)
-    fun formatOne(snippetId: UUID): SnippetDetailDto
-    fun lintOne(snippetId: UUID): SnippetDetailDto
     fun formatOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto
     fun lintOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto
 }

@@ -80,8 +80,10 @@ class RulesStateService(
         )
 
     // Lee enabled directamente (Hibernate ya deserializa JSON → List<String>)
-    private fun readEnabled(type: RulesType, ownerId: String?): Set<String> =
-        findRow(type, ownerId)?.enabledJson?.toSet() ?: emptySet()
+    private fun readEnabled(type: RulesType, ownerId: String?): Set<String> {
+        val row = findRow(type, ownerId) ?: return defaultFormatEnabled() // solo si nunca guardó
+        return row.enabledJson.toSet()
+    }
 
     // Coercea options a Map<String, Int> desde Map<String, Any?> guardado
     private fun readOptions(type: RulesType, ownerId: String?): Map<String, Int> {
@@ -99,11 +101,22 @@ class RulesStateService(
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
         val options: Map<String, Int> = rules.mapNotNull { r -> r.value?.let { v -> r.id to v } }.toMap()
 
+        val normalizedConfigText = configText
+            ?.trim()
+            ?.takeUnless { it.isEmpty() || it == "{}" }
+
+        val normalizedConfigFormat = when (configFormat?.lowercase()) {
+            "yaml", "yml" -> "yaml"
+            "json" -> "json"
+            null, "" -> "json"
+            else -> "json"
+        }
+
         val row = upsertRow(RulesType.FORMAT, ownerId)
         row.enabledJson = enabled.toList()
         row.optionsJson = options.ifEmpty { null }
-        row.configText = if (configText.isNullOrBlank() || configText == "{}") null else configText
-        row.configFormat = configFormat ?: "json"
+        row.configText = normalizedConfigText
+        row.configFormat = normalizedConfigFormat
         rulesStateRepo.save(row)
     }
 
@@ -119,7 +132,7 @@ class RulesStateService(
     }
 
     fun getFormatAsRules(ownerId: String): List<RuleDto> {
-        val enabled = readEnabled(RulesType.FORMAT, ownerId).ifEmpty { defaultFormatEnabled() }
+        val enabled = readEnabled(RulesType.FORMAT, ownerId)
         val values = readOptions(RulesType.FORMAT, ownerId).ifEmpty { defaultFormatValues() }
 
         return allFormatIds.map { id ->
@@ -129,7 +142,7 @@ class RulesStateService(
     }
 
     fun getLintAsRules(ownerId: String): List<RuleDto> {
-        val enabled = readEnabled(RulesType.LINT, ownerId).ifEmpty { defaultLintEnabled() }
+        val enabled = readEnabled(RulesType.LINT, ownerId)
         return lintRules.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
     }
 
@@ -148,6 +161,21 @@ class RulesStateService(
     fun currentLintConfig(ownerId: String): Pair<String?, String?> {
         val row = findRow(RulesType.LINT, ownerId)
         return row?.configText to row?.configFormat
+    }
+
+    fun buildFormatterConfigFromRules(rules: List<RuleDto>): String {
+        val opts = FormatterMapper.toFormatterOptionsDto(rules)
+        val config = mapOf(
+            "spaceBeforeColonInDecl" to opts.spaceBeforeColonInDecl,
+            "spaceAfterColonInDecl" to opts.spaceAfterColonInDecl,
+            "spaceAroundAssignment" to opts.spaceAroundAssignment,
+            "blankLinesAfterPrintln" to opts.blankLinesAfterPrintln,
+            "indentSpaces" to opts.indentSpaces,
+            "mandatorySingleSpaceSeparation" to opts.mandatorySingleSpaceSeparation,
+            "ifBraceBelowLine" to opts.ifBraceBelowLine,
+            "ifBraceSameLine" to opts.ifBraceSameLine,
+        )
+        return om.writeValueAsString(config)
     }
 
     private fun buildLintConfigFromEnabled(enabled: Set<String>): String {
