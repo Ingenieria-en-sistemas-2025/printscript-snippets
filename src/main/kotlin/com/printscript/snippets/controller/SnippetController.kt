@@ -141,9 +141,11 @@ class SnippetController(
 
     @GetMapping("/{snippetId}/download")
     fun download(
+        principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
         @RequestParam(defaultValue = "false") formatted: Boolean,
     ): ResponseEntity<ByteArray> {
+        service.checkPermissions(principal.name, snippetId)
         val bytes = service.download(snippetId, formatted) // trae los bytes del bucket
         val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
