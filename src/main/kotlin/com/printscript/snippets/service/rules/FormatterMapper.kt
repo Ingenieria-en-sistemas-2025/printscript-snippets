@@ -3,33 +3,35 @@ package com.printscript.snippets.service.rules
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.execution.dto.FormatterOptionsDto
 
-// traduce las RuleDto que vienen de la ui para el DTO que entiende el servicio de execution cuando le pedís que formatee código.
 object FormatterMapper {
+
     fun toFormatterOptionsDto(rules: List<RuleDto>): FormatterOptionsDto =
         FormatterOptionsDto(
-            // Si está activa -> true; si no -> null (no tocar)
-            spaceBeforeColonInDecl = if (rules.any { it.id == "enforce-spacing-before-colon-in-declaration" && it.enabled }) true else null,
-            spaceAfterColonInDecl = if (rules.any { it.id == "enforce-spacing-after-colon-in-declaration" && it.enabled }) true else null,
-
-            // Mutuamente excluyentes; si ninguna está activa -> null
-            spaceAroundAssignment = when {
-                rules.any { it.id == "enforce-spacing-around-equals" && it.enabled } -> true
-                rules.any { it.id == "enforce-no-spacing-around-equals" && it.enabled } -> false
-                else -> null
-            },
-
-            // Numéricas: toma el primer alias que venga con value
-            blankLinesAfterPrintln = rules.firstOrNull {
-                it.id == "line-breaks-after-println" || it.id == "line_breaks_after_println"
-            }?.value,
-
-            indentSpaces = rules.firstOrNull {
-                it.id == "indent-spaces" || it.id == "indent_size" || it.id == "tabsize"
-            }?.value,
-
-            // Otros flags → true si están activos; null si no (no tocar)
-            mandatorySingleSpaceSeparation = if (rules.any { it.id == "mandatory-single-space-separation" && it.enabled }) true else null,
-            ifBraceBelowLine = if (rules.any { it.id == "if-brace-below-line" && it.enabled }) true else null,
-            ifBraceSameLine = if (rules.any { it.id == "if-brace-same-line" && it.enabled }) true else null,
+            spaceBeforeColonInDecl = enabled(rules, "enforce-spacing-before-colon-in-declaration"),
+            spaceAfterColonInDecl = enabled(rules, "enforce-spacing-after-colon-in-declaration"),
+            spaceAroundAssignment = assignmentSpacing(rules),
+            blankLinesAfterPrintln = numericValue(rules, "line-breaks-after-println", "line_breaks_after_println"),
+            indentSpaces = numericValue(rules, "indent-spaces", "indent_size", "tabsize"),
+            mandatorySingleSpaceSeparation = enabled(rules, "mandatory-single-space-separation"),
+            ifBraceBelowLine = enabled(rules, "if-brace-below-line"),
+            ifBraceSameLine = enabled(rules, "if-brace-same-line"),
         )
+
+    private fun enabled(rules: List<RuleDto>, id: String): Boolean? =
+        if (rules.any { it.id == id && it.enabled }) true else null
+
+    private fun assignmentSpacing(rules: List<RuleDto>): Boolean? = when {
+        rules.any { it.id == "enforce-spacing-around-equals" && it.enabled } -> true
+        rules.any { it.id == "enforce-no-spacing-around-equals" && it.enabled } -> false
+        else -> null
+    }
+
+    private fun numericValue(rules: List<RuleDto>, vararg ids: String): Int? =
+        rules.firstOrNull { ids.contains(it.id) }?.let { rule ->
+            when (val v = rule.value) {
+                is Number -> v.toInt()
+                is String -> v.toIntOrNull()
+                else -> null
+            }
+        }
 }

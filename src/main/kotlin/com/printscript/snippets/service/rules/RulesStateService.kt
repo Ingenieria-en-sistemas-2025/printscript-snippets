@@ -91,21 +91,22 @@ class RulesStateService(
         return row.enabledJson.toSet()
     }
 
-    // Coercea options a Map<String, Int> desde Map<String, Any?> guardado
-    private fun readOptions(type: RulesType, ownerId: String?): Map<String, Int> {
-        val raw: Map<String, Any?> = findRow(type, ownerId)?.optionsJson ?: return emptyMap()
-        return raw.mapNotNull { (k, v) ->
-            when (v) {
-                is Number -> k to v.toInt()
-                is String -> v.toIntOrNull()?.let { k to it }
-                else -> null
-            }
-        }.toMap()
+    private fun readOptions(type: RulesType, ownerId: String?): Map<String, Any?> {
+        val row = findRow(type, ownerId)
+        val raw = row?.optionsJson ?: return emptyMap()
+        return raw.filterValues { it != null }
     }
 
     fun saveFormatState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
-        val options: Map<String, Int> = rules.mapNotNull { r -> r.value?.let { v -> r.id to v } }.toMap()
+        val options: Map<String, Int> = rules.mapNotNull { r ->
+            val intValue = when (val v = r.value) {
+                is Number -> v.toInt()
+                is String -> v.toIntOrNull()
+                else -> null
+            }
+            intValue?.let { r.id to it }
+        }.toMap()
 
         val normalizedConfigText = configText
             ?.trim()
@@ -128,10 +129,13 @@ class RulesStateService(
 
     fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
+        val options: Map<String, Any> = rules.mapNotNull { r ->
+            r.value?.let { v -> r.id to v }
+        }.toMap()
 
         val row = upsertRow(RulesType.LINT, ownerId)
         row.enabledJson = enabled.toList()
-        row.optionsJson = null
+        row.optionsJson = options.ifEmpty { null }
         row.configText = configText
         row.configFormat = configFormat
         rulesStateRepo.save(row)
@@ -139,17 +143,38 @@ class RulesStateService(
 
     fun getFormatAsRules(ownerId: String): List<RuleDto> {
         val enabled = readEnabled(RulesType.FORMAT, ownerId)
-        val values = readOptions(RulesType.FORMAT, ownerId).ifEmpty { defaultFormatValues() }
+        val values = readOptions(RulesType.FORMAT, ownerId)
+        val defaults = defaultFormatValues()
 
         return allFormatIds.map { id ->
-            val value = if (fmtNumericDefaults.containsKey(id)) values[id] ?: fmtNumericDefaults[id] else null
-            RuleDto(id = id, enabled = enabled.contains(id), value = value)
+            val raw = values[id] ?: defaults[id]
+            val intVal = when (raw) {
+                is Number -> raw.toInt()
+                is String -> raw.toIntOrNull()
+                else -> null
+            }
+            RuleDto(id = id, enabled = enabled.contains(id), value = intVal)
         }
     }
 
     fun getLintAsRules(ownerId: String): List<RuleDto> {
         val enabled = readEnabled(RulesType.LINT, ownerId)
-        return lintRules.distinct().map { id -> RuleDto(id = id, enabled = enabled.contains(id)) }
+        val values = readOptions(RulesType.LINT, ownerId)
+
+        return lintRules.distinct().map { id ->
+            val raw = values[id]
+            val value: Any? = when (raw) {
+                is String -> raw
+                is Number -> raw.toInt()
+                else -> null
+            }
+
+            RuleDto(
+                id = id,
+                enabled = enabled.contains(id),
+                value = value,
+            )
+        }
     }
 
     fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
