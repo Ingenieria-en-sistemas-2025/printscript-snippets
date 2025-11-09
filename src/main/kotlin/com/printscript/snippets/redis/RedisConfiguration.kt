@@ -27,11 +27,12 @@ class RedisConfiguration(
         }
 
     @Bean("redisTemplateJson")
-    fun redisJsonTemplate(cf: LettuceConnectionFactory) =
+    fun redisJsonTemplate(cf: LettuceConnectionFactory): RedisTemplate<String, Any> =
         RedisTemplate<String, Any>().apply {
             setConnectionFactory(cf)
+            val json = GenericJackson2JsonRedisSerializer()
             keySerializer = StringRedisSerializer()
-            valueSerializer = GenericJackson2JsonRedisSerializer()
+            valueSerializer = json
             hashKeySerializer = keySerializer
             hashValueSerializer = valueSerializer
             afterPropertiesSet()
