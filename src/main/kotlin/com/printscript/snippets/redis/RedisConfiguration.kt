@@ -28,17 +28,15 @@ class RedisConfiguration(
         }
 
     @Bean("redisTemplateJson")
-    fun redisTemplateJson(cf: RedisConnectionFactory): RedisTemplate<String, Any> {
-        val template = RedisTemplate<String, Any>()
-        template.setConnectionFactory(cf)
-
-        val json = GenericJackson2JsonRedisSerializer()
-        template.keySerializer = StringRedisSerializer()
-        template.valueSerializer = json
-        template.hashKeySerializer = template.keySerializer
-        template.hashValueSerializer = template.valueSerializer
-
-        template.afterPropertiesSet()
-        return template
+    fun redisTemplateJson(
+        cf: RedisConnectionFactory,
+        genericJsonSerializer: GenericJackson2JsonRedisSerializer,
+    ): RedisTemplate<String, Any> = RedisTemplate<String, Any>().apply {
+        setConnectionFactory(cf)
+        keySerializer = StringRedisSerializer()
+        valueSerializer = genericJsonSerializer
+        hashKeySerializer = keySerializer
+        hashValueSerializer = valueSerializer
+        afterPropertiesSet()
     }
 }
