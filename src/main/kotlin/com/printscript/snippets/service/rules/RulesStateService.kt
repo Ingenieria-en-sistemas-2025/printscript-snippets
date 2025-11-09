@@ -101,9 +101,9 @@ class RulesStateService(
 
         val row = upsertRow(RulesType.FORMAT, ownerId)
         row.enabledJson = enabled.toList()
-        row.optionsJson = options.mapValues { it.value as Any }
-        row.configText = configText
-        row.configFormat = configFormat
+        row.optionsJson = options.ifEmpty { null }
+        row.configText = if (configText.isNullOrBlank() || configText == "{}") null else configText
+        row.configFormat = configFormat ?: "json"
         rulesStateRepo.save(row)
     }
 
@@ -135,7 +135,14 @@ class RulesStateService(
 
     fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
         val row = findRow(RulesType.FORMAT, ownerId)
-        return row?.configText to row?.configFormat
+
+        val cfgText: String? = row
+            ?.configText
+            ?.takeUnless { it.isBlank() || it == "{}" }
+
+        val cfgFmt: String? = row?.configFormat
+
+        return cfgText to cfgFmt
     }
 
     fun currentLintConfig(ownerId: String): Pair<String?, String?> {
@@ -162,8 +169,13 @@ class RulesStateService(
         val row = findRow(RulesType.LINT, ownerId)
         val enabled = readEnabled(RulesType.LINT, ownerId).ifEmpty { defaultLintEnabled() }
 
-        val cfgText = row?.configText ?: buildLintConfigFromEnabled(enabled)
-        val cfgFmt = row?.configFormat ?: "json"
+        val cfgText: String = row
+            ?.configText
+            ?.takeUnless { it.isBlank() || it == "{}" }
+            ?: buildLintConfigFromEnabled(enabled)
+
+        val cfgFmt: String = row?.configFormat ?: "json"
+
         return cfgText to cfgFmt
     }
 }
