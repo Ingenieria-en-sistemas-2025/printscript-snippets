@@ -1,5 +1,6 @@
 package com.printscript.snippets.service.rules
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.domain.model.RulesType
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Service
 class RulesStateService(
     private val rulesStateRepo: RulesStateRepo,
 ) {
+
+    private val om = jacksonObjectMapper()
+
     private companion object {
         private const val DEFAULT_INDENT = 3
         private const val DEFAULT_TABSIZE = 3
@@ -137,5 +141,21 @@ class RulesStateService(
     fun currentLintConfig(ownerId: String): Pair<String?, String?> {
         val row = findRow(RulesType.LINT, ownerId)
         return row?.configText to row?.configFormat
+    }
+
+    private fun buildLintConfigFromEnabled(enabled: Set<String>): String {
+        val all = lintRules.toSet()
+        val rulesMap = all.associateWith { enabled.contains(it) }
+        val root = mapOf("rules" to rulesMap)
+        return om.writeValueAsString(root)
+    }
+
+    fun currentLintConfigEffective(ownerId: String): Pair<String, String> {
+        val row = findRow(RulesType.LINT, ownerId)
+        val enabled = readEnabled(RulesType.LINT, ownerId).ifEmpty { defaultLintEnabled() }
+
+        val cfgText = row?.configText ?: buildLintConfigFromEnabled(enabled)
+        val cfgFmt = row?.configFormat ?: "json"
+        return cfgText to cfgFmt
     }
 }

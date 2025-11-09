@@ -94,8 +94,17 @@ class SnippetServiceImpl(
         logger.debug("Uploading content to asset client with key: $contentKey")
         assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
 
-        logger.debug("Calling execution service for linting...")
-        val lintRes = executionClient.lint(LintReq(snippet.language, snippet.languageVersion, content))
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
+        logger.debug("Calling execution service for linting with owner rules...")
+        val lintRes = executionClient.lint(
+            LintReq(
+                language = snippet.language,
+                version = snippet.languageVersion,
+                content = content,
+                configText = cfgText,
+                configFormat = cfgFmt,
+            ),
+        )
 
         val version = versionRepo.save(
             SnippetVersion(
@@ -710,7 +719,7 @@ class SnippetServiceImpl(
 
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig(snippet.ownerId)
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
 
         val req = LintReq(
             language = snippet.language,
@@ -766,8 +775,7 @@ class SnippetServiceImpl(
 
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        val (cfgText, cfgFmt) = rulesStateService.currentLintConfig(snippet.ownerId)
-
+        val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
         val req = LintReq(
             language = snippet.language,
             version = snippet.languageVersion,
