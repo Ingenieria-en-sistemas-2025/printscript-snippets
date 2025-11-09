@@ -144,10 +144,18 @@ class RulesStateService(
     }
 
     private fun buildLintConfigFromEnabled(enabled: Set<String>): String {
-        val all = lintRules.toSet()
-        val rulesMap = all.associateWith { enabled.contains(it) }
-        val root = mapOf("rules" to rulesMap)
-        return om.writeValueAsString(root)
+        val cfg = mapOf(
+            "identifiers" to mapOf(
+                "enabled" to enabled.contains("IdentifierStyleRuleStreaming"),
+            ),
+            "printlnRule" to mapOf(
+                "enabled" to enabled.contains("PrintlnSimpleArgRuleStreaming"),
+            ),
+            "readInputRule" to mapOf(
+                "enabled" to enabled.contains("ReadInputSimpleArgRuleStreaming"),
+            ),
+        )
+        return om.writeValueAsString(cfg)
     }
 
     fun currentLintConfigEffective(ownerId: String): Pair<String, String> {
