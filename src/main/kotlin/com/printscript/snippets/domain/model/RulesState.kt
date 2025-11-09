@@ -8,22 +8,36 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
-@Table(name = "rules_state")
+@Table(
+    name = "rules_state",
+    uniqueConstraints = [
+        // una fila por (tipo, owner) — ownerId null = GLOBAL
+        UniqueConstraint(name = "uq_rules_scope", columnNames = ["type", "owner_id"]),
+    ],
+)
 class RulesState(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     var type: RulesType, // FORMAT | LINT
 
-    @Column(name = "enabled_json", nullable = false, columnDefinition = "text")
-    var enabledJson: String, // JSON array de ids habilitados
+    @Column(name = "owner_id", length = 64) // null => reglas GLOBAL
+    var ownerId: String? = null,
 
-    @Column(name = "options_json", columnDefinition = "text")
-    var optionsJson: String? = null, // JSON con parámetros (indentSpaces, maxLineLength, etc.)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "enabled_json", columnDefinition = "jsonb", nullable = false)
+    var enabledJson: List<String> = emptyList(),
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "options_json", columnDefinition = "jsonb")
+    var optionsJson: Map<String, Any?>? = null,
 
     @Column(name = "config_text", columnDefinition = "text")
     var configText: String? = null,

@@ -23,4 +23,7 @@ interface SnippetRepo : JpaRepository<Snippet, UUID> {
 """,
     )
     fun getLangAndVersion(@Param("id") id: UUID): LangVerProjection
+
+    @Query("select s.id from Snippet s where s.ownerId = :ownerId")
+    fun findAllIdsByOwner(ownerId: String): List<UUID>
 }

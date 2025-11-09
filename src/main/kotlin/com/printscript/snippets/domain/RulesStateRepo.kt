@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 
 interface RulesStateRepo : JpaRepository<RulesState, Long> {
-    fun findByType(type: RulesType): Optional<RulesState>
+    fun findByTypeAndOwnerId(type: RulesType, ownerId: String?): Optional<RulesState>
 }

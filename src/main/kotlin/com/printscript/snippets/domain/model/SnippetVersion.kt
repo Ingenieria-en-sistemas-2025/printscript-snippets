@@ -2,6 +2,8 @@ package com.printscript.snippets.domain.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Table
@@ -44,6 +46,10 @@ class SnippetVersion(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "parse_errors", columnDefinition = "jsonb", nullable = false)
     var parseErrors: String = "[]",
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "lint_status", nullable = false, length = 16)
+    var lintStatus: LintStatus = LintStatus.PENDING,
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),

@@ -32,8 +32,16 @@ spring:
 
 
 streams:
-  formatting: ps.formatting
-  linting: ps.linting
+  enabled: true
+  formatting:
+    key: ps.formatting
+    group: formatting-workers
+  linting:
+    key: ps.linting
+    group: linting-workers
+  dlq:
+    formatting: ps.dlq.formatting
+    linting: ps.dlq.linting
 
 asset:
   service:

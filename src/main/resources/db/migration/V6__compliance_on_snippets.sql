@@ -1,0 +1,2 @@
+ALTER TABLE snippet
+    ADD COLUMN IF NOT EXISTS compliance VARCHAR(32) NOT NULL DEFAULT 'pending';
