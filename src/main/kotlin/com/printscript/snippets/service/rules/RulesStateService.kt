@@ -81,7 +81,13 @@ class RulesStateService(
 
     // Lee enabled directamente (Hibernate ya deserializa JSON → List<String>)
     private fun readEnabled(type: RulesType, ownerId: String?): Set<String> {
-        val row = findRow(type, ownerId) ?: return defaultFormatEnabled() // solo si nunca guardó
+        val row = findRow(type, ownerId)
+        if (row == null) {
+            return when (type) {
+                RulesType.FORMAT -> defaultFormatEnabled()
+                RulesType.LINT -> defaultLintEnabled()
+            }
+        }
         return row.enabledJson.toSet()
     }
 
@@ -178,10 +184,23 @@ class RulesStateService(
         return om.writeValueAsString(config)
     }
 
-    private fun buildLintConfigFromEnabled(enabled: Set<String>): String {
+    private fun buildLintConfigFromEnabled(enabled: Set<String>, rules: List<RuleDto>? = null): String {
+        val identifierValue: String? = rules
+            ?.firstOrNull { it.id == "IdentifierStyleRuleStreaming" }
+            ?.value
+            ?.toString()
+            ?.uppercase()
+
+        val style = when (identifierValue) {
+            "SNAKE_CASE" -> "SNAKE_CASE"
+            "CAMEL_CASE" -> "CAMEL_CASE"
+            else -> "CAMEL_CASE"
+        }
+
         val cfg = mapOf(
             "identifiers" to mapOf(
                 "enabled" to enabled.contains("IdentifierStyleRuleStreaming"),
+                "style" to style,
             ),
             "printlnRule" to mapOf(
                 "enabled" to enabled.contains("PrintlnSimpleArgRuleStreaming"),
@@ -195,12 +214,13 @@ class RulesStateService(
 
     fun currentLintConfigEffective(ownerId: String): Pair<String, String> {
         val row = findRow(RulesType.LINT, ownerId)
-        val enabled = readEnabled(RulesType.LINT, ownerId).ifEmpty { defaultLintEnabled() }
+        val enabled: Set<String> = row?.enabledJson?.toSet() ?: defaultLintEnabled()
+        val rules = getLintAsRules(ownerId)
 
         val cfgText: String = row
             ?.configText
             ?.takeUnless { it.isBlank() || it == "{}" }
-            ?: buildLintConfigFromEnabled(enabled)
+            ?: buildLintConfigFromEnabled(enabled, rules)
 
         val cfgFmt: String = row?.configFormat ?: "json"
 
