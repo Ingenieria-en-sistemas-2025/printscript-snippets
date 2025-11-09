@@ -14,13 +14,12 @@ class RedisEventBus(
     private val env: Environment,
 ) : EventBus {
 
-    private val streamKeys = mutableMapOf<Channel, String>()
+    private fun sanitizeKey(raw: String) = raw.trim().trim('"', '\'')
 
     override fun publish(channel: Channel, event: DomainEvent) {
-        val streamKey = streamKeys.getOrPut(channel) { env.getRequiredProperty("${channel.streamKeyProp}.key") }
-        val rec = StreamRecords.newRecord()
-            .ofObject(event)
-            .withStreamKey(streamKey)
+        val raw = env.getRequiredProperty("${channel.streamKeyProp}.key")
+        val streamKey = sanitizeKey(raw)
+        val rec = StreamRecords.newRecord().ofObject(event).withStreamKey(streamKey)
         redisJson.opsForStream<String, Any>().add(rec)
     }
 }
