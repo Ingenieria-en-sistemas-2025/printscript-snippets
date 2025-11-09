@@ -33,11 +33,11 @@ class RulesState(
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "enabled_json", columnDefinition = "jsonb", nullable = false)
-    var enabledJson: String = "[]",
+    var enabledJson: List<String> = emptyList(),
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "options_json", columnDefinition = "jsonb")
-    var optionsJson: String? = null,
+    var optionsJson: Map<String, Any?>? = null,
 
     @Column(name = "config_text", columnDefinition = "text")
     var configText: String? = null,

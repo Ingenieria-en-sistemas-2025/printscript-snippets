@@ -1,7 +1,5 @@
 package com.printscript.snippets.service.rules
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.domain.model.RulesType
@@ -12,8 +10,6 @@ import org.springframework.stereotype.Service
 class RulesStateService(
     private val rulesStateRepo: RulesStateRepo,
 ) {
-    private val om = jacksonObjectMapper()
-
     private companion object {
         private const val DEFAULT_INDENT = 3
         private const val DEFAULT_TABSIZE = 3
@@ -31,7 +27,7 @@ class RulesStateService(
         "if-brace-same-line",
     )
 
-    // Numéricas (con valor editable en UI)  los vals van en optionsJson
+    // Numéricas (van en optionsJson)
     private val fmtNumericDefaults = mapOf(
         "indent_size" to DEFAULT_INDENT,
         "indent-spaces" to DEFAULT_INDENT,
@@ -72,27 +68,20 @@ class RulesStateService(
                 id = null,
                 type = type,
                 ownerId = ownerId,
-                enabledJson = "[]",
+                enabledJson = emptyList(),
                 optionsJson = null,
                 configText = null,
                 configFormat = null,
             ),
         )
 
-    // Lee desde la tabla rules_state -> enabledJson y lo parsea a Set<String>
-    // Si no hay registro (Optional.empty), volvemos emptySet() y arriba aplicamos defaults.
+    // Lee enabled directamente (Hibernate ya deserializa JSON → List<String>)
     private fun readEnabled(type: RulesType, ownerId: String?): Set<String> =
-        findRow(type, ownerId)
-            ?.let { s -> om.readValue(s.enabledJson, Set::class.java) }
-            ?.map { it.toString() }
-            ?.toSet()
-            ?: emptySet()
+        findRow(type, ownerId)?.enabledJson?.toSet() ?: emptySet()
 
-    // Lee desde la tabla rules_state -> optionsJson y lo parsea a Map<String, Int>
-    // Admitimos que el JSON pueda venir con números o strings numéricos (por eso el when).
+    // Coercea options a Map<String, Int> desde Map<String, Any?> guardado
     private fun readOptions(type: RulesType, ownerId: String?): Map<String, Int> {
-        val json = findRow(type, ownerId)?.optionsJson ?: return emptyMap()
-        val raw: Map<String, Any?> = om.readValue(json, object : TypeReference<Map<String, Any?>>() {})
+        val raw: Map<String, Any?> = findRow(type, ownerId)?.optionsJson ?: return emptyMap()
         return raw.mapNotNull { (k, v) ->
             when (v) {
                 is Number -> k to v.toInt()
@@ -107,8 +96,8 @@ class RulesStateService(
         val options: Map<String, Int> = rules.mapNotNull { r -> r.value?.let { v -> r.id to v } }.toMap()
 
         val row = upsertRow(RulesType.FORMAT, ownerId)
-        row.enabledJson = om.writeValueAsString(enabled)
-        row.optionsJson = om.writeValueAsString(options)
+        row.enabledJson = enabled.toList()
+        row.optionsJson = options.mapValues { it.value as Any }
         row.configText = configText
         row.configFormat = configFormat
         rulesStateRepo.save(row)
@@ -118,7 +107,7 @@ class RulesStateService(
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
 
         val row = upsertRow(RulesType.LINT, ownerId)
-        row.enabledJson = om.writeValueAsString(enabled)
+        row.enabledJson = enabled.toList()
         row.optionsJson = null
         row.configText = configText
         row.configFormat = configFormat
