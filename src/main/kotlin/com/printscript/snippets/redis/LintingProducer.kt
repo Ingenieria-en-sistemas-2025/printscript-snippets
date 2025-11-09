@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class LintingProducer(
-    @Value("\${streams.linting}") streamKey: String,
+    @Value("\${streams.linting.key}") streamKey: String,
     @Qualifier("redisTemplateString")
     redis: RedisTemplate<String, String>,
 ) : RedisStreamProducer(streamKey, redis)

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class FormattingProducer(
-    @Value("\${streams.formatting}") streamKey: String,
+    @Value("\${streams.formatting.key}") streamKey: String,
     @Qualifier("redisTemplateString")
     redis: RedisTemplate<String, String>,
 ) : RedisStreamProducer(streamKey, redis)
