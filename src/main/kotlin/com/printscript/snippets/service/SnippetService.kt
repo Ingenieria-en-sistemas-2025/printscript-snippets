@@ -43,7 +43,7 @@ interface SnippetService {
     fun checkPermissions(
         userId: String,
         snippetId: UUID,
-        min: SnippetAuthorization.AccessLevel = SnippetAuthorization.AccessLevel.READER
+        min: SnippetAuthorization.AccessLevel = SnippetAuthorization.AccessLevel.READER,
     )
     fun filename(snippetId: UUID, formatted: Boolean): String
     fun runOneTestOwnerAware(userId: String, snippetId: UUID, testCaseId: UUID): SingleTestRunResult

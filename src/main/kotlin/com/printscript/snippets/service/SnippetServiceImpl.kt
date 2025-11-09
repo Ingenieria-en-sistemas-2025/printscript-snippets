@@ -578,7 +578,7 @@ class SnippetServiceImpl(
     override fun checkPermissions(
         userId: String,
         snippetId: UUID,
-        min: SnippetAuthorization.AccessLevel
+        min: SnippetAuthorization.AccessLevel,
     ) {
         val snippet = snippetRepo.findById(snippetId)
             .orElseThrow { NotFound("Snippet not found") }
@@ -586,7 +586,7 @@ class SnippetServiceImpl(
         when (min) {
             SnippetAuthorization.AccessLevel.READER -> authorization.requireReaderOrAbove(userId, snippet)
             SnippetAuthorization.AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, snippet)
-            SnippetAuthorization.AccessLevel.OWNER  -> authorization.requireOwner(userId, snippet)
+            SnippetAuthorization.AccessLevel.OWNER -> authorization.requireOwner(userId, snippet)
         }
     }
 
@@ -596,10 +596,11 @@ class SnippetServiceImpl(
         val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
         val base = "${snippet.name}-v${version.versionNumber}"
-        return if (formatted && version.isFormatted && version.formattedKey != null)
+        return if (formatted && version.isFormatted && version.formattedKey != null) {
             "$base.formatted.prs"
-        else
+        } else {
             "$base.prs"
+        }
     }
 
     @Transactional(readOnly = true)
