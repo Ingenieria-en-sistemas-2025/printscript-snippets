@@ -248,7 +248,7 @@ class SnippetController(
     fun runSnippet(
         auth: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
-        @RequestBody(required = false) body: RunSnippetInputsReq?,
+        @RequestBody body: RunSnippetInputsReq = RunSnippetInputsReq()
     ): ResponseEntity<RunRes> {
         val userId = auth.token.subject
         val res = snippetService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
