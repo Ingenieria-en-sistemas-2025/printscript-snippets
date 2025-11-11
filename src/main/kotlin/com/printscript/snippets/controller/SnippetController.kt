@@ -150,6 +150,7 @@ class SnippetController(
         val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
             .contentType(MediaType.TEXT_PLAIN)
             .body(bytes)
     }
