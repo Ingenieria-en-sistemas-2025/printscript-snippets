@@ -7,6 +7,8 @@ import com.printscript.snippets.execution.dto.LintReq
 import com.printscript.snippets.execution.dto.LintRes
 import com.printscript.snippets.execution.dto.ParseReq
 import com.printscript.snippets.execution.dto.ParseRes
+import com.printscript.snippets.execution.dto.RunReq
+import com.printscript.snippets.execution.dto.RunRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.execution.dto.RunSingleTestRes
 import org.springframework.beans.factory.annotation.Qualifier
@@ -40,6 +42,14 @@ class RemoteSnippetExecution(
     override fun format(req: FormatReq): FormatRes =
         rest.post().uri("$baseUrl/format").headers(::auth).body(req).retrieve()
             .body(FormatRes::class.java) ?: error("empty format")
+
+    override fun run(req: RunReq): RunRes =
+        rest.post()
+            .uri("$baseUrl/run")
+            .headers(::auth)
+            .body(req)
+            .retrieve()
+            .body(RunRes::class.java) ?: error("empty run")
 
     override fun runSingleTest(req: RunSingleTestReq): RunSingleTestRes =
         rest.post().uri("$baseUrl/run-test")

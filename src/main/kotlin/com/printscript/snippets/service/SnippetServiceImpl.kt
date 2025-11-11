@@ -33,6 +33,8 @@ import com.printscript.snippets.execution.dto.LintReq
 import com.printscript.snippets.execution.dto.LintRes
 import com.printscript.snippets.execution.dto.ParseReq
 import com.printscript.snippets.execution.dto.ParseRes
+import com.printscript.snippets.execution.dto.RunReq
+import com.printscript.snippets.execution.dto.RunRes
 import com.printscript.snippets.execution.dto.RunSingleTestReq
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
@@ -735,5 +737,30 @@ class SnippetServiceImpl(
 
         val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
         return toDetailDto(snippet, updated, original)
+    }
+
+    override fun runSnippetOwnerAware(
+        userId: String,
+        snippetId: UUID,
+        inputs: List<String>?,
+    ): RunRes {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        authorization.requireReaderOrAbove(userId, snippet)
+
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val contentBytes = assetClient.download(containerName, latest.contentKey)
+        val content = String(contentBytes, StandardCharsets.UTF_8)
+
+        val req = RunReq(
+            language = snippet.language, // ej. "printscript"
+            version = snippet.languageVersion, // ej. "1.1"
+            content = content,
+            inputs = inputs,
+        )
+
+        val response = executionClient.run(req)
+        return response
     }
 }
