@@ -19,8 +19,7 @@ class RedisEventBus(
     private fun sanitizeKey(raw: String) = raw.trim().trim('"', '\'')
 
     override fun publish(channel: Channel, event: DomainEvent) {
-        val raw = env.getRequiredProperty("${channel.streamKeyProp}.key")
-        val streamKey = sanitizeKey(raw)
+        val streamKey = sanitizeKey(env.getRequiredProperty("${channel.streamKeyProp}.key"))
         val json = om.writeValueAsString(event)
 
         val rec = StreamRecords.newRecord()
