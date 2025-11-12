@@ -17,6 +17,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/internal/snippets")
 class InternalWriteController(private val results: SnippetServiceImpl, private val versionRepo: SnippetVersionRepo, private val snippetRepo: SnippetRepo) {
+
     @PostMapping("/{id}/format")
     fun saveFmt(@PathVariable id: UUID, @RequestBody body: Map<String, String>) {
         val formatted = body["content"] ?: throw IllegalArgumentException("content is required")

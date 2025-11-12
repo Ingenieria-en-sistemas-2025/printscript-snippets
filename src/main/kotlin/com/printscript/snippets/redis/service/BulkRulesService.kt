@@ -33,7 +33,7 @@ class BulkRulesService(
     }
 
     fun onLintingRulesChanged(ownerId: String) {
-        val (cfg, fmt) = rulesStateService.currentLintConfig(ownerId)
+        val (cfg, fmt) = rulesStateService.currentLintConfigEffective(ownerId)
         val corr = UUID.randomUUID().toString()
 
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
