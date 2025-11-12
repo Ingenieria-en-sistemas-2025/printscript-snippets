@@ -5,6 +5,7 @@ import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
 import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.redis.connection.stream.MapRecord
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
@@ -17,14 +18,20 @@ class RedisEventBus(
 ) {
     private fun clean(k: String) = k.trim().trim('"', '\'')
 
-    private val lintingProducer = object : SimpleRedisStreamProducer(clean(rawLintKey), redis) {}
-    private val formattingProducer = object : SimpleRedisStreamProducer(clean(rawFmtKey), redis) {}
+    private val lintKey = clean(rawLintKey)
+    private val fmtKey = clean(rawFmtKey)
 
-    fun publishLint(ev: SnippetsLintingRulesUpdated) {
-        lintingProducer.emit(om.writeValueAsString(ev))
+    fun publishLint(ev: com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated) {
+        val json = om.writeValueAsString(ev)
+        redis.opsForStream<String, String>()
+            .add(MapRecord.create(lintKey, mapOf("value" to json)))
+        println("[RedisEventBus] publishLint -> stream=$lintKey field=value size=${json.length}")
     }
 
-    fun publishFormatting(ev: SnippetsFormattingRulesUpdated) {
-        formattingProducer.emit(om.writeValueAsString(ev))
+    fun publishFormatting(ev: com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated) {
+        val json = om.writeValueAsString(ev)
+        redis.opsForStream<String, String>()
+            .add(MapRecord.create(fmtKey, mapOf("value" to json)))
+        println("[RedisEventBus] publishFormatting -> stream=$fmtKey field=value size=${json.length}")
     }
 }
