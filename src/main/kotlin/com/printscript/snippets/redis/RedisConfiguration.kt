@@ -23,6 +23,10 @@ class RedisConfiguration(
     fun redisTemplate(cf: LettuceConnectionFactory): RedisTemplate<String, String> =
         RedisTemplate<String, String>().apply {
             setConnectionFactory(cf)
+            keySerializer = StringRedisSerializer()
+            valueSerializer = StringRedisSerializer()
+            hashKeySerializer = StringRedisSerializer()
+            hashValueSerializer = StringRedisSerializer()
             afterPropertiesSet()
         }
 
