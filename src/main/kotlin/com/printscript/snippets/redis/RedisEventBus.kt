@@ -21,14 +21,14 @@ class RedisEventBus(
     private val lintKey = clean(rawLintKey)
     private val fmtKey = clean(rawFmtKey)
 
-    fun publishLint(ev: com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated) {
+    fun publishLint(ev: SnippetsLintingRulesUpdated) {
         val json = om.writeValueAsString(ev)
         redis.opsForStream<String, String>()
             .add(MapRecord.create(lintKey, mapOf("value" to json)))
         println("[RedisEventBus] publishLint -> stream=$lintKey field=value size=${json.length}")
     }
 
-    fun publishFormatting(ev: com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated) {
+    fun publishFormatting(ev: SnippetsFormattingRulesUpdated) {
         val json = om.writeValueAsString(ev)
         redis.opsForStream<String, String>()
             .add(MapRecord.create(fmtKey, mapOf("value" to json)))
