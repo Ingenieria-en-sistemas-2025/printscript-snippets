@@ -4,8 +4,7 @@ import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Compliance
 import com.printscript.snippets.domain.model.LintStatus
-import com.printscript.snippets.redis.Channel
-import com.printscript.snippets.redis.EventBus
+import com.printscript.snippets.redis.RedisEventBus
 import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
 import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
 import com.printscript.snippets.service.rules.RulesStateService
@@ -17,7 +16,7 @@ class BulkRulesService(
     private val snippetRepo: SnippetRepo,
     private val versionRepo: SnippetVersionRepo,
     private val rulesStateService: RulesStateService,
-    private val bus: EventBus,
+    private val bus: RedisEventBus,
 ) {
     fun onFormattingRulesChanged(ownerId: String) {
         val (cfg, fmt) = rulesStateService.currentFormatConfig(ownerId)
@@ -25,10 +24,7 @@ class BulkRulesService(
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
         ids.forEach { snippetId ->
             val lv = snippetRepo.getLangAndVersion(snippetId)
-            bus.publish(
-                Channel.FORMATTING,
-                SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfg, fmt),
-            )
+            bus.publishFormatting(SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfg, fmt))
         }
     }
 
@@ -47,10 +43,7 @@ class BulkRulesService(
 
         ids.forEach { id ->
             val lv = snippetRepo.getLangAndVersion(id)
-            bus.publish(
-                Channel.LINTING,
-                SnippetsLintingRulesUpdated(corr, id, lv.language, lv.languageVersion, cfg, fmt),
-            )
+            bus.publishLint(SnippetsLintingRulesUpdated(corr, id, lv.language, lv.languageVersion, cfg, fmt))
         }
     }
 }
