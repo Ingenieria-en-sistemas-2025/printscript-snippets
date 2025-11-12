@@ -18,6 +18,7 @@ import com.printscript.snippets.execution.dto.LintReq
 import com.printscript.snippets.execution.dto.LintRes
 import com.printscript.snippets.execution.dto.ParseReq
 import com.printscript.snippets.execution.dto.ParseRes
+import com.printscript.snippets.execution.dto.RunRes
 import java.util.UUID
 
 interface SnippetService {
@@ -51,4 +52,5 @@ interface SnippetService {
     fun saveLint(snippetId: UUID, violations: List<DiagnosticDto>)
     fun formatOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto
     fun lintOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto
+    fun runSnippetOwnerAware(userId: String, snippetId: UUID, inputs: List<String>?): RunRes
 }

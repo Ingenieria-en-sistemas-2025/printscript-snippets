@@ -6,6 +6,7 @@ import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
 import com.printscript.snippets.dto.RelationFilter
 import com.printscript.snippets.dto.RuleDto
+import com.printscript.snippets.dto.RunSnippetInputsReq
 import com.printscript.snippets.dto.SaveRulesReq
 import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.dto.SingleTestRunResult
@@ -13,8 +14,10 @@ import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
+import com.printscript.snippets.execution.dto.RunRes
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
+import com.printscript.snippets.service.SnippetServiceImpl
 import com.printscript.snippets.service.rules.RulesStateService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -43,6 +46,7 @@ class SnippetController(
     private val service: SnippetService,
     private val bulkRulesService: BulkRulesService,
     private val rulesStateService: RulesStateService,
+    private val snippetService: SnippetServiceImpl,
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -150,6 +154,7 @@ class SnippetController(
         val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
             .contentType(MediaType.TEXT_PLAIN)
             .body(bytes)
     }
@@ -237,5 +242,16 @@ class SnippetController(
         val userId = auth.token.subject
         val dto = service.lintOneOwnerAware(userId, id)
         return ResponseEntity.ok(dto)
+    }
+
+    @PostMapping("/{snippetId}/run")
+    fun runSnippet(
+        auth: JwtAuthenticationToken,
+        @PathVariable snippetId: UUID,
+        @RequestBody body: RunSnippetInputsReq = RunSnippetInputsReq(),
+    ): ResponseEntity<RunRes> {
+        val userId = auth.token.subject
+        val res = snippetService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
+        return ResponseEntity.ok(res)
     }
 }
