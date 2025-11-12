@@ -3,7 +3,6 @@ package com.printscript.snippets.redis
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
 import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
-import org.austral.ingsis.redis.RedisStreamProducer
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
@@ -18,8 +17,8 @@ class RedisEventBus(
 ) {
     private fun clean(k: String) = k.trim().trim('"', '\'')
 
-    private val lintingProducer = object : RedisStreamProducer(clean(rawLintKey), redis) {}
-    private val formattingProducer = object : RedisStreamProducer(clean(rawFmtKey), redis) {}
+    private val lintingProducer = object : SimpleRedisStreamProducer(clean(rawLintKey), redis) {}
+    private val formattingProducer = object : SimpleRedisStreamProducer(clean(rawFmtKey), redis) {}
 
     fun publishLint(ev: SnippetsLintingRulesUpdated) {
         lintingProducer.emit(om.writeValueAsString(ev))
