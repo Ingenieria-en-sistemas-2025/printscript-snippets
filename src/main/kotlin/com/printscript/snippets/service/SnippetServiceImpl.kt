@@ -182,14 +182,17 @@ class SnippetServiceImpl(
         val snippet = snippetRepo.findById(snippetId)
             .orElseThrow { NotFound("Snippet with ID $snippetId not found") }
 
-        val latestVersion = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet $snippetId has no versions")
 
-        val content = String(
-            assetClient.download(containerName, latestVersion.contentKey),
-            StandardCharsets.UTF_8,
-        )
-        return toDetailDto(snippet, latestVersion, content)
+        val key = if (latest.isFormatted && latest.formattedKey != null) {
+            latest.formattedKey!!
+        } else {
+            latest.contentKey
+        }
+
+        val content = String(assetClient.download(containerName, key), StandardCharsets.UTF_8)
+        return toDetailDto(snippet, latest, content)
     }
 
     override fun updateSnippet(snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto {
@@ -654,14 +657,25 @@ class SnippetServiceImpl(
     }
 
     override fun saveFormatted(snippetId: UUID, formatted: String) {
+        val snippet = snippetRepo.findById(snippetId)
+            .orElseThrow { NotFound("Snippet not found") }
+
         val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet $snippetId has no versions")
 
-        val formattedKey = "snippets/$snippetId/v${latest.versionNumber}.formatted.ps"
+        val baseKey = "${
+            snippet.ownerId
+        }/$snippetId/v${latest.versionNumber}.ps"
+        val formattedKey = baseKey.replace(".ps", ".formatted.ps")
+
         assetClient.upload(containerName, formattedKey, formatted.toByteArray(Charsets.UTF_8))
         latest.formattedKey = formattedKey
         latest.isFormatted = true
+
         versionRepo.save(latest)
+
+        snippet.updatedAt = java.time.Instant.now()
+        snippetRepo.save(snippet)
     }
 
     override fun saveLint(
