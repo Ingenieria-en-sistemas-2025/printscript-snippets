@@ -22,7 +22,12 @@ class BulkRulesService(
     fun onFormattingRulesChanged(ownerId: String) {
         val rules = rulesStateService.getFormatAsRules(ownerId)
         val options = FormatterMapper.toFormatterOptionsDto(rules)
-        val cfgText = rulesStateService.buildFormatterConfigFromRules(rules)
+        var cfgText = rulesStateService.buildFormatterConfigFromRules(rules)
+
+        if (cfgText.isNullOrBlank()) {
+            cfgText = rulesStateService.buildFormatterConfigFromRules(rules)
+        }
+
         val cfgFmt = "json"
         val corr = UUID.randomUUID().toString()
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
