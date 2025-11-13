@@ -7,6 +7,7 @@ import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.redis.RedisEventBus
 import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
 import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
+import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -19,12 +20,15 @@ class BulkRulesService(
     private val bus: RedisEventBus,
 ) {
     fun onFormattingRulesChanged(ownerId: String) {
-        val (cfg, fmt) = rulesStateService.currentFormatConfig(ownerId)
+        val rules = rulesStateService.getFormatAsRules(ownerId)
+        val options = FormatterMapper.toFormatterOptionsDto(rules)
+        val cfgText = rulesStateService.buildFormatterConfigFromRules(rules)
+        val cfgFmt = "json"
         val corr = UUID.randomUUID().toString()
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
         ids.forEach { snippetId ->
             val lv = snippetRepo.getLangAndVersion(snippetId)
-            bus.publishFormatting(SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfg, fmt))
+            bus.publishFormatting(SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfgText, cfgFmt, options))
         }
     }
 
