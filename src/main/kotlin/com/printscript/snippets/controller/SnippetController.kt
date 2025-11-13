@@ -255,5 +255,5 @@ class SnippetController(
         return ResponseEntity.ok(res)
     }
 
-    //prueba push
+    // prueba push
 }
