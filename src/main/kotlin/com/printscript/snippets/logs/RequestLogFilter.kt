@@ -1,26 +1,38 @@
 package com.printscript.snippets.logs
 
-import org.slf4j.LoggerFactory
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
-import org.springframework.web.server.ServerWebExchange
-import org.springframework.web.server.WebFilter
-import org.springframework.web.server.WebFilterChain
-import reactor.core.publisher.Mono
+import org.springframework.web.filter.OncePerRequestFilter
+import kotlin.system.measureNanoTime
 
 @Component
-class RequestLogFilter : WebFilter {
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
+class RequestLogFilter : OncePerRequestFilter() {
 
-    val logger = LoggerFactory.getLogger(RequestLogFilter::class.java)
+    private val log = logger
 
-    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-        val uri = exchange.request.uri
-        val method = exchange.request.method.toString()
-        val prefix = "$method $uri"
-        try {
-            return chain.filter(exchange)
-        } finally {
-            val statusCode = exchange.response.statusCode
-            logger.info("$prefix - $statusCode")
-        }
+    companion object {
+        private const val NANO_TO_MILLISECOND = 1_000_000
+    }
+
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain,
+    ) {
+        val method = request.method
+        val uri = request.requestURI + (request.queryString?.let { "?$it" } ?: "")
+
+        var status: Int
+        val elapsedMs = measureNanoTime {
+            filterChain.doFilter(request, response)
+        }.let { it / NANO_TO_MILLISECOND }
+
+        status = response.status
+        log.info("$method $uri - $status (${elapsedMs}ms)")
     }
 }
