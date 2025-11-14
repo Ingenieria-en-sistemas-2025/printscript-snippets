@@ -42,6 +42,8 @@ class SecurityConfig(
         http
             .authorizeHttpRequests {
                 it
+                    .requestMatchers("/actuator/**")
+                    .permitAll()
                     // 1. ENDPOINTS DE SNIPPETS (CRUD)
                     // Lectura de snippets y sus tests (read:snippets)
                     .requestMatchers("/internal/**").authenticated()
