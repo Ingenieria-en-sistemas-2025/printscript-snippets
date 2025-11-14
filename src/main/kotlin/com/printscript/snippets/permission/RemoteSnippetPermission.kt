@@ -26,7 +26,7 @@ class RemoteSnippetPermission(
             val m2mToken = auth0TokenService.getAccessToken()
 
             restClient.post()
-                .uri("$permissionServiceUrl/authorization/create")
+                .uri("$permissionServiceUrl/authorization")
                 .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
                 .body(input)
                 .retrieve()
@@ -42,7 +42,7 @@ class RemoteSnippetPermission(
             val m2mToken = auth0TokenService.getAccessToken()
 
             restClient.get()
-                .uri("$permissionServiceUrl/authorization/owner/$snippetId")
+                .uri("$permissionServiceUrl/authorization/snippet/$snippetId/owner")
                 .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
                 .retrieve()
                 .toEntity(String::class.java)
@@ -60,7 +60,8 @@ class RemoteSnippetPermission(
         return try {
             val m2mToken = auth0TokenService.getAccessToken()
 
-            val uri = UriComponentsBuilder.fromUriString("$permissionServiceUrl/authorization/my")
+            val uri = UriComponentsBuilder
+                .fromUriString("$permissionServiceUrl/authorization/me")
                 .queryParam("userId", userId)
                 .queryParam("pageNum", pageNum)
                 .queryParam("pageSize", pageSize)
