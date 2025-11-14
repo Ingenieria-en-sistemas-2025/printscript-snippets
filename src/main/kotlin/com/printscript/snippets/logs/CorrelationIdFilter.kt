@@ -1,5 +1,6 @@
 package com.printscript.snippets.logs
 
+import com.newrelic.api.agent.NewRelic
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -27,6 +28,9 @@ class CorrelationIdFilter : OncePerRequestFilter() {
         val correlationId = request.getHeader(CORRELATION_ID_HEADER) ?: UUID.randomUUID().toString()
 
         MDC.put(CORRELATION_ID_KEY, correlationId)
+
+        NewRelic.addCustomParameter(CORRELATION_ID_KEY, correlationId)
+
         response.setHeader(CORRELATION_ID_HEADER, correlationId)
 
         try {
