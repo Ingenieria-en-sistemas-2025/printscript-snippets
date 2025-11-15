@@ -1,8 +1,8 @@
 package com.printscript.snippets.redis
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
-import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
+import io.printscript.contracts.events.FormattingRulesUpdated
+import io.printscript.contracts.events.LintingRulesUpdated
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.connection.stream.ObjectRecord
@@ -21,7 +21,7 @@ class RedisEventBus(
     private val lintKey = clean(rawLintKey)
     private val fmtKey = clean(rawFmtKey)
 
-    fun publishLint(ev: SnippetsLintingRulesUpdated) {
+    fun publishLint(ev: LintingRulesUpdated) {
         val json = om.writeValueAsString(ev)
         val record: ObjectRecord<String, String> = ObjectRecord.create(lintKey, json)
 
@@ -31,7 +31,7 @@ class RedisEventBus(
         println("[RedisEventBus] publishLint -> stream=$lintKey size=${json.length}")
     }
 
-    fun publishFormatting(ev: SnippetsFormattingRulesUpdated) {
+    fun publishFormatting(ev: FormattingRulesUpdated) {
         val json = om.writeValueAsString(ev)
         val record: ObjectRecord<String, String> = ObjectRecord.create(fmtKey, json)
 

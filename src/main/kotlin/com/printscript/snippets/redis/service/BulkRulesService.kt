@@ -5,10 +5,10 @@ import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Compliance
 import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.redis.RedisEventBus
-import com.printscript.snippets.redis.events.SnippetsFormattingRulesUpdated
-import com.printscript.snippets.redis.events.SnippetsLintingRulesUpdated
 import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
+import io.printscript.contracts.events.FormattingRulesUpdated
+import io.printscript.contracts.events.LintingRulesUpdated
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -33,7 +33,17 @@ class BulkRulesService(
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
         ids.forEach { snippetId ->
             val lv = snippetRepo.getLangAndVersion(snippetId)
-            bus.publishFormatting(SnippetsFormattingRulesUpdated(corr, snippetId, lv.language, lv.languageVersion, cfgText, cfgFmt, options))
+            bus.publishFormatting(
+                FormattingRulesUpdated(
+                    corr,
+                    snippetId,
+                    lv.language,
+                    lv.languageVersion,
+                    cfgText,
+                    cfgFmt,
+                    options,
+                ),
+            )
         }
     }
 
@@ -52,7 +62,7 @@ class BulkRulesService(
 
         ids.forEach { id ->
             val lv = snippetRepo.getLangAndVersion(id)
-            bus.publishLint(SnippetsLintingRulesUpdated(corr, id, lv.language, lv.languageVersion, cfg, fmt))
+            bus.publishLint(LintingRulesUpdated(corr, id, lv.language, lv.languageVersion, cfg, fmt))
         }
     }
 }

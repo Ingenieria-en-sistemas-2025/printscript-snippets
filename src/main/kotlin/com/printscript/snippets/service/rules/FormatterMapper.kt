@@ -1,7 +1,7 @@
 package com.printscript.snippets.service.rules
 
 import com.printscript.snippets.dto.RuleDto
-import com.printscript.snippets.execution.dto.FormatterOptionsDto
+import io.printscript.contracts.formatter.FormatterOptionsDto
 
 object FormatterMapper {
 

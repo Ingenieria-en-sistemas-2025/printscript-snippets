@@ -37,6 +37,15 @@ repositories {
             password = (findProperty("gpr.key") as String?) ?: System.getenv("GITHUB_TOKEN")
         }
     }
+
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Ingenieria-en-sistemas-2025/printscript-contracts")
+        credentials {
+            username = (findProperty("gpr.user") as String?) ?: System.getenv("GITHUB_ACTOR")
+            password = (findProperty("gpr.key") as String?) ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 flyway {
@@ -85,6 +94,8 @@ dependencies {
 
     "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
     "flyway"("org.postgresql:postgresql:42.7.4")
+
+    implementation("io.printscript:contracts:0.1.0")
 }
 
 kotlin {

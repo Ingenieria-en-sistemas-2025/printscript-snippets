@@ -1,5 +1,7 @@
 package com.printscript.snippets.execution.dto
 
+import io.printscript.contracts.formatter.FormatterOptionsDto
+
 data class FormatReq(
     val language: String,
     val version: String,
