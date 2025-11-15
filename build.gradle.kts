@@ -95,7 +95,7 @@ dependencies {
     "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
     "flyway"("org.postgresql:postgresql:42.7.4")
 
-    implementation("io.printscript:contracts:0.1.0")
+    implementation("io.printscript:contracts:0.1.2")
 }
 
 kotlin {

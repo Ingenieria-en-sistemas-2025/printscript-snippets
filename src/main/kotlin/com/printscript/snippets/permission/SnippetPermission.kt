@@ -1,7 +1,7 @@
 package com.printscript.snippets.permission
 
-import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
-import com.printscript.snippets.permission.dto.SnippetPermissionListResponse
+import io.printscript.contracts.permissions.PermissionCreateSnippetInput
+import io.printscript.contracts.permissions.SnippetPermissionListResponse
 import org.springframework.http.ResponseEntity
 
 interface SnippetPermission {
