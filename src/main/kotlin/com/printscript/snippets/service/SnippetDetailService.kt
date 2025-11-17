@@ -49,6 +49,22 @@ class SnippetDetailService(
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
 
+    private fun requireSnippet(snippetId: UUID): Snippet =
+        snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet with ID $snippetId not found") }
+
+    private fun requireLatestVersion(snippetId: UUID): SnippetVersion =
+        versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+    private fun validateNonBlankContent(content: String) {
+        if (content.isBlank()) {
+            throw InvalidRequest("El contenido del snippet no puede estar vacío")
+        }
+    }
+
+    private fun readContent(key: String): String =
+        String(assetClient.download(containerName, key), StandardCharsets.UTF_8)
+
     // key del archivo en el bucket
     private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
         "$ownerId/$snippetId/v$versionNumber.ps"
@@ -80,15 +96,15 @@ class SnippetDetailService(
         logger.debug("Uploading content to asset client with key: $contentKey")
         assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
 
-        val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
+        val (configText, configFormat) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
         logger.debug("Calling execution service for linting with owner rules...")
         val lintRes = executionClient.lint(
             LintReq(
                 language = snippet.language,
                 version = snippet.languageVersion,
                 content = content,
-                configText = cfgText,
-                configFormat = cfgFmt,
+                configText = configText,
+                configFormat = configFormat,
             ),
         )
 
@@ -100,7 +116,7 @@ class SnippetDetailService(
                 contentKey = contentKey,
                 formattedKey = null,
                 isFormatted = false,
-                isValid = parseRes.valid && lintRes.violations.isEmpty(),
+                isValid = lintRes.violations.isEmpty(),
                 lintIssues = objectMapper.writeValueAsString(lintRes.violations),
                 lintStatus = LintStatus.DONE,
                 parseErrors = "[]",
@@ -132,12 +148,27 @@ class SnippetDetailService(
             lintCount = snippet.lastLintCount,
         )
 
+    private fun toSummaryDto(snippet: Snippet): SnippetSummaryDto {
+        val authorEmail = userService.getEmailById(snippet.ownerId)
+        return SnippetSummaryDto(
+            id = snippet.id!!.toString(),
+            name = snippet.name,
+            description = snippet.description,
+            language = snippet.language,
+            version = snippet.languageVersion,
+            ownerId = snippet.ownerId,
+            ownerEmail = authorEmail,
+            lastIsValid = snippet.lastIsValid,
+            lastLintCount = snippet.lastLintCount,
+            compliance = snippet.compliance.name,
+        )
+    }
+
     @Transactional
     fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
         logger.info("Request to create snippet '${req.name}' by user $ownerId")
-        val content = (req.content ?: "").also {
-            if (it.isBlank()) throw InvalidRequest("El contenido del snippet no puede estar vacío")
-        }
+        val content = (req.content ?: "").also { validateNonBlankContent(it) }
+
         val snippet = snippetRepo.save(
             Snippet(
                 ownerId = ownerId,
@@ -164,11 +195,9 @@ class SnippetDetailService(
 
     @Transactional(readOnly = true)
     fun getSnippet(snippetId: UUID): SnippetDetailDto {
-        val snippet = snippetRepo.findById(snippetId)
-            .orElseThrow { NotFound("Snippet with ID $snippetId not found") }
+        val snippet = requireSnippet(snippetId)
 
-        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet $snippetId has no versions")
+        val latest = requireLatestVersion(snippetId)
 
         val key = if (latest.isFormatted && latest.formattedKey != null) {
             latest.formattedKey!!
@@ -176,7 +205,7 @@ class SnippetDetailService(
             latest.contentKey
         }
 
-        val content = String(assetClient.download(containerName, key), StandardCharsets.UTF_8)
+        val content = readContent(key)
         return toDetailDto(snippet, latest, content)
     }
 
@@ -206,115 +235,53 @@ class SnippetDetailService(
         relation: RelationFilter,
         sort: String,
     ): PageDto<SnippetSummaryDto> {
-        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
-        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
-            runCatching { UUID.fromString(authView.snippetId) }
-                .onFailure {
-                    logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
-                }
-                .getOrNull()
-        }
-
-        val all = snippetRepo.findAllById(ids)
-
-        val base = when (relation) {
-            RelationFilter.OWNER -> all.filter { it.ownerId == userId }
-            RelationFilter.SHARED -> all.filter { it.ownerId != userId }
-            RelationFilter.BOTH -> all
-        }
+        val base = findSnippetsWithPermissions(userId, relation)
 
         val filtered = base
             .filter { name == null || it.name.contains(name, ignoreCase = true) }
             .filter { language == null || it.language.equals(language, ignoreCase = true) }
             .filter { valid == null || it.lastIsValid == valid }
 
-        val (field, dir) = sort.split(",", limit = 2).let {
-            it.getOrNull(0) to (it.getOrNull(1) ?: "ASC")
-        }
+        val sorted = sortSnippets(filtered, sort)
 
-        val sorted = when (field) {
-            "name" -> filtered.sortedBy { it.name.lowercase() }
-            "language" -> filtered.sortedBy { it.language.lowercase() }
-            "valid" -> filtered.sortedBy { it.lastIsValid }
-            "updatedAt" -> filtered.sortedBy { it.updatedAt }
-            else -> filtered.sortedBy { it.name.lowercase() }
-        }.let { if (dir.equals("DESC", true)) it.reversed() else it }
+        val total = sorted.size
+        val (from, to) = pageBounds(total, page, size)
 
-        val totalFiltered = sorted.size
-        val from = (page * size).coerceAtMost(totalFiltered)
-        val to = (from + size).coerceAtMost(totalFiltered)
-
-        val pageItems = if (from < totalFiltered) {
-            sorted.subList(from, to).map { snippet ->
-                val authorEmail = userService.getEmailById(snippet.ownerId)
-
-                SnippetSummaryDto(
-                    id = snippet.id!!.toString(),
-                    name = snippet.name,
-                    description = snippet.description,
-                    language = snippet.language,
-                    version = snippet.languageVersion,
-                    ownerId = snippet.ownerId,
-                    ownerEmail = authorEmail,
-                    lastIsValid = snippet.lastIsValid,
-                    lastLintCount = snippet.lastLintCount,
-                    compliance = snippet.compliance.name,
-                )
-            }
+        val pageItems = if (from < total) {
+            sorted.subList(from, to).map(::toSummaryDto)
         } else {
             emptyList()
         }
 
-        return PageDto(pageItems, totalFiltered.toLong(), page, size)
+        return PageDto(pageItems, total.toLong(), page, size)
     }
 
     fun createSnippetFromFile(ownerId: String, meta: CreateSnippetReq, bytes: ByteArray): SnippetDetailDto {
         if (bytes.isEmpty()) throw InvalidRequest("El archivo subido está vacío")
         val content = String(bytes, StandardCharsets.UTF_8)
-        if (content.isBlank()) throw InvalidRequest("El contenido del snippet no puede estar vacío")
+        validateNonBlankContent(content)
         return createSnippet(ownerId, meta.copy(content = content, source = SnippetSource.FILE_UPLOAD))
     }
 
     @Transactional
     fun updateSnippetOwnerAware(userId: String, snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        val snippet = requireSnippet(snippetId)
         authorization.requireEditorOrOwner(userId, snippet)
 
-        req.name?.let { snippet.name = it }
-        req.description?.let { snippet.description = it }
-
-        val langProvided = req.language != null
-        val verProvided = req.version != null
-        if (langProvided.xor(verProvided)) {
-            throw InvalidRequest("Para cambiar el lenguaje, debés enviar language y version juntos")
-        }
-
-        var langChanged = false
-        req.language?.let {
-            snippet.language = it
-            langChanged = true
-        }
-        req.version?.let {
-            snippet.languageVersion = it
-            langChanged = true
-        }
-
+        applyBasicUpdates(snippet, req)
         snippetRepo.save(snippet)
 
-        if (req.content != null || langChanged) {
-            val content = req.content ?: run {
-                val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-                    ?: throw NotFound("Snippet without versions")
-                String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
-            }
-            if (content.isBlank()) throw InvalidRequest("El contenido del snippet no puede estar vacío")
+        val needsNewVersion = req.content != null || req.language != null || req.version != null
+
+        if (needsNewVersion) {
+            val content = resolveUpdatedContent(snippetId, req)
+            validateNonBlankContent(content)
             val version = createAndPersistVersion(snippet, content)
             return toDetailDto(snippet, version, content)
         }
 
-        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
-        val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+        val latest = requireLatestVersion(snippetId)
+        val content = readContent(latest.contentKey)
         return toDetailDto(snippet, latest, content)
     }
 
@@ -327,17 +294,15 @@ class SnippetDetailService(
 
     @Transactional(readOnly = true)
     fun download(snippetId: UUID, formatted: Boolean): ByteArray {
-        val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
+        val version = requireLatestVersion(snippetId)
         val key = if (formatted && version.isFormatted && version.formattedKey != null) version.formattedKey!! else version.contentKey
         return assetClient.download(containerName, key)
     }
 
     @Transactional(readOnly = true)
     fun filename(snippetId: UUID, formatted: Boolean): String {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
+        val snippet = requireSnippet(snippetId)
+        val version = requireLatestVersion(snippetId)
         val base = "${snippet.name}-v${version.versionNumber}"
         return if (formatted && version.isFormatted && version.formattedKey != null) {
             "$base.formatted.prs"
@@ -345,4 +310,68 @@ class SnippetDetailService(
             "$base.prs"
         }
     }
+
+    private fun findSnippetsWithPermissions(
+        userId: String,
+        relation: RelationFilter,
+    ): List<Snippet> {
+        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
+        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
+            runCatching { UUID.fromString(authView.snippetId) }
+                .onFailure {
+                    logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
+                }
+                .getOrNull()
+        }
+
+        val all = snippetRepo.findAllById(ids)
+
+        return when (relation) {
+            RelationFilter.OWNER -> all.filter { it.ownerId == userId }
+            RelationFilter.SHARED -> all.filter { it.ownerId != userId }
+            RelationFilter.BOTH -> all
+        }
+    }
+
+    private fun sortSnippets(snippets: List<Snippet>, sort: String): List<Snippet> {
+        val (field, dir) = sort.split(",", limit = 2).let {
+            it.getOrNull(0) to (it.getOrNull(1) ?: "ASC")
+        }
+
+        val sorted = when (field) {
+            "name" -> snippets.sortedBy { it.name.lowercase() }
+            "language" -> snippets.sortedBy { it.language.lowercase() }
+            "valid" -> snippets.sortedBy { it.lastIsValid }
+            "updatedAt" -> snippets.sortedBy { it.updatedAt }
+            else -> snippets.sortedBy { it.name.lowercase() }
+        }
+
+        return if (dir.equals("DESC", true)) sorted.reversed() else sorted
+    }
+
+    private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
+        val from = (page * size).coerceAtMost(total) // calcular indice inicial
+        val to = (from + size).coerceAtMost(total)
+        return from to to
+    }
+
+    private fun applyBasicUpdates(snippet: Snippet, req: UpdateSnippetReq) {
+        req.name?.let { snippet.name = it }
+        req.description?.let { snippet.description = it }
+
+        val langProvided = req.language != null
+        val verProvided = req.version != null
+        if (langProvided.xor(verProvided)) {
+            throw InvalidRequest("Para cambiar el lenguaje, debés enviar language y version juntos")
+        }
+
+        req.language?.let { snippet.language = it }
+        req.version?.let { snippet.languageVersion = it }
+    }
+
+    private fun resolveUpdatedContent(snippetId: UUID, req: UpdateSnippetReq): String =
+        req.content ?: run {
+            val latest = requireLatestVersion(snippetId)
+            readContent(latest.contentKey)
+        }
 }
