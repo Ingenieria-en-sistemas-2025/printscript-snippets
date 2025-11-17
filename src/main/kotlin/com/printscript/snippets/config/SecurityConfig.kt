@@ -47,6 +47,8 @@ class SecurityConfig(
                     // 1. ENDPOINTS DE SNIPPETS (CRUD)
                     // Lectura de snippets y sus tests (read:snippets)
                     .requestMatchers("/internal/**").authenticated()
+                    // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
+                    .requestMatchers(GET, "/snippets/users").authenticated()
                     .requestMatchers(POST, "/snippets/share").authenticated()
                     .requestMatchers(GET, "/snippets/all").authenticated()
                     .requestMatchers(GET, "/snippets/*").authenticated()
@@ -57,8 +59,6 @@ class SecurityConfig(
                     .requestMatchers(DELETE, "/snippets/*").authenticated()
                     .requestMatchers(POST, "/snippets/cases").authenticated()
                     .requestMatchers(DELETE, "/snippets/cases/*").authenticated()
-                    // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
-                    .requestMatchers(GET, "/api/users").authenticated()
                     // 2. ENDPOINTS DE REGLAS (RULES) Y CONFIG
                     // Administracion de Reglas/Config (admin:rules)
                     .requestMatchers(GET, "/snippets/rules/*").authenticated()
