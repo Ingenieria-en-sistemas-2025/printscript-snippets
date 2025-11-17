@@ -27,7 +27,6 @@ interface SnippetService {
     fun updateSnippet(snippetId: UUID, req: UpdateSnippetReq): SnippetDetailDto
     fun deleteSnippet(snippetId: UUID)
     fun addVersion(snippetId: UUID, req: SnippetSource): SnippetDetailDto
-    fun listMySnippets(userId: String, page: Int, size: Int): PageDto<SnippetSummaryDto>
     fun shareSnippet(req: ShareSnippetReq)
     fun createTestCase(req: CreateTestReq): TestCaseDto
     fun listTestCases(snippetId: UUID): List<TestCaseDto>

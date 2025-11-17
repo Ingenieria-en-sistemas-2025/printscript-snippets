@@ -67,9 +67,7 @@ class SnippetController(
         @RequestParam(defaultValue = "BOTH") relation: RelationFilter,
         @RequestParam(defaultValue = "updatedAt,DESC") sort: String,
     ): PageDto<SnippetSummaryDto> {
-        logger.info("========================================")
         logger.info("GET /snippets/all CALLED")
-        logger.info("========================================")
         logger.info("User (principal.name): ${principal.name}")
         logger.info("Parameters:")
         logger.info("  - page: $page")
@@ -79,14 +77,12 @@ class SnippetController(
         logger.info("  - valid: $valid")
         logger.info("  - relation: $relation")
         logger.info("  - sort: $sort")
-        logger.info("========================================")
 
         val result = service.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
 
         logger.info("Result from service:")
         logger.info("  - count: ${result.count}")
         logger.info("  - items: ${result.items.size}")
-        logger.info("========================================")
 
         return result
     }

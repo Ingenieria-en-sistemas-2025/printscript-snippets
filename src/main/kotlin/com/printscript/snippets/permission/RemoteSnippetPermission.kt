@@ -67,11 +67,14 @@ class RemoteSnippetPermission(
                 .queryParam("pageSize", pageSize)
                 .toUriString()
 
+            logger.info("Calling PermissionService: GET $uri")
+
             restClient.get()
                 .uri(uri)
                 .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
                 .retrieve()
                 .toEntity(SnippetPermissionListResponse::class.java)
+                .also { logger.info("PermissionService responded with status ${it.statusCode}") }
         } catch (ex: RestClientException) {
             logger.error("Failed to get permissions for user $userId: ${ex.message}", ex)
             throw ex
