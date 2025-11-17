@@ -14,11 +14,11 @@ import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
-import com.printscript.snippets.execution.dto.RunRes
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetService
 import com.printscript.snippets.service.SnippetServiceImpl
 import com.printscript.snippets.service.rules.RulesStateService
+import io.printscript.contracts.run.RunRes
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders

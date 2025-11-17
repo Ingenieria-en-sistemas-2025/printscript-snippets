@@ -1,6 +1,6 @@
 package com.printscript.snippets.dto
 
-import com.printscript.snippets.execution.dto.DiagnosticDto
+import io.printscript.contracts.DiagnosticDto
 
 data class SingleTestRunResult(
     val status: String, // "OK" | "MISMATCH" | "ERROR" (según tu Execution)

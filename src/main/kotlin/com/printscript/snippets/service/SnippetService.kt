@@ -11,14 +11,14 @@ import com.printscript.snippets.dto.SnippetSource
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
-import com.printscript.snippets.execution.dto.DiagnosticDto
-import com.printscript.snippets.execution.dto.FormatReq
-import com.printscript.snippets.execution.dto.FormatRes
-import com.printscript.snippets.execution.dto.LintReq
-import com.printscript.snippets.execution.dto.LintRes
-import com.printscript.snippets.execution.dto.ParseReq
-import com.printscript.snippets.execution.dto.ParseRes
-import com.printscript.snippets.execution.dto.RunRes
+import io.printscript.contracts.DiagnosticDto
+import io.printscript.contracts.formatter.FormatReq
+import io.printscript.contracts.formatter.FormatRes
+import io.printscript.contracts.linting.LintReq
+import io.printscript.contracts.linting.LintRes
+import io.printscript.contracts.parse.ParseReq
+import io.printscript.contracts.parse.ParseRes
+import io.printscript.contracts.run.RunRes
 import java.util.UUID
 
 interface SnippetService {

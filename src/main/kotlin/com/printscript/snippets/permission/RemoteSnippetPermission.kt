@@ -1,8 +1,8 @@
 package com.printscript.snippets.permission
 
 import com.printscript.snippets.auth.Auth0TokenService
-import com.printscript.snippets.permission.dto.PermissionCreateSnippetInput
-import com.printscript.snippets.permission.dto.SnippetPermissionListResponse
+import io.printscript.contracts.permissions.PermissionCreateSnippetInput
+import io.printscript.contracts.permissions.SnippetPermissionListResponse
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
