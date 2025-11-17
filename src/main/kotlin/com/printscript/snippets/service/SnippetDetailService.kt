@@ -132,6 +132,7 @@ class SnippetDetailService(
             lintCount = snippet.lastLintCount,
         )
 
+    @Transactional
     fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
         logger.info("Request to create snippet '${req.name}' by user $ownerId")
         val content = (req.content ?: "").also {
