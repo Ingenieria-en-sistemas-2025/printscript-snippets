@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("snippets/users")
 class UserController
 @Autowired
 constructor(
