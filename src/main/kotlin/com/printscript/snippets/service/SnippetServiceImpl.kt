@@ -238,7 +238,6 @@ class SnippetServiceImpl(
         )
     }
 
-
     @Transactional
     override fun shareSnippet(req: ShareSnippetReq) {
         permissionClient.createAuthorization(
