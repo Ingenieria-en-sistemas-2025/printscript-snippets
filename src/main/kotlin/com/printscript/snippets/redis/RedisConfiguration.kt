@@ -18,13 +18,14 @@ class RedisConfiguration(
     @Value("\${spring.data.redis.port}") private val port: Int,
 ) {
     @Bean
-    fun connectionFactory() = LettuceConnectionFactory(RedisStandaloneConfiguration(host, port))
+    fun connectionFactory() = LettuceConnectionFactory(RedisStandaloneConfiguration(host, port)) // devuelve un lettuce connection factory -> Driver Lettuce para conectarse a Redis
+    // otras partes como redis template usan esta factory para abrir conextiones
 
     @Bean
     @Primary
     fun stringTemplate(cf: RedisConnectionFactory): RedisTemplate<String, String> =
         RedisTemplate<String, String>().apply {
-            setConnectionFactory(cf)
+            setConnectionFactory(cf) // setea conexion con redis
             keySerializer = StringRedisSerializer()
             valueSerializer = StringRedisSerializer()
             hashKeySerializer = StringRedisSerializer()
