@@ -50,6 +50,9 @@ class SnippetController(
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
+    @GetMapping("/ping")
+    fun ping(): ResponseEntity<Void> = ResponseEntity.noContent().build()
+
     @GetMapping("/{snippetId}")
     fun getSnippet(@PathVariable snippetId: UUID): SnippetDetailDto {
         logger.info("GET /snippets/$snippetId")
