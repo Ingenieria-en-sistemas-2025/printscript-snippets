@@ -5,7 +5,6 @@ import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Compliance
 import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.error.NotFound
-import com.printscript.snippets.service.SnippetServiceImpl
 import io.printscript.contracts.DiagnosticDto
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping

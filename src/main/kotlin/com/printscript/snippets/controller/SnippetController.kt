@@ -15,9 +15,13 @@ import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.redis.service.BulkRulesService
-import com.printscript.snippets.service.SnippetService
-import com.printscript.snippets.service.SnippetServiceImpl
+import com.printscript.snippets.service.AccessLevel
+import com.printscript.snippets.service.SnippetDetailService
+import com.printscript.snippets.service.SnippetPermissionService
+import com.printscript.snippets.service.SnippetTestService
+import com.printscript.snippets.service.SnippetsExecuteService
 import com.printscript.snippets.service.rules.RulesStateService
+import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.run.RunRes
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -43,10 +47,13 @@ import java.util.UUID
 @RestController
 @RequestMapping("/snippets")
 class SnippetController(
-    private val service: SnippetService,
+    private val snippetDetailService: SnippetDetailService,
+    private val snippetsExecuteService: SnippetsExecuteService,
+    private val snippetTestService: SnippetTestService,
+    private val snippetPermissionService: SnippetPermissionService,
     private val bulkRulesService: BulkRulesService,
     private val rulesStateService: RulesStateService,
-    private val snippetService: SnippetServiceImpl,
+    private val snippetRuleDomainService: SnippetRuleDomainService,
 ) {
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -56,7 +63,7 @@ class SnippetController(
     @GetMapping("/{snippetId}")
     fun getSnippet(@PathVariable snippetId: UUID): SnippetDetailDto {
         logger.info("GET /snippets/$snippetId")
-        return service.getSnippet(snippetId)
+        return snippetDetailService.getSnippet(snippetId)
     }
 
     @GetMapping("/all")
@@ -81,7 +88,7 @@ class SnippetController(
         logger.info("  - relation: $relation")
         logger.info("  - sort: $sort")
 
-        val result = service.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
+        val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name, language, valid, relation, sort)
 
         logger.info("Result from service:")
         logger.info("  - count: ${result.count}")
@@ -102,7 +109,7 @@ class SnippetController(
         logger.info("Request: name=${req.name}, language=${req.language}, version=${req.version}")
         logger.info("========================================")
 
-        val result = service.createSnippet(principal.name, req)
+        val result = snippetDetailService.createSnippet(principal.name, req)
 
         logger.info("Snippet created successfully:")
         logger.info("  - id: ${result.id}")
@@ -119,7 +126,7 @@ class SnippetController(
         @RequestPart("meta") @Valid meta: CreateSnippetReq,
         @RequestPart("file") file: MultipartFile,
     ): SnippetDetailDto =
-        service.createSnippetFromFile(principal.name, meta, file.bytes)
+        snippetDetailService.createSnippetFromFile(principal.name, meta, file.bytes)
 
     @PutMapping("/{snippetId}")
     fun updateSnippet(
@@ -127,20 +134,20 @@ class SnippetController(
         @PathVariable snippetId: UUID,
         @RequestBody @Valid req: UpdateSnippetReq,
     ): SnippetDetailDto =
-        service.updateSnippetOwnerAware(principal.name, snippetId, req)
+        snippetDetailService.updateSnippetOwnerAware(principal.name, snippetId, req)
 
     @DeleteMapping("/{snippetId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSnippet(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
-    ) = service.deleteSnippetOwnerAware(principal.name, snippetId)
+    ) = snippetDetailService.deleteSnippetOwnerAware(principal.name, snippetId)
 
     @PostMapping("/share")
     fun share(
         principal: JwtAuthenticationToken,
         @RequestBody req: ShareSnippetReq,
-    ) = service.shareSnippetOwnerAware(principal.name, req)
+    ) = snippetPermissionService.shareSnippetOwnerAware(principal.name, req)
 
     @GetMapping("/{snippetId}/download")
     fun download(
@@ -148,9 +155,9 @@ class SnippetController(
         @PathVariable snippetId: UUID,
         @RequestParam(defaultValue = "false") formatted: Boolean,
     ): ResponseEntity<ByteArray> {
-        service.checkPermissions(principal.name, snippetId)
-        val bytes = service.download(snippetId, formatted) // trae los bytes del bucket
-        val filename = service.filename(snippetId, formatted) // arma el nombre del archivo
+        snippetPermissionService.checkPermissions(principal.name, snippetId, min = AccessLevel.READER)
+        val bytes = snippetDetailService.download(snippetId, formatted) // trae los bytes del bucket
+        val filename = snippetDetailService.filename(snippetId, formatted) // arma el nombre del archivo
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
             .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
@@ -164,26 +171,26 @@ class SnippetController(
         @PathVariable snippetId: UUID,
         @RequestBody @Valid req: CreateTestReq,
     ): TestCaseDto =
-        service.createTestCase(req.copy(snippetId = snippetId.toString()))
+        snippetTestService.createTestCase(req.copy(snippetId = snippetId.toString()))
 
     @GetMapping("/{snippetId}/tests")
     fun listTests(
         @PathVariable snippetId: UUID,
     ): List<TestCaseDto> =
-        service.listTestCases(snippetId)
+        snippetTestService.listTestCases(snippetId)
 
     @DeleteMapping("/tests/{testCaseId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteTest(
         @PathVariable testCaseId: UUID,
-    ) = service.deleteTestCase(testCaseId)
+    ) = snippetTestService.deleteTestCase(testCaseId)
 
     @PostMapping("/{snippetId}/tests/{testCaseId}/run")
     fun runSingleTest(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
         @PathVariable testCaseId: UUID,
-    ): SingleTestRunResult = service.runOneTestOwnerAware(
+    ): SingleTestRunResult = snippetsExecuteService.runOneTestOwnerAware(
         principal.name,
         snippetId,
         testCaseId,
@@ -229,7 +236,7 @@ class SnippetController(
         auth: JwtAuthenticationToken,
     ): ResponseEntity<SnippetDetailDto> {
         val userId = auth.token.subject
-        val dto = service.formatOneOwnerAware(userId, id)
+        val dto = snippetRuleDomainService.formatOneOwnerAware(userId, id)
         return ResponseEntity.ok(dto)
     }
 
@@ -239,7 +246,7 @@ class SnippetController(
         auth: JwtAuthenticationToken,
     ): ResponseEntity<SnippetDetailDto> {
         val userId = auth.token.subject
-        val dto = service.lintOneOwnerAware(userId, id)
+        val dto = snippetRuleDomainService.lintOneOwnerAware(userId, id)
         return ResponseEntity.ok(dto)
     }
 
@@ -250,9 +257,8 @@ class SnippetController(
         @RequestBody body: RunSnippetInputsReq = RunSnippetInputsReq(),
     ): ResponseEntity<RunRes> {
         val userId = auth.token.subject
-        val res = snippetService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
+        val res = snippetsExecuteService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
         return ResponseEntity.ok(res)
     }
 
-    // prueba push
 }

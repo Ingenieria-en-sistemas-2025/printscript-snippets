@@ -3,12 +3,13 @@ package com.printscript.snippets.service
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.error.UnsupportedOperation
 import com.printscript.snippets.permission.SnippetPermission
+import org.springframework.stereotype.Service
 import java.util.UUID
 
-class SnippetAuthorization(
+
+class SnippetAuthorizationScopeService(
     private val permissionClient: SnippetPermission,
 ) {
-    enum class AccessLevel { READER, EDITOR, OWNER }
 
     private fun String.toAccessLevel(): AccessLevel? = when (uppercase()) {
         "READER" -> AccessLevel.READER
@@ -24,9 +25,7 @@ class SnippetAuthorization(
         if (snippet.ownerId == userId && minRequired <= AccessLevel.OWNER) {
             return
         }
-
         val maxScope = userExplicitScopeForSnippet(userId, snippet.id!!)
-
         if (maxScope == null || maxScope.ordinal < minRequired.ordinal) {
             throw UnsupportedOperation("Insufficient scope. Required: $minRequired")
         }
