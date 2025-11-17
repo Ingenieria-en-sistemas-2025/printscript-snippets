@@ -42,6 +42,7 @@ class SecurityConfig(
         http
             .authorizeHttpRequests {
                 it
+                    .requestMatchers("ping").permitAll()
                     .requestMatchers("/actuator/**")
                     .permitAll()
                     // 1. ENDPOINTS DE SNIPPETS (CRUD)
