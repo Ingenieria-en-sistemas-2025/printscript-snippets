@@ -11,40 +11,38 @@ import java.util.UUID
 
 @Service
 class SnippetPermissionService(
-  private val snippetRepo: SnippetRepo,
-  private val permissionClient: SnippetPermission,
+    private val snippetRepo: SnippetRepo,
+    private val permissionClient: SnippetPermission,
 ) {
-  private val authorization = SnippetAuthorizationScopeService(permissionClient)
+    private val authorization = SnippetAuthorizationScopeService(permissionClient)
 
-  @Transactional
-  fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq) {
-    val snippet = snippetRepo.findById(UUID.fromString(req.snippetId))
-      .orElseThrow { NotFound("Snippet not found") }
-    authorization.requireOwner(ownerId, snippet)
+    @Transactional
+    fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq) {
+        val snippet = snippetRepo.findById(UUID.fromString(req.snippetId))
+            .orElseThrow { NotFound("Snippet not found") }
+        authorization.requireOwner(ownerId, snippet)
 
-    permissionClient.createAuthorization(
-      PermissionCreateSnippetInput(
-        snippetId = req.snippetId,
-        userId = req.userId,
-        scope = req.permissionType,
-      ),
-    )
-  }
-
-  fun checkPermissions(
-    userId: String,
-    snippetId: UUID,
-    min: AccessLevel,
-  ) {
-    val snippet = snippetRepo.findById(snippetId)
-      .orElseThrow { NotFound("Snippet not found") }
-
-    when (min) {
-      AccessLevel.READER -> authorization.requireReaderOrAbove(userId, snippet)
-      AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, snippet)
-      AccessLevel.OWNER -> authorization.requireOwner(userId, snippet)
+        permissionClient.createAuthorization(
+            PermissionCreateSnippetInput(
+                snippetId = req.snippetId,
+                userId = req.userId,
+                scope = req.permissionType,
+            ),
+        )
     }
-  }
 
+    fun checkPermissions(
+        userId: String,
+        snippetId: UUID,
+        min: AccessLevel,
+    ) {
+        val snippet = snippetRepo.findById(snippetId)
+            .orElseThrow { NotFound("Snippet not found") }
 
+        when (min) {
+            AccessLevel.READER -> authorization.requireReaderOrAbove(userId, snippet)
+            AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, snippet)
+            AccessLevel.OWNER -> authorization.requireOwner(userId, snippet)
+        }
+    }
 }

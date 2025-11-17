@@ -260,5 +260,4 @@ class SnippetController(
         val res = snippetsExecuteService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
         return ResponseEntity.ok(res)
     }
-
 }

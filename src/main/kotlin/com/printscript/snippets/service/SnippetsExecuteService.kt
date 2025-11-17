@@ -17,80 +17,79 @@ import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-
 @Service
 class SnippetsExecuteService(
-  private val snippetRepo: SnippetRepo,
-  private val versionRepo: SnippetVersionRepo,
-  private val testCaseRepo: TestCaseRepo,
-  private val assetClient: SnippetAsset,
-  private val executionClient: SnippetExecution,
-  private val permissionClient: SnippetPermission,
+    private val snippetRepo: SnippetRepo,
+    private val versionRepo: SnippetVersionRepo,
+    private val testCaseRepo: TestCaseRepo,
+    private val assetClient: SnippetAsset,
+    private val executionClient: SnippetExecution,
+    private val permissionClient: SnippetPermission,
 ) {
-  private val authorization = SnippetAuthorizationScopeService(permissionClient)
-  private val containerName = "snippets"
+    private val authorization = SnippetAuthorizationScopeService(permissionClient)
+    private val containerName = "snippets"
 
-  @Transactional(readOnly = true)
-  fun runOneTestOwnerAware(
-    userId: String,
-    snippetId: UUID,
-    testCaseId: UUID,
-  ): SingleTestRunResult {
-    val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-    authorization.requireReaderOrAbove(userId, snippet)
+    @Transactional(readOnly = true)
+    fun runOneTestOwnerAware(
+        userId: String,
+        snippetId: UUID,
+        testCaseId: UUID,
+    ): SingleTestRunResult {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        authorization.requireReaderOrAbove(userId, snippet)
 
-    val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-      ?: throw NotFound("Snippet without versions")
-    val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+        val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-    val tc = testCaseRepo.findById(testCaseId).orElseThrow { NotFound("Test case not found") }
-    if (tc.snippetId != snippetId) throw InvalidRequest("El test no pertenece a este snippet")
+        val tc = testCaseRepo.findById(testCaseId).orElseThrow { NotFound("Test case not found") }
+        if (tc.snippetId != snippetId) throw InvalidRequest("El test no pertenece a este snippet")
 
-    val inputs = tc.inputs
-    val expected = tc.expectedOutputs
+        val inputs = tc.inputs
+        val expected = tc.expectedOutputs
 
-    val execReq = RunSingleTestReq(
-      language = snippet.language,
-      version = snippet.languageVersion,
-      content = content,
-      inputs = inputs,
-      expectedOutputs = expected,
-      options = null,
-    )
+        val execReq = RunSingleTestReq(
+            language = snippet.language,
+            version = snippet.languageVersion,
+            content = content,
+            inputs = inputs,
+            expectedOutputs = expected,
+            options = null,
+        )
 
-    val execRes = executionClient.runSingleTest(execReq)
+        val execRes = executionClient.runSingleTest(execReq)
 
-    return SingleTestRunResult(
-      status = execRes.status,
-      actual = execRes.actual,
-      expected = expected,
-      mismatchAt = execRes.mismatchAt,
-      diagnostic = execRes.diagnostic,
-    )
-  }
+        return SingleTestRunResult(
+            status = execRes.status,
+            actual = execRes.actual,
+            expected = expected,
+            mismatchAt = execRes.mismatchAt,
+            diagnostic = execRes.diagnostic,
+        )
+    }
 
-  fun runSnippetOwnerAware(
-    userId: String,
-    snippetId: UUID,
-    inputs: List<String>?,
-  ): RunRes {
-    val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-    authorization.requireReaderOrAbove(userId, snippet)
+    fun runSnippetOwnerAware(
+        userId: String,
+        snippetId: UUID,
+        inputs: List<String>?,
+    ): RunRes {
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        authorization.requireReaderOrAbove(userId, snippet)
 
-    val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-      ?: throw NotFound("Snippet without versions")
+        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
 
-    val contentBytes = assetClient.download(containerName, latest.contentKey)
-    val content = String(contentBytes, StandardCharsets.UTF_8)
+        val contentBytes = assetClient.download(containerName, latest.contentKey)
+        val content = String(contentBytes, StandardCharsets.UTF_8)
 
-    val req = RunReq(
-      language = snippet.language, // ej. "printscript"
-      version = snippet.languageVersion, // ej. "1.1"
-      content = content,
-      inputs = inputs,
-    )
+        val req = RunReq(
+            language = snippet.language, // ej. "printscript"
+            version = snippet.languageVersion, // ej. "1.1"
+            content = content,
+            inputs = inputs,
+        )
 
-    val response = executionClient.run(req)
-    return response
-  }
+        val response = executionClient.run(req)
+        return response
+    }
 }

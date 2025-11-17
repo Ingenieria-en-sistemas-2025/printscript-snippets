@@ -67,7 +67,6 @@ class RemoteSnippetPermission(
                 .queryParam("pageSize", pageSize)
                 .toUriString()
 
-
             restClient.get()
                 .uri(uri)
                 .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }

@@ -5,6 +5,7 @@ import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Compliance
 import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.error.NotFound
+import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.DiagnosticDto
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,7 +16,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/internal/snippets")
-class InternalWriteController(private val results: SnippetServiceImpl, private val versionRepo: SnippetVersionRepo, private val snippetRepo: SnippetRepo) {
+class InternalWriteController(private val results: SnippetRuleDomainService, private val versionRepo: SnippetVersionRepo, private val snippetRepo: SnippetRepo) {
 
     @PostMapping("/{id}/format")
     fun saveFmt(@PathVariable id: UUID, @RequestBody body: Map<String, String>) {

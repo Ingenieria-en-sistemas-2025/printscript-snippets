@@ -3,9 +3,7 @@ package com.printscript.snippets.service
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.error.UnsupportedOperation
 import com.printscript.snippets.permission.SnippetPermission
-import org.springframework.stereotype.Service
 import java.util.UUID
-
 
 class SnippetAuthorizationScopeService(
     private val permissionClient: SnippetPermission,
