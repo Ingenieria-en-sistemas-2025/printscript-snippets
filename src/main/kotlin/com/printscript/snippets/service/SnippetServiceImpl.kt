@@ -148,6 +148,7 @@ class SnippetServiceImpl(
             lintCount = snippet.lastLintCount,
         )
 
+    @Transactional
     override fun createSnippet(ownerId: String, req: CreateSnippetReq): SnippetDetailDto {
         logger.info("Request to create snippet '${req.name}' by user $ownerId")
         val content = (req.content ?: "").also {
