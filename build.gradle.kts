@@ -1,24 +1,18 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
-    kotlin("plugin.spring") version "1.9.23"
+    kotlin("jvm") version "1.9.23" //proy en kt corre en jvm
+    kotlin("plugin.spring") version "1.9.23" //hace q kt genere clases compatibles con spring
     kotlin("plugin.jpa") version "1.9.23"
-    id("org.springframework.boot") version "3.5.6"
-    id("io.spring.dependency-management") version "1.1.7"
+    id("org.springframework.boot") version "3.5.6" //facilita arrancar la app
+    id("io.spring.dependency-management") version "1.1.7" //maneja las vers de dependencias de spring
     id("jacoco")
     id("com.diffplug.spotless") version "6.25.0"
-    id("io.gitlab.arturbosch.detekt") version "1.23.6"
+    id("dev.detekt") version "2.0.0-alpha.0"
     id("org.flywaydb.flyway") version "11.7.2"
-}
-
-buildscript {
-    dependencies {
-        classpath("org.flywaydb:flyway-database-postgresql:11.7.2")
-    }
 }
 
 group = "com.printscript"
 version = "0.0.1-SNAPSHOT"
-description = "PrintScript Tests microservice"
+description = "PrintScript Snippets microservice"
 
 java {
     toolchain {
@@ -62,30 +56,24 @@ configurations {
 }
 
 dependencies {
-    implementation("org.postgresql:postgresql:42.7.4")
+    implementation("org.postgresql:postgresql:42.7.4") //para conectarse con pg
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-core") //para q spring maneje migraciones
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") //para validacion jwt y eso
     implementation("com.newrelic.agent.java:newrelic-api:8.10.0")
     runtimeOnly("org.postgresql:postgresql")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    // testRuntimeOnly("com.h2database:h2")
     testImplementation("org.testcontainers:postgresql")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.1"))
+
     testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test") // JUnit5 + Mockito + MockMvc
     testImplementation("io.mockk:mockk:1.13.12") // mocking para Kotlin
 
@@ -98,6 +86,7 @@ dependencies {
     implementation("io.printscript:contracts:0.1.2")
 }
 
+//configura el compilador de kt
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
@@ -116,12 +105,11 @@ tasks.withType<Test> {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
-    systemProperty("user.timezone", "UTC")
 }
 
 spotless {
     kotlin {
-        target("**/*.kt")
+        target("**/*.kt") // archivos a formatear
         ktlint("0.50.0").editorConfigOverride(
             mapOf("max_line_length" to "400", "indent_size" to "4"),
         )
