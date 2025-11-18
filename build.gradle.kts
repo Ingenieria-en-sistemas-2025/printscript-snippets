@@ -1,13 +1,12 @@
 plugins {
-    kotlin("jvm") version "1.9.23" //proy en kt corre en jvm
-    kotlin("plugin.spring") version "1.9.23" //hace q kt genere clases compatibles con spring
+    kotlin("jvm") version "1.9.23" // proy en kt corre en jvm
+    kotlin("plugin.spring") version "1.9.23" // hace q kt genere clases compatibles con spring
     kotlin("plugin.jpa") version "1.9.23"
-    id("org.springframework.boot") version "3.5.6" //facilita arrancar la app
-    id("io.spring.dependency-management") version "1.1.7" //maneja las vers de dependencias de spring
+    id("org.springframework.boot") version "3.5.6" // facilita arrancar la app
+    id("io.spring.dependency-management") version "1.1.7" // maneja las vers de dependencias de spring
     id("jacoco")
     id("com.diffplug.spotless") version "6.25.0"
-    id("dev.detekt") version "2.0.0-alpha.0"
-    id("org.flywaydb.flyway") version "11.7.2"
+    id("io.gitlab.arturbosch.detekt") version "1.23.6"
 }
 
 group = "com.printscript"
@@ -42,30 +41,17 @@ repositories {
     }
 }
 
-flyway {
-    url = "jdbc:postgresql://localhost:5432/snippets"
-    user = "snippets"
-    password = "snippets"
-    driver = "org.postgresql.Driver"
-    locations = arrayOf("filesystem:src/main/resources/db/migration")
-    schemas = arrayOf("public")
-}
-
-configurations {
-    create("flyway")
-}
-
 dependencies {
-    implementation("org.postgresql:postgresql:42.7.4") //para conectarse con pg
+    implementation("org.postgresql:postgresql:42.7.4") // para conectarse con pg
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.flywaydb:flyway-core") //para q spring maneje migraciones
+    implementation("org.flywaydb:flyway-core") // para q spring maneje migraciones
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") //para validacion jwt y eso
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") // para validacion jwt y eso
     implementation("com.newrelic.agent.java:newrelic-api:8.10.0")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -80,13 +66,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.austral.ingsis:redis-streams-mvc:0.1.13")
 
-    "flyway"("org.flywaydb:flyway-database-postgresql:11.7.2")
-    "flyway"("org.postgresql:postgresql:42.7.4")
-
     implementation("io.printscript:contracts:0.1.2")
 }
 
-//configura el compilador de kt
+// configura el compilador de kt
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
