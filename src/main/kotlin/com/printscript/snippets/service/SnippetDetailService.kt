@@ -2,12 +2,14 @@ package com.printscript.snippets.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.bucket.SnippetAsset
+import com.printscript.snippets.domain.LanguageConfigRepo
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.LintStatus
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.dto.CreateSnippetReq
+import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
 import com.printscript.snippets.dto.RelationFilter
 import com.printscript.snippets.dto.SnippetDetailDto
@@ -42,6 +44,7 @@ class SnippetDetailService(
     private val permissionClient: SnippetPermission,
     private val userService: UserService,
     private val rulesStateService: RulesStateService,
+    private val languageConfigRepo: LanguageConfigRepo,
 ) {
 
     private val authorization = SnippetAuthorizationScopeService(permissionClient)
@@ -309,6 +312,20 @@ class SnippetDetailService(
         } else {
             "$base.prs"
         }
+    }
+
+    fun getFileTypes(): List<FileTypeDto> {
+        val rows = languageConfigRepo.findAll()
+
+        return rows
+            .groupBy { it.language }
+            .map { (lang, entries) ->
+                FileTypeDto(
+                    language = lang,
+                    extension = entries.first().extension,
+                    versions = entries.map { it.version }.sortedDescending()
+                )
+            }
     }
 
     private fun findSnippetsWithPermissions(

@@ -226,9 +226,7 @@ class SnippetController(
 
     @GetMapping("/config/filetypes")
     fun getFileTypes(): List<FileTypeDto> =
-        listOf(
-            FileTypeDto("printscript", listOf("1.1", "1.0"), "prs"),
-        )
+        snippetDetailService.getFileTypes()
 
     @PostMapping("/run/{id}/format")
     fun formatOne(
