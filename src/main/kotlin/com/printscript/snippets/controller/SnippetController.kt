@@ -1,6 +1,5 @@
 package com.printscript.snippets.controller
 
-import com.printscript.snippets.domain.model.RulesType
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.FileTypeDto
@@ -200,13 +199,7 @@ class SnippetController(
     @PutMapping("/rules/format")
     fun saveAndPublishFormat(auth: JwtAuthenticationToken, @RequestBody body: SaveRulesReq): ResponseEntity<Void> {
         val ownerId = auth.token.subject
-        rulesStateService.saveState(
-            ownerId = ownerId,
-            type = RulesType.FORMAT,
-            rules = body.rules,
-            configText = body.configText,
-            configFormat = body.configFormat,
-        )
+        rulesStateService.saveFormatState(ownerId, body.rules, body.configText, body.configFormat)
         bulkRulesService.onFormattingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()
     }
@@ -214,13 +207,7 @@ class SnippetController(
     @PutMapping("/rules/linting")
     fun saveAndPublishLint(auth: JwtAuthenticationToken, @RequestBody body: SaveRulesReq): ResponseEntity<Void> {
         val ownerId = auth.token.subject
-        rulesStateService.saveState(
-            ownerId = ownerId,
-            type = RulesType.FORMAT,
-            rules = body.rules,
-            configText = body.configText,
-            configFormat = body.configFormat,
-        )
+        rulesStateService.saveLintState(ownerId, body.rules, body.configText, body.configFormat)
         bulkRulesService.onLintingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()
     }
@@ -228,13 +215,13 @@ class SnippetController(
     @GetMapping("/rules/format")
     fun getFmtRules(auth: JwtAuthenticationToken): ResponseEntity<List<RuleDto>> {
         val ownerId = auth.token.subject
-        return ResponseEntity.ok(rulesStateService.getRules(ownerId, RulesType.FORMAT))
+        return ResponseEntity.ok(rulesStateService.getFormatAsRules(ownerId))
     }
 
     @GetMapping("/rules/linting")
     fun getLintRules(auth: JwtAuthenticationToken): ResponseEntity<List<RuleDto>> {
         val ownerId = auth.token.subject
-        return ResponseEntity.ok(rulesStateService.getRules(ownerId, RulesType.LINT))
+        return ResponseEntity.ok(rulesStateService.getLintAsRules(ownerId))
     }
 
     @GetMapping("/config/filetypes")
