@@ -1,12 +1,15 @@
 package com.printscript.snippets.redis.service
 
 import com.printscript.snippets.domain.SnippetRepo
+import com.printscript.snippets.logs.CorrelationIdFilter.Companion.CORRELATION_ID_KEY
 import com.printscript.snippets.redis.RedisEventBus
 import com.printscript.snippets.service.LintReevaluationService
 import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
 import io.printscript.contracts.events.FormattingRulesUpdated
 import io.printscript.contracts.events.LintingRulesUpdated
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -17,13 +20,24 @@ class BulkRulesService(
     private val lintReevaluationService: LintReevaluationService,
     private val bus: RedisEventBus,
 ) {
+
+    private val logger = LoggerFactory.getLogger(BulkRulesService::class.java)
+
     fun onFormattingRulesChanged(ownerId: String) {
         val rules = rulesStateService.getFormatAsRules(ownerId)
         val options = FormatterMapper.toFormatterOptionsDto(rules)
         val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(ownerId)
 
-        val corr = UUID.randomUUID().toString()
+        val corr = MDC.get(CORRELATION_ID_KEY) ?: UUID.randomUUID().toString()
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
+
+        logger.info(
+            "onFormattingRulesChanged: owner={} snippets={} corrId={}",
+            ownerId,
+            ids.size,
+            corr,
+        )
+
         ids.forEach { snippetId ->
             val lv = snippetRepo.getLangAndVersion(snippetId)
             val event = FormattingRulesUpdated(
@@ -41,9 +55,16 @@ class BulkRulesService(
 
     fun onLintingRulesChanged(ownerId: String) {
         val (cfg, fmt) = rulesStateService.currentLintConfigEffective(ownerId)
-        val corr = UUID.randomUUID().toString()
+        val corr = MDC.get(CORRELATION_ID_KEY) ?: UUID.randomUUID().toString()
 
         val ids = lintReevaluationService.markOwnerSnippetsPending(ownerId)
+
+        logger.info(
+            "onLintingRulesChanged: owner={} snippets={} corrId={}",
+            ownerId,
+            ids.size,
+            corr,
+        )
 
         ids.forEach { id ->
             val lv = snippetRepo.getLangAndVersion(id)
