@@ -12,7 +12,7 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-#    baja el codigo del repo a la vm de GitHub
+#baja el codigo del repo a la vm de GitHub
       - uses: actions/checkout@v4
 
       - name: Set up JDK 21
@@ -22,7 +22,7 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      #corre build completo
+#corre build completo
       - name: Build (tests, detekt, spotless, etc.)
         env:
           GITHUB_ACTOR: ${{ github.actor }}
@@ -74,6 +74,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+#Calcular el nombre de la imagen y los tags
       - name: Compute images and tags
         id: meta
         run: |
@@ -166,7 +167,7 @@ jobs:
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
 
-      - name: Deploy to PROD over SSH #separadas
+      - name: Deploy to PROD over SSH
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         env:
