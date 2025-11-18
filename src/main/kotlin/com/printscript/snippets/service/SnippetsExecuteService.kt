@@ -104,5 +104,4 @@ class SnippetsExecuteService(
         val bytes = assetClient.download(containerName, version.contentKey)
         return String(bytes, StandardCharsets.UTF_8)
     }
-
 }
