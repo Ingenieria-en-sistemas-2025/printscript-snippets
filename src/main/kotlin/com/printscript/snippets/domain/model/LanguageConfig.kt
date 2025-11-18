@@ -13,8 +13,8 @@ import java.util.UUID
 @Table(
     name = "language_config",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["language", "version"])
-    ]
+        UniqueConstraint(columnNames = ["language", "version"]),
+    ],
 )
 data class LanguageConfig(
 

@@ -323,7 +323,7 @@ class SnippetDetailService(
                 FileTypeDto(
                     language = lang,
                     extension = entries.first().extension,
-                    versions = entries.map { it.version }.sortedDescending()
+                    versions = entries.map { it.version }.sortedDescending(),
                 )
             }
     }
