@@ -8,7 +8,7 @@ import com.printscript.snippets.dto.RuleDto
 import org.springframework.stereotype.Service
 
 @Service
-class RulesStateService(
+class RulesStateService( //preferencias del usuario sobre reglas
     private val rulesStateRepo: RulesStateRepo,
 ) {
 

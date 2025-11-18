@@ -28,12 +28,12 @@ class RulesState(
     @Column(nullable = false)
     var type: RulesType, // FORMAT | LINT
 
-    @Column(name = "owner_id", length = 64) // null => reglas GLOBAL
+    @Column(name = "owner_id", length = 64)
     var ownerId: String? = null,
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "enabled_json", columnDefinition = "jsonb", nullable = false)
-    var enabledJson: List<String> = emptyList(),
+    var enabledJson: List<String> = emptyList(), //ids de reglas habilitadas
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "options_json", columnDefinition = "jsonb")
