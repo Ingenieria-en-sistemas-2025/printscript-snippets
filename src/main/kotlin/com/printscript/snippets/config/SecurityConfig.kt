@@ -42,42 +42,35 @@ class SecurityConfig(
         http
             .authorizeHttpRequests {
                 it
-                    // 1. ENDPOINTS DE SNIPPETS (CRUD)
-                    // Lectura de snippets y sus tests (read:snippets)
                     .requestMatchers("/internal/**").authenticated()
                     .requestMatchers("/snippets/ping").permitAll()
-                    // GET /snippets/users -> Listar Usuarios/Amigos (read:users)
                     .requestMatchers(GET, "/snippets/users").authenticated()
                     .requestMatchers(POST, "/snippets/share").authenticated()
                     .requestMatchers(GET, "/snippets/all").authenticated()
                     .requestMatchers(GET, "/snippets/*").authenticated()
                     .requestMatchers(GET, "/snippets/cases/*").authenticated()
-                    // Escritura/Modificación/Eliminación de snippets y sus tests (write:snippets)
                     .requestMatchers(POST, "/snippets").authenticated()
                     .requestMatchers(PUT, "/snippets/*").authenticated()
                     .requestMatchers(DELETE, "/snippets/*").authenticated()
                     .requestMatchers(POST, "/snippets/cases").authenticated()
                     .requestMatchers(DELETE, "/snippets/cases/*").authenticated()
-                    // 2. ENDPOINTS DE REGLAS (RULES) Y CONFIG
-                    // Administracion de Reglas/Config (admin:rules)
+
                     .requestMatchers(GET, "/snippets/rules/*").authenticated()
                     .requestMatchers(PUT, "/snippets/rules").authenticated()
                     .requestMatchers(GET, "/snippets/config/filetypes").authenticated()
-                    // --- DESCARGA DE SNIPPET ---
+
                     .requestMatchers(GET, "/snippets/*/download").authenticated()
-// --- SNIPPET DESDE ARCHIVO (multipart) ---
+
                     .requestMatchers(POST, "/snippets/file").authenticated()
                     .requestMatchers(PUT, "/snippets/*/file").authenticated()
-// --- TEST CASES ---
+
                     .requestMatchers(GET, "/snippets/*/tests").authenticated()
                     .requestMatchers(POST, "/snippets/*/tests").authenticated()
                     .requestMatchers(DELETE, "/snippets/tests/*").authenticated()
-// --- RUN DE TESTS ---
+
                     .requestMatchers(POST, "/snippets/*/tests/*/run").authenticated()
-                    // 3. ENDPOINTS DE EJECUCIÓN (RUN)
-                    // POST /snippets/run/* (Formato, Testear, etc.) -> execute:code
+
                     .requestMatchers(POST, "/snippets/run/*").authenticated()
-                    // Fallback: Cualquier otra ruta requiere autenticacion, pero sin scope especifico
                     .anyRequest().authenticated()
             }
             .oauth2ResourceServer { rs ->
