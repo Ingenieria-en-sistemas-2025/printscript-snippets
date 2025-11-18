@@ -205,7 +205,7 @@ class SnippetController(
             type = RulesType.FORMAT,
             rules = body.rules,
             configText = body.configText,
-            configFormat = body.configFormat
+            configFormat = body.configFormat,
         )
         bulkRulesService.onFormattingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()
@@ -219,7 +219,7 @@ class SnippetController(
             type = RulesType.FORMAT,
             rules = body.rules,
             configText = body.configText,
-            configFormat = body.configFormat
+            configFormat = body.configFormat,
         )
         bulkRulesService.onLintingRulesChanged(ownerId)
         return ResponseEntity.accepted().build()

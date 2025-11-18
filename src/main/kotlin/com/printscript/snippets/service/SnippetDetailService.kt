@@ -6,6 +6,7 @@ import com.printscript.snippets.domain.LanguageConfigRepo
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.LintStatus
+import com.printscript.snippets.domain.model.RulesType
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.dto.CreateSnippetReq
@@ -99,7 +100,8 @@ class SnippetDetailService(
         logger.debug("Uploading content to asset client with key: $contentKey")
         assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
 
-        val (configText, configFormat) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
+        val (configText, configFormat) =
+            rulesStateService.currentConfigEffective(snippet.ownerId, RulesType.LINT)
         logger.debug("Calling execution service for linting with owner rules...")
         val lintRes = executionClient.lint(
             LintReq(

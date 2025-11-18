@@ -54,22 +54,16 @@ class SecurityConfig(
                     .requestMatchers(DELETE, "/snippets/*").authenticated()
                     .requestMatchers(POST, "/snippets/cases").authenticated()
                     .requestMatchers(DELETE, "/snippets/cases/*").authenticated()
-
                     .requestMatchers(GET, "/snippets/rules/*").authenticated()
                     .requestMatchers(PUT, "/snippets/rules").authenticated()
                     .requestMatchers(GET, "/snippets/config/filetypes").authenticated()
-
                     .requestMatchers(GET, "/snippets/*/download").authenticated()
-
                     .requestMatchers(POST, "/snippets/file").authenticated()
                     .requestMatchers(PUT, "/snippets/*/file").authenticated()
-
                     .requestMatchers(GET, "/snippets/*/tests").authenticated()
                     .requestMatchers(POST, "/snippets/*/tests").authenticated()
                     .requestMatchers(DELETE, "/snippets/tests/*").authenticated()
-
                     .requestMatchers(POST, "/snippets/*/tests/*/run").authenticated()
-
                     .requestMatchers(POST, "/snippets/run/*").authenticated()
                     .anyRequest().authenticated()
             }

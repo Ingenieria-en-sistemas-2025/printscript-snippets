@@ -84,7 +84,7 @@ class RulesStateService( // preferencias del usuario sobre reglas
         type: RulesType,
         rules: List<RuleDto>,
         configText: String?,
-        configFormat: String?
+        configFormat: String?,
     ) {
         val enabled = rules.filter { it.enabled }.map { it.id }.toSet()
         val options = rules.mapNotNull { r -> r.value?.let { v -> r.id to v } }.toMap()
