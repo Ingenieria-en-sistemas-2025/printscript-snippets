@@ -9,9 +9,6 @@ import org.springframework.data.jpa.repository.Query
 import java.util.UUID
 
 interface SnippetRepo : JpaRepository<Snippet, UUID> {
-    fun findByIdIn(ids: List<UUID>, pageable: Pageable): Page<Snippet>
-    fun existsByOwnerIdAndName(ownerId: String, name: String): Boolean
-
     @Query("select s.id from Snippet s")
     fun findAllIds(): List<UUID>
 

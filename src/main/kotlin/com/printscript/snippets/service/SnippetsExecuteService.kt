@@ -35,25 +35,18 @@ class SnippetsExecuteService(
         snippetId: UUID,
         testCaseId: UUID,
     ): SingleTestRunResult {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        authorization.requireReaderOrAbove(userId, snippet)
+        val snippet = requireSnippetWithReadAccess(userId, snippetId)
 
-        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
-        val content = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
+        val content = loadLatestContent(snippetId)
 
-        val tc = testCaseRepo.findById(testCaseId).orElseThrow { NotFound("Test case not found") }
-        if (tc.snippetId != snippetId) throw InvalidRequest("El test no pertenece a este snippet")
-
-        val inputs = tc.inputs
-        val expected = tc.expectedOutputs
+        val testCase = requireTestCaseForSnippet(testCaseId, snippetId)
 
         val execReq = RunSingleTestReq(
             language = snippet.language,
             version = snippet.languageVersion,
             content = content,
-            inputs = inputs,
-            expectedOutputs = expected,
+            inputs = testCase.inputs,
+            expectedOutputs = testCase.expectedOutputs,
             options = null,
         )
 
@@ -62,7 +55,7 @@ class SnippetsExecuteService(
         return SingleTestRunResult(
             status = execRes.status,
             actual = execRes.actual,
-            expected = expected,
+            expected = testCase.expectedOutputs,
             mismatchAt = execRes.mismatchAt,
             diagnostic = execRes.diagnostic,
         )
@@ -73,14 +66,8 @@ class SnippetsExecuteService(
         snippetId: UUID,
         inputs: List<String>?,
     ): RunRes {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        authorization.requireReaderOrAbove(userId, snippet)
-
-        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
-
-        val contentBytes = assetClient.download(containerName, latest.contentKey)
-        val content = String(contentBytes, StandardCharsets.UTF_8)
+        val snippet = requireSnippetWithReadAccess(userId, snippetId)
+        val content = loadLatestContent(snippetId)
 
         val req = RunReq(
             language = snippet.language, // ej. "printscript"
@@ -92,4 +79,30 @@ class SnippetsExecuteService(
         val response = executionClient.run(req)
         return response
     }
+
+    private fun requireSnippetWithReadAccess(userId: String, snippetId: UUID): com.printscript.snippets.domain.model.Snippet {
+        val snippet = snippetRepo.findById(snippetId)
+            .orElseThrow { NotFound("Snippet not found") }
+
+        authorization.requireReaderOrAbove(userId, snippet)
+        return snippet
+    }
+
+    private fun requireTestCaseForSnippet(testCaseId: UUID, snippetId: UUID) =
+        testCaseRepo.findById(testCaseId)
+            .orElseThrow { NotFound("Test case not found") }
+            .also { tc ->
+                if (tc.snippetId != snippetId) {
+                    throw InvalidRequest("El test no pertenece a este snippet")
+                }
+            }
+
+    private fun loadLatestContent(snippetId: UUID): String {
+        val version = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet without versions")
+
+        val bytes = assetClient.download(containerName, version.contentKey)
+        return String(bytes, StandardCharsets.UTF_8)
+    }
+
 }
