@@ -37,21 +37,6 @@ class RemoteSnippetPermission(
         }
     }
 
-    override fun getAuthorBySnippetId(snippetId: String): ResponseEntity<String> {
-        return try {
-            val m2mToken = auth0TokenService.getAccessToken()
-
-            restClient.get()
-                .uri("$permissionServiceUrl/authorization/snippet/$snippetId/owner")
-                .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
-                .retrieve()
-                .toEntity(String::class.java)
-        } catch (ex: RestClientException) {
-            logger.error("Failed to get owner for snippet $snippetId: ${ex.message}", ex)
-            throw ex
-        }
-    }
-
     override fun getAllSnippetsPermission(
         userId: String,
         pageNum: Int,
