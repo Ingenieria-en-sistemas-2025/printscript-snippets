@@ -1,6 +1,7 @@
 package com.printscript.snippets.redis.service
 
 import com.printscript.snippets.domain.SnippetRepo
+import com.printscript.snippets.domain.model.RulesType
 import com.printscript.snippets.logs.CorrelationIdFilter.Companion.CORRELATION_ID_KEY
 import com.printscript.snippets.redis.RedisEventBus
 import com.printscript.snippets.service.LintReevaluationService
@@ -24,9 +25,9 @@ class BulkRulesService(
     private val logger = LoggerFactory.getLogger(BulkRulesService::class.java)
 
     fun onFormattingRulesChanged(ownerId: String) {
-        val rules = rulesStateService.getFormatAsRules(ownerId)
+        val rules = rulesStateService.getRules(ownerId, RulesType.FORMAT)
         val options = FormatterMapper.toFormatterOptionsDto(rules)
-        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(ownerId)
+        val (cfgText, cfgFmt) = rulesStateService.currentConfigEffective(ownerId, RulesType.FORMAT)
 
         val corr = MDC.get(CORRELATION_ID_KEY) ?: UUID.randomUUID().toString()
         val ids = snippetRepo.findAllIdsByOwner(ownerId)
@@ -54,7 +55,7 @@ class BulkRulesService(
     }
 
     fun onLintingRulesChanged(ownerId: String) {
-        val (cfg, fmt) = rulesStateService.currentLintConfigEffective(ownerId)
+        val (cfg, fmt) = rulesStateService.currentConfigEffective(ownerId, RulesType.LINT)
         val corr = MDC.get(CORRELATION_ID_KEY) ?: UUID.randomUUID().toString()
 
         val ids = lintReevaluationService.markOwnerSnippetsPending(ownerId)
