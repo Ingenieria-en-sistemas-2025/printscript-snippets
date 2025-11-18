@@ -29,7 +29,6 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         "indent-spaces" to DEFAULT_INDENT,
         "tabsize" to DEFAULT_TABSIZE,
         "line-breaks-after-println" to DEFAULT_PRINTLN_BREAKS,
-        "line_breaks_after_println" to DEFAULT_PRINTLN_BREAKS,
     )
 
     private val allIds: List<String> = (formatBoolRules + formatNumericDefaults.keys).toList().sorted()
