@@ -62,7 +62,8 @@ jobs:
           length: 8
 
       #prepara el entorno para el paso de build
-      - name: Docker Buildx # es el build moderno de docker p/construir imgs
+      # es el build moderno de docker p/construir imgs
+      - name: Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       #loguea al GHCR usando el token del repo
