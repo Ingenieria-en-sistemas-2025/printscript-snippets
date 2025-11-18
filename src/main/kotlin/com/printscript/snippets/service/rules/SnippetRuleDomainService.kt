@@ -100,8 +100,7 @@ class SnippetRuleDomainService(
 
         val rules = rulesStateService.getFormatAsRules(snippet.ownerId)
         val options = FormatterMapper.toFormatterOptionsDto(rules)
-        val cfgText = rulesStateService.buildFormatterConfigFromRules(rules)
-        val cfgFmt = "json"
+        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(snippet.ownerId)
 
         val req = FormatReq(
             language = snippet.language,

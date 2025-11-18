@@ -1,6 +1,5 @@
 package com.printscript.snippets.service.rules
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.domain.model.RulesType
@@ -8,58 +7,15 @@ import com.printscript.snippets.dto.RuleDto
 import org.springframework.stereotype.Service
 
 @Service
-class RulesStateService( //preferencias del usuario sobre reglas
+class RulesStateService( // preferencias del usuario sobre reglas
     private val rulesStateRepo: RulesStateRepo,
 ) {
 
-    private val om = jacksonObjectMapper()
-
-    private companion object {
-        private const val DEFAULT_INDENT = 3
-        private const val DEFAULT_TABSIZE = 3
-        private const val DEFAULT_PRINTLN_BREAKS = 0
-    }
-
-    private val fmtBoolRules = setOf(
-        "enforce-spacing-around-equals",
-        "enforce-no-spacing-around-equals",
-        "enforce-spacing-after-colon-in-declaration",
-        "enforce-spacing-before-colon-in-declaration",
-        "indent-inside-if",
-        "mandatory-single-space-separation",
-        "if-brace-below-line",
-        "if-brace-same-line",
-    )
-
-    // Numéricas (van en optionsJson)
-    private val fmtNumericDefaults = mapOf(
-        "indent_size" to DEFAULT_INDENT,
-        "indent-spaces" to DEFAULT_INDENT,
-        "tabsize" to DEFAULT_TABSIZE,
-        "line-breaks-after-println" to DEFAULT_PRINTLN_BREAKS,
-        "line_breaks_after_println" to DEFAULT_PRINTLN_BREAKS,
-    )
-
-    private val lintRules = listOf(
-        "IdentifierStyleRuleStreaming",
-        "PrintlnSimpleArgRuleStreaming",
-        "ReadInputSimpleArgRuleStreaming",
-    )
-
-    private val allFormatIds = (fmtBoolRules + fmtNumericDefaults.keys).toList().sorted()
-
-    private fun defaultFormatEnabled(): Set<String> = setOf(
-        "indent-spaces",
-        "mandatory-single-space-separation",
-        "if-brace-same-line",
-    )
-
-    private fun defaultFormatValues(): Map<String, Int> = fmtNumericDefaults
-
-    private fun defaultLintEnabled(): Set<String> = setOf(
-        "IdentifierStyleRuleStreaming",
-        "PrintlnSimpleArgRuleStreaming",
-    )
+    private val strategies: Map<RulesType, RuleTypeStrategy> =
+        listOf(
+            FormatRuleStrategy(),
+            LintRuleStrategy(),
+        ).associateBy { it.type }
 
     private fun findRow(type: RulesType, ownerId: String?): RulesState? =
         rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElseGet {
@@ -79,16 +35,10 @@ class RulesStateService( //preferencias del usuario sobre reglas
             ),
         )
 
-    // Lee enabled directamente (Hibernate ya deserializa JSON → List<String>)
     private fun readEnabled(type: RulesType, ownerId: String?): Set<String> {
         val row = findRow(type, ownerId)
-        if (row == null) {
-            return when (type) {
-                RulesType.FORMAT -> defaultFormatEnabled()
-                RulesType.LINT -> defaultLintEnabled()
-            }
-        }
-        return row.enabledJson.toSet()
+        val strategy = strategies.getValue(type)
+        return row?.enabledJson?.toSet() ?: strategy.defaultEnabled()
     }
 
     private fun readOptions(type: RulesType, ownerId: String?): Map<String, Any?> {
@@ -97,8 +47,17 @@ class RulesStateService( //preferencias del usuario sobre reglas
         return raw.filterValues { it != null }
     }
 
+    private fun normalizeFormat(configFormat: String?): String =
+        when (configFormat?.lowercase()) {
+            "yaml", "yml" -> "yaml"
+            "json" -> "json"
+            null, "" -> "json"
+            else -> "json"
+        }
+
     fun saveFormatState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
+
         val options: Map<String, Int> = rules.mapNotNull { r ->
             val intValue = when (val v = r.value) {
                 is Number -> v.toInt()
@@ -112,19 +71,32 @@ class RulesStateService( //preferencias del usuario sobre reglas
             ?.trim()
             ?.takeUnless { it.isEmpty() || it == "{}" }
 
-        val normalizedConfigFormat = when (configFormat?.lowercase()) {
-            "yaml", "yml" -> "yaml"
-            "json" -> "json"
-            null, "" -> "json"
-            else -> "json"
-        }
-
         val row = upsertRow(RulesType.FORMAT, ownerId)
         row.enabledJson = enabled.toList()
         row.optionsJson = options.ifEmpty { null }
         row.configText = normalizedConfigText
-        row.configFormat = normalizedConfigFormat
+        row.configFormat = normalizeFormat(configFormat)
         rulesStateRepo.save(row)
+    }
+
+    fun getFormatAsRules(ownerId: String): List<RuleDto> {
+        val type = RulesType.FORMAT
+        val strategy = strategies.getValue(type)
+
+        val enabled = readEnabled(type, ownerId)
+        val values = readOptions(type, ownerId)
+
+        return strategy.toRuleDtos(enabled, values)
+    }
+
+    fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
+        val type = RulesType.FORMAT
+        val row = findRow(type, ownerId)
+        val rules = getFormatAsRules(ownerId)
+
+        // A diferencia de lint, acá permitís null si no tenés nada configurado
+        val (cfgText, cfgFmt) = strategies.getValue(type).buildEffectiveConfig(row, rules)
+        return cfgText to cfgFmt
     }
 
     fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
@@ -141,114 +113,30 @@ class RulesStateService( //preferencias del usuario sobre reglas
         rulesStateRepo.save(row)
     }
 
-    fun getFormatAsRules(ownerId: String): List<RuleDto> {
-        val enabled = readEnabled(RulesType.FORMAT, ownerId)
-        val values = readOptions(RulesType.FORMAT, ownerId)
-        val defaults = defaultFormatValues()
-
-        return allFormatIds.map { id ->
-            val raw = values[id] ?: defaults[id]
-            val intVal = when (raw) {
-                is Number -> raw.toInt()
-                is String -> raw.toIntOrNull()
-                else -> null
-            }
-            RuleDto(id = id, enabled = enabled.contains(id), value = intVal)
-        }
-    }
-
     fun getLintAsRules(ownerId: String): List<RuleDto> {
-        val enabled = readEnabled(RulesType.LINT, ownerId)
-        val values = readOptions(RulesType.LINT, ownerId)
+        val type = RulesType.LINT
+        val strategy = strategies.getValue(type)
 
-        return lintRules.distinct().map { id ->
-            val raw = values[id]
-            val value: Any? = when (raw) {
-                is String -> raw
-                is Number -> raw.toInt()
-                else -> null
-            }
+        val enabled = readEnabled(type, ownerId)
+        val values = readOptions(type, ownerId)
 
-            RuleDto(
-                id = id,
-                enabled = enabled.contains(id),
-                value = value,
-            )
-        }
-    }
-
-    fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
-        val row = findRow(RulesType.FORMAT, ownerId)
-
-        val cfgText: String? = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" }
-
-        val cfgFmt: String? = row?.configFormat
-
-        return cfgText to cfgFmt
+        return strategy.toRuleDtos(enabled, values)
     }
 
     fun currentLintConfig(ownerId: String): Pair<String?, String?> {
-        val row = findRow(RulesType.LINT, ownerId)
-        return row?.configText to row?.configFormat
-    }
-
-    fun buildFormatterConfigFromRules(rules: List<RuleDto>): String {
-        val opts = FormatterMapper.toFormatterOptionsDto(rules)
-        val config = mapOf(
-            "spaceBeforeColonInDecl" to opts.spaceBeforeColonInDecl,
-            "spaceAfterColonInDecl" to opts.spaceAfterColonInDecl,
-            "spaceAroundAssignment" to opts.spaceAroundAssignment,
-            "blankLinesAfterPrintln" to opts.blankLinesAfterPrintln,
-            "indentSpaces" to opts.indentSpaces,
-            "mandatorySingleSpaceSeparation" to opts.mandatorySingleSpaceSeparation,
-            "ifBraceBelowLine" to opts.ifBraceBelowLine,
-            "ifBraceSameLine" to opts.ifBraceSameLine,
-        )
-        return om.writeValueAsString(config)
-    }
-
-    private fun buildLintConfigFromEnabled(enabled: Set<String>, rules: List<RuleDto>? = null): String {
-        val identifierValue: String? = rules
-            ?.firstOrNull { it.id == "IdentifierStyleRuleStreaming" }
-            ?.value
-            ?.toString()
-            ?.uppercase()
-
-        val style = when (identifierValue) {
-            "SNAKE_CASE" -> "SNAKE_CASE"
-            "CAMEL_CASE" -> "CAMEL_CASE"
-            else -> "CAMEL_CASE"
-        }
-
-        val cfg = mapOf(
-            "identifiers" to mapOf(
-                "enabled" to enabled.contains("IdentifierStyleRuleStreaming"),
-                "style" to style,
-            ),
-            "printlnRule" to mapOf(
-                "enabled" to enabled.contains("PrintlnSimpleArgRuleStreaming"),
-            ),
-            "readInputRule" to mapOf(
-                "enabled" to enabled.contains("ReadInputSimpleArgRuleStreaming"),
-            ),
-        )
-        return om.writeValueAsString(cfg)
+        val type = RulesType.LINT
+        val row = findRow(type, ownerId)
+        val rules = getLintAsRules(ownerId)
+        return strategies.getValue(type).buildEffectiveConfig(row, rules)
     }
 
     fun currentLintConfigEffective(ownerId: String): Pair<String, String> {
-        val row = findRow(RulesType.LINT, ownerId)
-        val enabled: Set<String> = row?.enabledJson?.toSet() ?: defaultLintEnabled()
-        val rules = getLintAsRules(ownerId)
+        val (cfgText, cfgFmt) = currentLintConfig(ownerId)
+        return (cfgText ?: "{}") to (cfgFmt ?: "json")
+    }
 
-        val cfgText: String = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" }
-            ?: buildLintConfigFromEnabled(enabled, rules)
-
-        val cfgFmt: String = row?.configFormat ?: "json"
-
-        return cfgText to cfgFmt
+    fun currentFormatConfigEffective(ownerId: String): Pair<String, String> {
+        val (cfgText, cfgFmt) = currentFormatConfig(ownerId)
+        return (cfgText ?: "{}") to (cfgFmt ?: "json")
     }
 }

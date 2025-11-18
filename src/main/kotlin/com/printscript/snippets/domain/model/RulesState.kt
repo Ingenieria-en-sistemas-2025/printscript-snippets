@@ -33,7 +33,7 @@ class RulesState(
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "enabled_json", columnDefinition = "jsonb", nullable = false)
-    var enabledJson: List<String> = emptyList(), //ids de reglas habilitadas
+    var enabledJson: List<String> = emptyList(), // ids de reglas habilitadas
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "options_json", columnDefinition = "jsonb")
