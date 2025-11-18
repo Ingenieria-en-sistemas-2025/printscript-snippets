@@ -74,8 +74,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-
-        #Calcular el nombre de la imagen y los tags
       - name: Compute images and tags
         id: meta
         run: |
