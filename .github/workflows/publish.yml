@@ -1,4 +1,4 @@
-name:  CI + Publish Docker image
+name: CI + Publish Docker image
 
 on:
   push:
@@ -12,9 +12,10 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-#baja el codigo del repo a la vm de GitHub
+      # Descarga el codigo del repo en el runner
       - uses: actions/checkout@v4
 
+      # Instala JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -22,13 +23,14 @@ jobs:
           java-version: "21"
           cache: gradle
 
-#corre build completo
+      # Corre el build completo (tests, detekt, spotless, etc)
       - name: Build (tests, detekt, spotless, etc.)
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew --no-daemon clean build
 
+      # Sube los reportes para poder verlos en Actions
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -42,31 +44,31 @@ jobs:
 
   publish:
     name: Build & Push Docker image
-    #solo se ejecuta si ci termina en ok
+    # Se ejecuta solo si ci terminó OK
     needs: ci
-    # corre para push a dev o main
+    # Solo para push a main o dev
     if: github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
+      # Checkout del repo
       - name: Checkout
         uses: actions/checkout@v4
 
-      #convierte el sha largo del commit en corto
+      # Convierte el SHA del commit en uno corto
       - name: Create short SHA
         id: short-sha
         uses: benjlevesque/short-sha@v1.2
         with:
           length: 8
 
-      #prepara el entorno para el paso de build
-      # es el build moderno de docker p/construir imgs
+      # Prepara Docker Buildx para build multi-arch
       - name: Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      #loguea al GHCR usando el token del repo
+      # Login al GHCR para poder pushear imágenes
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -74,14 +76,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-#Calcular el nombre de la imagen y los tags
+      # Calcula el nombre de la imagen y los tags
       - name: Compute images and tags
         id: meta
         run: |
           IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
-        #guarda image como output del step
-          echo "image=$IMAGE" >> $GITHUB_OUTPUT  
-          
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
           {
             echo "tags<<EOF"
             echo "$IMAGE:${{ steps.short-sha.outputs.sha }}"
@@ -94,18 +95,17 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
+      # Construye la imagen usando el Dockerfile y la publica en GHCR
       - name: Build & Push
         uses: docker/build-push-action@v6
         with:
           context: .
-          #le dice que suba la img al registry desp de construirla
           push: true
           build-args: |
             GITHUB_ACTOR=${{ github.actor }}
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: ${{ steps.meta.outputs.tags }}
           provenance: false
-
 
   deploy:
     needs: publish
@@ -115,34 +115,37 @@ jobs:
       id-token: write
       contents: read
     steps:
+      # Login a Azure para usar CLI
       - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Encender VM DEV
       - name: Start DEV VM
         if: github.ref_name == 'dev'
         run: |
           az vm start -g "${{ secrets.AZ_RG_DEV }}" -n "${{ secrets.AZ_VM_DEV_NAME }}"
-          # Esperar a que el SSH responda (máx ~2 min)
           for i in {1..24}; do
             nc -z ${{ secrets.VM_DEV_HOST }} 22 && echo "SSH listo" && exit 0
             echo "Esperando SSH..." && sleep 5
           done
           echo "Timeout esperando SSH" && exit 1
+
+      # Encender VM PROD
       - name: Start PROD VM
         if: github.ref_name == 'main'
         run: |
           az vm start -g "${{ secrets.AZ_RG_PROD }}" -n "${{ secrets.AZ_VM_PROD_NAME }}"
-          # Esperar a que el SSH responda (máx ~2 min)
           for i in {1..24}; do
             nc -z ${{ secrets.VM_PROD_HOST }} 22 && echo "SSH listo" && exit 0
             echo "Esperando SSH..." && sleep 5
           done
           echo "Timeout esperando SSH" && exit 1
 
+      # Deploy a DEV
       - name: Deploy to DEV over SSH
         if: github.ref_name == 'dev'
-        #para conectarse por SSH a una VM y ejecutar comandos.
         uses: appleboy/ssh-action@v1.0.3
         env:
           GHCR_USER: ${{ secrets.GHCR_USER }}
@@ -157,16 +160,17 @@ jobs:
             git fetch --all
             git checkout dev || true
             git pull || true
+
             if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
-            
+
             SVC_NAME="snippets"
             docker compose pull "$SVC_NAME"
             docker compose up -d --no-deps "$SVC_NAME"
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
-
+      # Deploy a PROD
       - name: Deploy to PROD over SSH
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
@@ -183,10 +187,11 @@ jobs:
             git fetch --all
             git checkout main || true
             git pull || true
+
             if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_PAT}" ]; then
               echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             fi
-            
+
             SVC_NAME="snippets"
             docker compose pull "$SVC_NAME"
             docker compose up -d --no-deps "$SVC_NAME"
