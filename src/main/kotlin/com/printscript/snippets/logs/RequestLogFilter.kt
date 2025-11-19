@@ -26,6 +26,8 @@ class RequestLogFilter : OncePerRequestFilter() {
     ) {
         val method = request.method
         val uri = request.requestURI + (request.queryString?.let { "?$it" } ?: "")
+        val fullUri = "$method $uri"
+        log.info("START - $fullUri")
 
         var status: Int
         val elapsedMs = measureNanoTime {
@@ -33,6 +35,6 @@ class RequestLogFilter : OncePerRequestFilter() {
         }.let { it / NANO_TO_MILLISECOND }
 
         status = response.status
-        log.info("$method $uri - $status (${elapsedMs}ms)")
+        log.info("END - $fullUri - $status (${elapsedMs}ms)")
     }
 }
