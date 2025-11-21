@@ -40,15 +40,6 @@ class TestCase(
     // la version correspondiente al snippet que aplica este test case
     @Column(name = "target_version_number")
     var targetVersionNumber: Long? = null,
-
-    @Column(name = "created_by", nullable = false)
-    var createdBy: String,
-
-    @Column(name = "created_at", nullable = false)
-    var createdAt: Instant = Instant.now(),
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now(),
 )
 
 // 1 snippet tiene 1 o muchos test cases

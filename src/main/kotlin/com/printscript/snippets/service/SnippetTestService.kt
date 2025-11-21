@@ -22,7 +22,6 @@ class SnippetTestService(
                 inputs = req.inputs,
                 expectedOutputs = req.expectedOutputs,
                 targetVersionNumber = req.targetVersionNumber,
-                createdBy = "system",
             ),
         )
 
