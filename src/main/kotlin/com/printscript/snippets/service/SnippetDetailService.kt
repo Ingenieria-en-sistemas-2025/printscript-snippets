@@ -268,16 +268,15 @@ class SnippetDetailService(
         val permissions = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
         val ids = (permissions?.authorizations ?: emptyList())
             .mapNotNull { auth ->
-            runCatching { UUID.fromString(auth.snippetId) } //run catching para evitar que un uuid mal formado rompa tdo
-                .onFailure {
-                    logger.warn("Invalid UUID format found in authorization service: ${auth.snippetId}", it)
-                }
-                .getOrNull()
-        }
+                runCatching { UUID.fromString(auth.snippetId) } // run catching para evitar que un uuid mal formado rompa tdo
+                    .onFailure {
+                        logger.warn("Invalid UUID format found in authorization service: ${auth.snippetId}", it)
+                    }
+                    .getOrNull()
+            }
 
         return snippetRepo.findAllById(ids)
     }
-
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
         val from = (page * size).coerceAtMost(total) // calcular indice iniciall
@@ -333,8 +332,6 @@ class SnippetDetailService(
     private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
         list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
 
-
-
     private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
         SnippetDetailDto(
             id = snippet.id!!.toString(),
@@ -363,5 +360,4 @@ class SnippetDetailService(
             compliance = snippet.compliance.name,
         )
     }
-
 }
