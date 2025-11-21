@@ -1,6 +1,6 @@
 package com.printscript.snippets.domain
 
-import com.printscript.snippets.domain.model.LintStatus
+import com.printscript.snippets.domain.model.enums.LintStatus
 import com.printscript.snippets.domain.model.SnippetVersion
 import jakarta.transaction.Transactional
 import org.springframework.data.jpa.repository.JpaRepository

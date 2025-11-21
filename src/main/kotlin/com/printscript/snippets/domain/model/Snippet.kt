@@ -1,5 +1,6 @@
 package com.printscript.snippets.domain.model
 
+import com.printscript.snippets.domain.model.enums.Compliance
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

@@ -1,7 +1,7 @@
 package com.printscript.snippets.service
 
-import com.printscript.snippets.domain.model.Compliance
-import com.printscript.snippets.domain.model.LintStatus
+import com.printscript.snippets.domain.model.enums.Compliance
+import com.printscript.snippets.domain.model.enums.LintStatus
 
 object ComplianceCalculator {
     fun compute(lintStatus: LintStatus, isValid: Boolean, lintCount: Int): Compliance =

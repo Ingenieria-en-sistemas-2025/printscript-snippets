@@ -1,5 +1,6 @@
 package com.printscript.snippets.domain.model
 
+import com.printscript.snippets.domain.model.enums.LintStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -47,4 +48,4 @@ class SnippetVersion(
     @Column(name = "lint_status", nullable = false, length = 16)
     var lintStatus: LintStatus = LintStatus.PENDING,
 
-)
+    )

@@ -1,7 +1,7 @@
 package com.printscript.snippets.service.rules
 
 import com.printscript.snippets.domain.model.RulesState
-import com.printscript.snippets.domain.model.RulesType
+import com.printscript.snippets.domain.model.enums.RulesType
 import com.printscript.snippets.dto.RuleDto
 
 internal interface RuleTypeStrategy {

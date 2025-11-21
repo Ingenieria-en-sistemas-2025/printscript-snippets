@@ -1,5 +1,6 @@
 package com.printscript.snippets.domain.model
 
+import com.printscript.snippets.domain.model.enums.RulesType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -46,4 +47,4 @@ class RulesState(
     var configFormat: String? = null,
 )
 
-enum class RulesType { FORMAT, LINT }
+
