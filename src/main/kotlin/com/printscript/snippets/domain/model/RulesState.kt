@@ -46,5 +46,3 @@ class RulesState(
     @Column(name = "config_format", length = 32)
     var configFormat: String? = null,
 )
-
-

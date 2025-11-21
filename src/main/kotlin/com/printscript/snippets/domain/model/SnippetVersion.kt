@@ -48,4 +48,4 @@ class SnippetVersion(
     @Column(name = "lint_status", nullable = false, length = 16)
     var lintStatus: LintStatus = LintStatus.PENDING,
 
-    )
+)

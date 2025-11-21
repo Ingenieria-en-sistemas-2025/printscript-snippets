@@ -5,9 +5,9 @@ import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.LanguageConfigRepo
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
-import com.printscript.snippets.domain.model.enums.LintStatus
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
+import com.printscript.snippets.domain.model.enums.LintStatus
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto

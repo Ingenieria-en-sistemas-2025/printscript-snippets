@@ -4,9 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
-import com.printscript.snippets.domain.model.enums.LintStatus
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
+import com.printscript.snippets.domain.model.enums.LintStatus
 import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.execution.SnippetExecution
