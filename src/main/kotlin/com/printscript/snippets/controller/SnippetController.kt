@@ -82,7 +82,7 @@ class SnippetController(
         logger.info("  - name: $name")
         logger.info("  - relation: $relation")
 
-        val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name, relation,)
+        val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name, relation)
 
         logger.info("Result from service:")
         logger.info("  - count: ${result.count}")
