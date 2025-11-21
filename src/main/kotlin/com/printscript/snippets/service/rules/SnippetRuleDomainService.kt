@@ -64,9 +64,6 @@ class SnippetRuleDomainService(
         latest.isFormatted = true
 
         versionRepo.save(latest)
-
-        snippet.updatedAt = java.time.Instant.now()
-        snippetRepo.save(snippet)
     }
 
     fun saveLint(
