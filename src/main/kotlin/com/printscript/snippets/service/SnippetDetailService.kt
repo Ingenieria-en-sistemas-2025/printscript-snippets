@@ -50,34 +50,6 @@ class SnippetDetailService(
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
 
-    private fun requireSnippet(snippetId: UUID): Snippet =
-        snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet with ID $snippetId not found") }
-
-    private fun requireLatestVersion(snippetId: UUID): SnippetVersion =
-        versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet $snippetId has no versions")
-
-    private fun validateNonBlankContent(content: String) {
-        if (content.isBlank()) {
-            throw InvalidRequest("El contenido del snippet no puede estar vacío")
-        }
-    }
-
-    private fun readContent(key: String): String =
-        String(assetClient.download(containerName, key), StandardCharsets.UTF_8)
-
-    // key del archivo en el bucket
-    private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
-        "$ownerId/$snippetId/v$versionNumber.ps"
-
-    // ult nro de version persistido para ese snippet
-    private fun getLatestVersionNumber(snippetId: UUID): Long =
-        versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
-
-    // mapper simple Execution.DiagnosticDto -> ApiDiagnostic
-    private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
-        list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
-
     private fun createAndPersistVersion(
         snippet: Snippet,
         content: String,
@@ -132,35 +104,6 @@ class SnippetDetailService(
         snippetRepo.save(snippet)
         logger.info("Snippet version $nextVersion created successfully")
         return version
-    }
-
-    private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
-        SnippetDetailDto(
-            id = snippet.id!!.toString(),
-            name = snippet.name,
-            description = snippet.description,
-            language = snippet.language,
-            version = snippet.languageVersion,
-            ownerId = snippet.ownerId,
-            content = content,
-            isValid = version.isValid,
-            lintCount = snippet.lastLintCount,
-        )
-
-    private fun toSummaryDto(snippet: Snippet): SnippetSummaryDto {
-        val authorEmail = userService.getEmailById(snippet.ownerId)
-        return SnippetSummaryDto(
-            id = snippet.id!!.toString(),
-            name = snippet.name,
-            description = snippet.description,
-            language = snippet.language,
-            version = snippet.languageVersion,
-            ownerId = snippet.ownerId,
-            ownerEmail = authorEmail,
-            lastIsValid = snippet.lastIsValid,
-            lastLintCount = snippet.lastLintCount,
-            compliance = snippet.compliance.name,
-        )
     }
 
     @Transactional
@@ -322,17 +265,19 @@ class SnippetDetailService(
     private fun findSnippetsWithPermissions(
         userId: String,
     ): List<Snippet> {
-        val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
-        val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
-            runCatching { UUID.fromString(authView.snippetId) }
+        val permissions = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
+        val ids = (permissions?.authorizations ?: emptyList())
+            .mapNotNull { auth ->
+            runCatching { UUID.fromString(auth.snippetId) } //run catching para evitar que un uuid mal formado rompa tdo
                 .onFailure {
-                    logger.warn("Invalid UUID format found in authorization service: ${authView.snippetId}", it)
+                    logger.warn("Invalid UUID format found in authorization service: ${auth.snippetId}", it)
                 }
                 .getOrNull()
         }
 
         return snippetRepo.findAllById(ids)
     }
+
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
         val from = (page * size).coerceAtMost(total) // calcular indice iniciall
@@ -359,4 +304,64 @@ class SnippetDetailService(
             val latest = requireLatestVersion(snippetId)
             readContent(latest.contentKey)
         }
+
+    private fun requireSnippet(snippetId: UUID): Snippet =
+        snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet with ID $snippetId not found") }
+
+    private fun requireLatestVersion(snippetId: UUID): SnippetVersion =
+        versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
+            ?: throw NotFound("Snippet $snippetId has no versions")
+
+    private fun validateNonBlankContent(content: String) {
+        if (content.isBlank()) {
+            throw InvalidRequest("El contenido del snippet no puede estar vacío")
+        }
+    }
+
+    private fun readContent(key: String): String =
+        String(assetClient.download(containerName, key), StandardCharsets.UTF_8)
+
+    // key del archivo en el bucket
+    private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
+        "$ownerId/$snippetId/v$versionNumber.ps"
+
+    // ult nro de version persistido para ese snippet
+    private fun getLatestVersionNumber(snippetId: UUID): Long =
+        versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
+
+    // mapper simple Execution.DiagnosticDto -> ApiDiagnostic
+    private fun toApiDiagnostics(list: List<DiagnosticDto>): List<ApiDiagnostic> =
+        list.map { diagnostic -> ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col) }
+
+
+
+    private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
+        SnippetDetailDto(
+            id = snippet.id!!.toString(),
+            name = snippet.name,
+            description = snippet.description,
+            language = snippet.language,
+            version = snippet.languageVersion,
+            ownerId = snippet.ownerId,
+            content = content,
+            isValid = version.isValid,
+            lintCount = snippet.lastLintCount,
+        )
+
+    private fun toSummaryDto(snippet: Snippet): SnippetSummaryDto {
+        val authorEmail = userService.getEmailById(snippet.ownerId)
+        return SnippetSummaryDto(
+            id = snippet.id!!.toString(),
+            name = snippet.name,
+            description = snippet.description,
+            language = snippet.language,
+            version = snippet.languageVersion,
+            ownerId = snippet.ownerId,
+            ownerEmail = authorEmail,
+            lastIsValid = snippet.lastIsValid,
+            lastLintCount = snippet.lastLintCount,
+            compliance = snippet.compliance.name,
+        )
+    }
+
 }
