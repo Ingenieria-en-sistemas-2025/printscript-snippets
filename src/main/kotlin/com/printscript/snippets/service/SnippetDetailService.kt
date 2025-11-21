@@ -233,19 +233,15 @@ class SnippetDetailService(
         page: Int,
         size: Int,
         name: String?,
-        language: String?,
-        valid: Boolean?,
         relation: RelationFilter,
-        sort: String,
     ): PageDto<SnippetSummaryDto> {
         val base = findSnippetsWithPermissions(userId, relation)
 
-        val filtered = base
-            .filter { name == null || it.name.contains(name, ignoreCase = true) }
-            .filter { language == null || it.language.equals(language, ignoreCase = true) }
-            .filter { valid == null || it.lastIsValid == valid }
+        val filtered = base.filter { snippet ->
+            name == null || snippet.name.contains(name, ignoreCase = true)
+        }
 
-        val sorted = sortSnippets(filtered, sort)
+        val sorted = filtered.sortedByDescending { it.createdAt }
 
         val total = sorted.size
         val (from, to) = pageBounds(total, page, size)
@@ -348,22 +344,6 @@ class SnippetDetailService(
             RelationFilter.SHARED -> all.filter { it.ownerId != userId }
             RelationFilter.BOTH -> all
         }
-    }
-
-    private fun sortSnippets(snippets: List<Snippet>, sort: String): List<Snippet> {
-        val (field, dir) = sort.split(",", limit = 2).let {
-            it.getOrNull(0) to (it.getOrNull(1) ?: "ASC")
-        }
-
-        val sorted = when (field) {
-            "name" -> snippets.sortedBy { it.name.lowercase() }
-            "language" -> snippets.sortedBy { it.language.lowercase() }
-            "valid" -> snippets.sortedBy { it.lastIsValid }
-            "updatedAt" -> snippets.sortedBy { it.updatedAt }
-            else -> snippets.sortedBy { it.name.lowercase() }
-        }
-
-        return if (dir.equals("DESC", true)) sorted.reversed() else sorted
     }
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
