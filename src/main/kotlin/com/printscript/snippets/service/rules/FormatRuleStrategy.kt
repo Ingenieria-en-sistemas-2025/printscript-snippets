@@ -2,8 +2,8 @@ package com.printscript.snippets.service.rules
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.model.RulesState
-import com.printscript.snippets.enums.RulesType
 import com.printscript.snippets.dto.RuleDto
+import com.printscript.snippets.enums.RulesType
 import io.printscript.contracts.formatter.FormatterOptionsDto
 
 internal class FormatRuleStrategy : RuleTypeStrategy {

@@ -1,8 +1,8 @@
 package com.printscript.snippets.service.rules
 
 import com.printscript.snippets.domain.model.RulesState
-import com.printscript.snippets.enums.RulesType
 import com.printscript.snippets.dto.RuleDto
+import com.printscript.snippets.enums.RulesType
 
 internal interface RuleTypeStrategy {
     val type: RulesType
