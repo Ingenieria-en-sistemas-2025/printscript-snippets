@@ -367,7 +367,7 @@ class SnippetDetailService(
     }
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
-        val from = (page * size).coerceAtMost(total) // calcular indice inicial
+        val from = (page * size).coerceAtMost(total) // calcular indice iniciall
         val to = (from + size).coerceAtMost(total)
         return from to to
     }

@@ -74,8 +74,6 @@ class SecurityConfig(
             .cors { }
             .build()
 
-    // SOLUCION PARA EL ERROR DE RESTCLIENT (Bean definition)
-    // despues veo si hay una mejor forma de solucionarlo
     @Bean
     fun restClient(): RestClient {
         return RestClient.builder()
@@ -83,10 +81,8 @@ class SecurityConfig(
                 // Busca un correlation-id actual (si no hay, crea uno nuevo)
                 val id = org.slf4j.MDC.get("correlation-id")
                     ?: java.util.UUID.randomUUID().toString()
-
                 // Lo agrega como header en el request
                 request.headers.add("X-Correlation-Id", id)
-
                 // Ejecuta el request
                 execution.execute(request, body)
             }
