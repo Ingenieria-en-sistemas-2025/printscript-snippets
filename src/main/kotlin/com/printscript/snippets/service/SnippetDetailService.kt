@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
-import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -122,8 +121,6 @@ class SnippetDetailService(
                 isValid = lintRes.violations.isEmpty(),
                 lintIssues = objectMapper.writeValueAsString(lintRes.violations),
                 lintStatus = LintStatus.DONE,
-                parseErrors = "[]",
-                createdAt = Instant.now(),
             ),
         )
 

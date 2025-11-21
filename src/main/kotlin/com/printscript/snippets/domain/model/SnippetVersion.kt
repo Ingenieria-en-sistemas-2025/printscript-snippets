@@ -10,7 +10,6 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -43,14 +42,9 @@ class SnippetVersion(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "lint_issues", columnDefinition = "jsonb", nullable = false)
     var lintIssues: String = "[]",
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "parse_errors", columnDefinition = "jsonb", nullable = false)
-    var parseErrors: String = "[]",
 
     @Enumerated(EnumType.STRING)
     @Column(name = "lint_status", nullable = false, length = 16)
     var lintStatus: LintStatus = LintStatus.PENDING,
 
-    @Column(name = "created_at", nullable = false)
-    var createdAt: Instant = Instant.now(),
 )
