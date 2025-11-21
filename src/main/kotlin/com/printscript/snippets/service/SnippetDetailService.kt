@@ -14,7 +14,6 @@ import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.enums.LintStatus
-import com.printscript.snippets.enums.RelationFilter
 import com.printscript.snippets.enums.SnippetSource
 import com.printscript.snippets.error.ApiDiagnostic
 import com.printscript.snippets.error.InvalidRequest
@@ -230,9 +229,8 @@ class SnippetDetailService(
         page: Int,
         size: Int,
         name: String?,
-        relation: RelationFilter,
     ): PageDto<SnippetSummaryDto> {
-        val base = findSnippetsWithPermissions(userId, relation)
+        val base = findSnippetsWithPermissions(userId)
 
         val filtered = base.filter { snippet ->
             name == null || snippet.name.contains(name, ignoreCase = true)
@@ -323,7 +321,6 @@ class SnippetDetailService(
 
     private fun findSnippetsWithPermissions(
         userId: String,
-        relation: RelationFilter,
     ): List<Snippet> {
         val perms = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
         val ids = (perms?.authorizations ?: emptyList()).mapNotNull { authView ->
@@ -334,13 +331,7 @@ class SnippetDetailService(
                 .getOrNull()
         }
 
-        val all = snippetRepo.findAllById(ids)
-
-        return when (relation) {
-            RelationFilter.OWNER -> all.filter { it.ownerId == userId }
-            RelationFilter.SHARED -> all.filter { it.ownerId != userId }
-            RelationFilter.BOTH -> all
-        }
+        return snippetRepo.findAllById(ids)
     }
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {

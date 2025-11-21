@@ -14,7 +14,6 @@ import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.enums.AccessLevel
-import com.printscript.snippets.enums.RelationFilter
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetDetailService
 import com.printscript.snippets.service.SnippetPermissionService
@@ -72,7 +71,6 @@ class SnippetController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) name: String?,
-        @RequestParam(defaultValue = "BOTH") relation: RelationFilter,
     ): PageDto<SnippetSummaryDto> {
         logger.info("GET /snippets/all CALLED")
         logger.info("User (principal.name): ${principal.name}")
@@ -80,9 +78,8 @@ class SnippetController(
         logger.info("  - page: $page")
         logger.info("  - size: $size")
         logger.info("  - name: $name")
-        logger.info("  - relation: $relation")
 
-        val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name, relation)
+        val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name)
 
         logger.info("Result from service:")
         logger.info("  - count: ${result.count}")
