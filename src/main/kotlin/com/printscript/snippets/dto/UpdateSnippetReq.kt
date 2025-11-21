@@ -1,5 +1,7 @@
 package com.printscript.snippets.dto
 
+import com.printscript.snippets.enums.SnippetSource
+
 data class UpdateSnippetReq(
     val name: String? = null,
     val description: String? = null,

@@ -7,13 +7,13 @@ import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
-import com.printscript.snippets.domain.model.enums.LintStatus
+import com.printscript.snippets.enums.LintStatus
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
-import com.printscript.snippets.dto.RelationFilter
+import com.printscript.snippets.enums.RelationFilter
 import com.printscript.snippets.dto.SnippetDetailDto
-import com.printscript.snippets.dto.SnippetSource
+import com.printscript.snippets.enums.SnippetSource
 import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.error.ApiDiagnostic

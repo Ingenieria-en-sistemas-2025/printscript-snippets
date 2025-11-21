@@ -1,3 +1,3 @@
-package com.printscript.snippets.domain.model.enums
+package com.printscript.snippets.enums
 
 enum class Compliance { PENDING, FAILED, NOT_COMPLIANT, COMPLIANT }

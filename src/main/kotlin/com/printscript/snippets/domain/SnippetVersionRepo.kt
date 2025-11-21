@@ -1,7 +1,7 @@
 package com.printscript.snippets.domain
 
 import com.printscript.snippets.domain.model.SnippetVersion
-import com.printscript.snippets.domain.model.enums.LintStatus
+import com.printscript.snippets.enums.LintStatus
 import jakarta.transaction.Transactional
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying

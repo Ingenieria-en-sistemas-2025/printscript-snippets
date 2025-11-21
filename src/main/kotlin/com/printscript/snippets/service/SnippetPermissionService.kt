@@ -2,6 +2,7 @@ package com.printscript.snippets.service
 
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.dto.ShareSnippetReq
+import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.permission.SnippetPermission
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput

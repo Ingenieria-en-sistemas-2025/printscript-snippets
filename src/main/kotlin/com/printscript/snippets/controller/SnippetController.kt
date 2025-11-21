@@ -4,7 +4,7 @@ import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
-import com.printscript.snippets.dto.RelationFilter
+import com.printscript.snippets.enums.RelationFilter
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.dto.RunSnippetInputsReq
 import com.printscript.snippets.dto.SaveRulesReq
@@ -15,7 +15,7 @@ import com.printscript.snippets.dto.SnippetSummaryDto
 import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.redis.service.BulkRulesService
-import com.printscript.snippets.service.AccessLevel
+import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.service.SnippetDetailService
 import com.printscript.snippets.service.SnippetPermissionService
 import com.printscript.snippets.service.SnippetTestService

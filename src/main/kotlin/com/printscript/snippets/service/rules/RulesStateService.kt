@@ -2,7 +2,7 @@ package com.printscript.snippets.service.rules
 
 import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
-import com.printscript.snippets.domain.model.enums.RulesType
+import com.printscript.snippets.enums.RulesType
 import com.printscript.snippets.dto.RuleDto
 import org.springframework.stereotype.Service
 

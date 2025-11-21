@@ -1,5 +1,7 @@
 package com.printscript.snippets.dto
 
+import com.printscript.snippets.enums.SnippetSource
+
 data class CreateSnippetReq(
     val name: String,
     val description: String? = null,

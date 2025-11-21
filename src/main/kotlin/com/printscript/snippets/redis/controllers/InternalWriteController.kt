@@ -2,8 +2,8 @@ package com.printscript.snippets.redis.controllers
 
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
-import com.printscript.snippets.domain.model.enums.Compliance
-import com.printscript.snippets.domain.model.enums.LintStatus
+import com.printscript.snippets.enums.Compliance
+import com.printscript.snippets.enums.LintStatus
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.DiagnosticDto

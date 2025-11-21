@@ -1,6 +1,6 @@
 package com.printscript.snippets.domain.model
 
-import com.printscript.snippets.domain.model.enums.LintStatus
+import com.printscript.snippets.enums.LintStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

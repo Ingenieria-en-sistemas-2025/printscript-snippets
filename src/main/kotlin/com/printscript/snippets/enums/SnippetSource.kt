@@ -1,4 +1,4 @@
-package com.printscript.snippets.dto
+package com.printscript.snippets.enums
 
 enum class SnippetSource {
     INLINE, // escribir en consola

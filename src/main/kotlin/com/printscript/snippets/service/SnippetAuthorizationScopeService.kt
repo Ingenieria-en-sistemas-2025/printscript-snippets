@@ -1,6 +1,7 @@
 package com.printscript.snippets.service
 
 import com.printscript.snippets.domain.model.Snippet
+import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.error.UnsupportedOperation
 import com.printscript.snippets.permission.SnippetPermission
 import java.util.UUID
