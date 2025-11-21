@@ -63,10 +63,4 @@ class Snippet(
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
-) {
-    // para setear createdAt/updatedAt sin olvidos
-    @PrePersist
-    fun prePersist() {
-        createdAt = Instant.now()
-    }
-}
+)
