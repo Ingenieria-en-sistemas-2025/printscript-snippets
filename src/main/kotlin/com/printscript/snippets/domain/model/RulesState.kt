@@ -6,7 +6,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
@@ -42,11 +41,11 @@ class RulesState(
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "options_json", columnDefinition = "jsonb")
-    var optionsJson: Map<String, Any?>? = null, //indent numb y esas cosas
+    var optionsJson: Map<String, Any?>? = null, // indent numb y esas cosas
 
     @Column(name = "config_text", columnDefinition = "text")
-    var configText: String? = null, //el file de config de las reglas
+    var configText: String? = null, // el file de config de las reglas
 
     @Column(name = "config_format", length = 32)
-    var configFormat: String? = null, //el formato del config file
+    var configFormat: String? = null, // el formato del config file
 )
