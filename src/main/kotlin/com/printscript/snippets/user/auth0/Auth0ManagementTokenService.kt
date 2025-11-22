@@ -3,7 +3,6 @@ package com.printscript.snippets.user.auth0
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.printscript.snippets.error.RunTimeError
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -20,10 +19,10 @@ class Auth0ManagementTokenService(
     private val clientId: String,
     @param:Value("\${auth0.client-secret}")
     private val clientSecret: String,
-    @param:Qualifier("plainRestClient")
-    private val rest: RestClient,
+    restBuilder: RestClient.Builder,
 ) {
     private val logger = LoggerFactory.getLogger(Auth0ManagementTokenService::class.java)
+    private val rest: RestClient = restBuilder.build()
     private var accessToken: String = ""
     private var expiresAt: Instant = Instant.EPOCH
 
