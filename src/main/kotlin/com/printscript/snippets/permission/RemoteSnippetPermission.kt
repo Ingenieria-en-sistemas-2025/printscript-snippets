@@ -1,6 +1,5 @@
 package com.printscript.snippets.permission
 
-import com.printscript.snippets.auth.Auth0TokenService
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import io.printscript.contracts.permissions.SnippetPermissionListResponse
 import org.slf4j.LoggerFactory
@@ -29,8 +28,8 @@ class RemoteSnippetPermission(
             val response = restTemplate.exchange(
                 "$permissionServiceUrl/authorization",
                 HttpMethod.POST,
-                HttpEntity(input),         // body = input, headers los maneja el interceptor
-                String::class.java
+                HttpEntity(input), // body = input, headers los maneja el interceptor
+                String::class.java,
             )
             response
         } catch (ex: RestClientException) {
@@ -56,7 +55,7 @@ class RemoteSnippetPermission(
                 uri,
                 HttpMethod.GET,
                 HttpEntity.EMPTY,
-                SnippetPermissionListResponse::class.java
+                SnippetPermissionListResponse::class.java,
             )
             response
         } catch (ex: RestClientException) {

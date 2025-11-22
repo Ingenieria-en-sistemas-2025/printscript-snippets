@@ -23,7 +23,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.web.client.RestClient
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -74,7 +73,6 @@ class SecurityConfig(
             .cors { }
             .build()
 
-
     // CORS
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
@@ -122,7 +120,7 @@ class SecurityConfig(
 
         // 2) Validar audience
         val audienceClaimValidator = JwtClaimValidator<List<String>>("aud") { audList ->
-            audList != null && audience in audList //¿este token esta dirigido a mi?
+            audList != null && audience in audList // ¿este token esta dirigido a mi?
         }
         // ambas validaciones
         return DelegatingOAuth2TokenValidator(withIssuer, audienceClaimValidator)

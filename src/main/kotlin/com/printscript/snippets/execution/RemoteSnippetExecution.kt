@@ -1,6 +1,5 @@
 package com.printscript.snippets.execution
 
-import com.printscript.snippets.auth.Auth0TokenService
 import io.printscript.contracts.formatter.FormatReq
 import io.printscript.contracts.formatter.FormatRes
 import io.printscript.contracts.linting.LintReq
@@ -15,14 +14,12 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 
 @Component
 class RemoteSnippetExecution(
     @Qualifier("m2mRestTemplate") private val rest: RestTemplate, // interceptor ya pone Authorization
-    private val m2m: Auth0TokenService,
     @Value("\${execution.base-url}") private val baseUrl: String,
 ) : SnippetExecution {
 
@@ -33,7 +30,7 @@ class RemoteSnippetExecution(
             "$baseUrl/parse",
             HttpMethod.POST,
             entity,
-            ParseRes::class.java
+            ParseRes::class.java,
         )
 
         return response.body ?: error("empty parse")
@@ -46,7 +43,7 @@ class RemoteSnippetExecution(
             "$baseUrl/lint",
             HttpMethod.POST,
             entity,
-            LintRes::class.java
+            LintRes::class.java,
         )
 
         return response.body ?: error("empty lint")
@@ -59,7 +56,7 @@ class RemoteSnippetExecution(
             "$baseUrl/format",
             HttpMethod.POST,
             entity,
-            FormatRes::class.java
+            FormatRes::class.java,
         )
 
         return response.body ?: error("empty format")
@@ -72,7 +69,7 @@ class RemoteSnippetExecution(
             "$baseUrl/run",
             HttpMethod.POST,
             entity,
-            RunRes::class.java
+            RunRes::class.java,
         )
 
         return response.body ?: error("empty run")
@@ -85,7 +82,7 @@ class RemoteSnippetExecution(
             "$baseUrl/run-test",
             HttpMethod.POST,
             entity,
-            RunSingleTestRes::class.java
+            RunSingleTestRes::class.java,
         )
 
         return response.body ?: error("empty run-single-test")

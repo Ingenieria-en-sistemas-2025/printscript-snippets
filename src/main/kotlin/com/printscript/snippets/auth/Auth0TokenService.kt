@@ -3,14 +3,12 @@ package com.printscript.snippets.auth
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.printscript.snippets.error.RunTimeError
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
-import org.springframework.web.client.RestTemplate
 import java.time.Instant
 
 @Service

@@ -26,7 +26,7 @@ class RemoteSnippetAsset(
             .toUriString() // genera URL final
     }
 
-    override fun upload(container: String, key: String, body: ByteArray) {
+    override fun upload(container: String, key: String, bytes: ByteArray) {
         // headers SOLO para poner el content-type
         val headers = HttpHeaders().apply {
             contentType = MediaType.APPLICATION_OCTET_STREAM
@@ -36,8 +36,8 @@ class RemoteSnippetAsset(
         rest.exchange(
             buildUrl(container, key),
             HttpMethod.PUT,
-            HttpEntity(body, headers), // body + content-type
-            Void::class.java
+            HttpEntity(bytes, headers), // body + content-type
+            Void::class.java,
         )
     }
 
@@ -46,8 +46,8 @@ class RemoteSnippetAsset(
         return rest.exchange(
             buildUrl(container, key),
             HttpMethod.GET,
-            null,                     // no se necesita body ni headers
-            ByteArray::class.java
+            null, // no se necesita body ni headers
+            ByteArray::class.java,
         ).body ?: error("empty body")
     }
 
@@ -57,7 +57,7 @@ class RemoteSnippetAsset(
             buildUrl(container, key),
             HttpMethod.DELETE,
             null,
-            Void::class.java
+            Void::class.java,
         )
     }
 }
