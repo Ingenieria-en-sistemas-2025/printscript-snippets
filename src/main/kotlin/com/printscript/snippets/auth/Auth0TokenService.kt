@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
+import org.springframework.web.client.RestTemplate
 import java.time.Instant
 
 @Service
@@ -22,10 +23,10 @@ class Auth0TokenService(
     private val clientSecret: String,
     @param:Value("\${auth0.audience}")
     private val audience: String,
-    @Qualifier("plainRestClient")
-    private val rest: RestClient,
+    restBuilder: RestClient.Builder,
 ) {
     private val logger = LoggerFactory.getLogger(Auth0TokenService::class.java)
+    private val rest: RestClient = restBuilder.build()
     private var accessToken: String = ""
     private var expiresAt: Instant = Instant.EPOCH
 

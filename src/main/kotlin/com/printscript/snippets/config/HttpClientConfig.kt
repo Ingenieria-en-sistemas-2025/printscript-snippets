@@ -43,8 +43,4 @@ class HttpClientConfig {
             .additionalInterceptors(authInterceptor, correlationInterceptor)
             .build()
     }
-
-    @Bean
-    fun plainRestTemplate(): RestTemplate =
-        RestTemplateBuilder().build()
 }
