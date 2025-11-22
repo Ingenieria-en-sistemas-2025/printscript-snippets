@@ -74,23 +74,6 @@ class SecurityConfig(
             .cors { }
             .build()
 
-    @Bean
-    fun restClient(): RestClient {
-        return RestClient.builder()
-            .requestInterceptor { request, body, execution ->
-                // Busca un correlation-id actual (si no hay, crea uno nuevo)
-                val id = org.slf4j.MDC.get("correlation-id")
-                    ?: java.util.UUID.randomUUID().toString()
-                // Lo agrega como header en el request
-                request.headers.add("X-Correlation-Id", id)
-                // Ejecuta el request
-                execution.execute(request, body)
-            }
-            .build()
-    }
-
-    @Bean
-    fun plainRestClient(): RestClient = RestClient.create()
 
     // CORS
     @Bean
@@ -139,7 +122,7 @@ class SecurityConfig(
 
         // 2) Validar audience
         val audienceClaimValidator = JwtClaimValidator<List<String>>("aud") { audList ->
-            audList != null && audience in audList
+            audList != null && audience in audList //¿este token esta dirigido a mi?
         }
         // ambas validaciones
         return DelegatingOAuth2TokenValidator(withIssuer, audienceClaimValidator)

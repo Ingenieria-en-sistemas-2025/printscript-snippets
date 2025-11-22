@@ -13,48 +13,81 @@ import io.printscript.contracts.tests.RunSingleTestReq
 import io.printscript.contracts.tests.RunSingleTestRes
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestTemplate
 
 @Component
 class RemoteSnippetExecution(
-    @param:Qualifier("restClient") private val rest: RestClient,
+    @Qualifier("m2mRestTemplate") private val rest: RestTemplate, // interceptor ya pone Authorization
     private val m2m: Auth0TokenService,
     @Value("\${execution.base-url}") private val baseUrl: String,
 ) : SnippetExecution {
 
-    private fun auth(h: HttpHeaders) {
-        h.set(HttpHeaders.AUTHORIZATION, "Bearer ${m2m.getAccessToken()}")
-        h.contentType = MediaType.APPLICATION_JSON
-        h.accept = listOf(MediaType.APPLICATION_JSON)
+    override fun parse(req: ParseReq): ParseRes {
+        val entity = HttpEntity(req) // sin headers, los pone el interceptor
+
+        val response = rest.exchange(
+            "$baseUrl/parse",
+            HttpMethod.POST,
+            entity,
+            ParseRes::class.java
+        )
+
+        return response.body ?: error("empty parse")
     }
 
-    override fun parse(req: ParseReq): ParseRes =
-        rest.post().uri("$baseUrl/parse").headers(::auth).body(req).retrieve()
-            .body(ParseRes::class.java) ?: error("empty parse")
+    override fun lint(req: LintReq): LintRes {
+        val entity = HttpEntity(req)
 
-    override fun lint(req: LintReq): LintRes =
-        rest.post().uri("$baseUrl/lint").headers(::auth).body(req).retrieve()
-            .body(LintRes::class.java) ?: error("empty lint")
+        val response = rest.exchange(
+            "$baseUrl/lint",
+            HttpMethod.POST,
+            entity,
+            LintRes::class.java
+        )
 
-    override fun format(req: FormatReq): FormatRes =
-        rest.post().uri("$baseUrl/format").headers(::auth).body(req).retrieve()
-            .body(FormatRes::class.java) ?: error("empty format")
+        return response.body ?: error("empty lint")
+    }
 
-    override fun run(req: RunReq): RunRes =
-        rest.post()
-            .uri("$baseUrl/run")
-            .headers(::auth)
-            .body(req)
-            .retrieve()
-            .body(RunRes::class.java) ?: error("empty run")
+    override fun format(req: FormatReq): FormatRes {
+        val entity = HttpEntity(req)
 
-    override fun runSingleTest(req: RunSingleTestReq): RunSingleTestRes =
-        rest.post().uri("$baseUrl/run-test")
-            .headers(::auth)
-            .body(req)
-            .retrieve()
-            .body(RunSingleTestRes::class.java) ?: error("empty run-single-test")
+        val response = rest.exchange(
+            "$baseUrl/format",
+            HttpMethod.POST,
+            entity,
+            FormatRes::class.java
+        )
+
+        return response.body ?: error("empty format")
+    }
+
+    override fun run(req: RunReq): RunRes {
+        val entity = HttpEntity(req)
+
+        val response = rest.exchange(
+            "$baseUrl/run",
+            HttpMethod.POST,
+            entity,
+            RunRes::class.java
+        )
+
+        return response.body ?: error("empty run")
+    }
+
+    override fun runSingleTest(req: RunSingleTestReq): RunSingleTestRes {
+        val entity = HttpEntity(req)
+
+        val response = rest.exchange(
+            "$baseUrl/run-test",
+            HttpMethod.POST,
+            entity,
+            RunSingleTestRes::class.java
+        )
+
+        return response.body ?: error("empty run-single-test")
+    }
 }

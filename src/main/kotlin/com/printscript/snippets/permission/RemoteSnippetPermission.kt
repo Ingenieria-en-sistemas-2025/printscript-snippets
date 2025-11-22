@@ -4,18 +4,20 @@ import com.printscript.snippets.auth.Auth0TokenService
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import io.printscript.contracts.permissions.SnippetPermissionListResponse
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 
 @Component
 class RemoteSnippetPermission(
-    private val auth0TokenService: Auth0TokenService,
-    private val restClient: RestClient,
+    // ya no necesitamos usar el token acá directamente, lo pone el interceptor
+    @Qualifier("m2mRestTemplate") private val restTemplate: RestTemplate,
     @param:Value("\${authorization.service.url}") private val permissionServiceUrl: String,
 ) : SnippetPermission {
 
@@ -23,14 +25,14 @@ class RemoteSnippetPermission(
 
     override fun createAuthorization(input: PermissionCreateSnippetInput): ResponseEntity<String> {
         return try {
-            val m2mToken = auth0TokenService.getAccessToken()
-
-            restClient.post()
-                .uri("$permissionServiceUrl/authorization")
-                .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
-                .body(input)
-                .retrieve()
-                .toEntity(String::class.java)
+            // POST /authorization con body JSON y Authorization agregado por el interceptor
+            val response = restTemplate.exchange(
+                "$permissionServiceUrl/authorization",
+                HttpMethod.POST,
+                HttpEntity(input),         // body = input, headers los maneja el interceptor
+                String::class.java
+            )
+            response
         } catch (ex: RestClientException) {
             logger.error("Failed to create authorization for snippet ${input.snippetId}: ${ex.message}", ex)
             throw ex
@@ -43,8 +45,6 @@ class RemoteSnippetPermission(
         pageSize: Int,
     ): ResponseEntity<SnippetPermissionListResponse> {
         return try {
-            val m2mToken = auth0TokenService.getAccessToken()
-
             val uri = UriComponentsBuilder
                 .fromUriString("$permissionServiceUrl/authorization/me")
                 .queryParam("userId", userId)
@@ -52,11 +52,13 @@ class RemoteSnippetPermission(
                 .queryParam("pageSize", pageSize)
                 .toUriString()
 
-            restClient.get()
-                .uri(uri)
-                .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
-                .retrieve()
-                .toEntity(SnippetPermissionListResponse::class.java)
+            val response = restTemplate.exchange(
+                uri,
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                SnippetPermissionListResponse::class.java
+            )
+            response
         } catch (ex: RestClientException) {
             logger.error("Failed to get permissions for user $userId: ${ex.message}", ex)
             throw ex
@@ -65,13 +67,12 @@ class RemoteSnippetPermission(
 
     override fun deleteSnippetPermissions(snippetId: String): ResponseEntity<Unit> {
         return try {
-            val m2mToken = auth0TokenService.getAccessToken()
-
-            restClient.delete()
-                .uri("$permissionServiceUrl/authorization/snippet/$snippetId")
-                .headers { it.set(HttpHeaders.AUTHORIZATION, "Bearer $m2mToken") }
-                .retrieve()
-                .toBodilessEntity()
+            restTemplate.exchange(
+                "$permissionServiceUrl/authorization/snippet/$snippetId",
+                HttpMethod.DELETE,
+                HttpEntity.EMPTY,
+                Void::class.java,
+            )
 
             ResponseEntity.ok().build()
         } catch (ex: RestClientException) {
