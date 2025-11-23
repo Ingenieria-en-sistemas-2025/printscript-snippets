@@ -171,6 +171,22 @@ class SnippetDetailService(
     }
 
     @Transactional
+    fun updateSnippetFromFile(
+        userId: String,
+        snippetId: UUID,
+        meta: UpdateSnippetReq,
+        fileBytes: ByteArray,
+    ): SnippetDetailDto {
+        val content = String(fileBytes, StandardCharsets.UTF_8)
+
+        return updateSnippetOwnerAware(
+            userId,
+            snippetId,
+            meta.copy(content = content)
+        )
+    }
+
+    @Transactional
     fun deleteSnippetOwnerAware(userId: String, snippetId: UUID) {
         val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
         authorization.requireOwner(userId, snippet)

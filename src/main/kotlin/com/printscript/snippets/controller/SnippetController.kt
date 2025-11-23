@@ -127,6 +127,21 @@ class SnippetController(
     ): SnippetDetailDto =
         snippetDetailService.updateSnippetOwnerAware(principal.name, snippetId, req)
 
+    @PutMapping(path = ["/{snippetId}/file"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun updateSnippetFromFile(
+        principal: JwtAuthenticationToken,
+        @PathVariable snippetId: UUID,
+        @RequestPart("meta") @Valid meta: UpdateSnippetReq,
+        @RequestPart("file") file: MultipartFile,
+    ): SnippetDetailDto {
+        return snippetDetailService.updateSnippetFromFile(
+            principal.name,
+            snippetId,
+            meta,
+            file.bytes
+        )
+    }
+
     @DeleteMapping("/{snippetId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteSnippet(
