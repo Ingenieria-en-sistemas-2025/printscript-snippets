@@ -139,6 +139,7 @@ class SnippetDetailServiceTest {
             formattedKey = null,
         )
         val code = "println(1);"
+
         `when`(snippetRepo.findById(id)).thenReturn(Optional.of(s))
         `when`(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id)).thenReturn(v)
         `when`(assetClient.download("snippets", "owner/$id/v1.ps"))
@@ -162,6 +163,7 @@ class SnippetDetailServiceTest {
             isFormatted = true,
         )
         val formatted = "formatted();"
+
         `when`(snippetRepo.findById(id)).thenReturn(Optional.of(s))
         `when`(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id)).thenReturn(v)
         `when`(assetClient.download("snippets", "owner/$id/v2.formatted.ps"))
@@ -190,7 +192,6 @@ class SnippetDetailServiceTest {
     fun `listAccessibleSnippets cuando no hay permisos devuelve pagina vacia`() {
         val userId = "auth0|u1"
 
-        // armamos una respuesta vacía del contrato real
         val emptyPermissions = SnippetPermissionListResponse(
             authorizations = emptyList(),
             total = 0,
@@ -241,43 +242,36 @@ class SnippetDetailServiceTest {
         val lintRes = mock(LintRes::class.java)
         `when`(lintRes.violations).thenReturn(emptyList())
 
-        // snippet save inicial y luego save con compliance; devolvemos siempre el mismo
         `when`(snippetRepo.save(ArgumentMatchers.any(Snippet::class.java))).thenReturn(savedSnippet)
-
         `when`(versionRepo.findMaxVersionBySnippetId(snippetId)).thenReturn(0L)
 
-        val version = version(
+        val v1 = version(
             snippetId = snippetId,
             number = 1L,
             contentKey = "$ownerId/$snippetId/v1.ps",
         )
-        `when`(versionRepo.save(ArgumentMatchers.any(SnippetVersion::class.java))).thenReturn(version)
+        `when`(versionRepo.save(ArgumentMatchers.any(SnippetVersion::class.java))).thenReturn(v1)
 
         `when`(executionClient.parse(ArgumentMatchers.any(ParseReq::class.java))).thenReturn(parseRes)
         `when`(rulesStateService.currentLintConfigEffective(ownerId))
             .thenReturn("" to "")
         `when`(executionClient.lint(ArgumentMatchers.any())).thenReturn(lintRes)
 
-        // act
         val dto: SnippetDetailDto = service.createSnippet(ownerId, req)
 
-        // assert dto básico
         assertEquals(snippetId.toString(), dto.id)
         assertEquals(ownerId, dto.ownerId)
         assertEquals(req.content, dto.content)
 
-        // parse y lint llamados
         verify(executionClient).parse(ArgumentMatchers.any(ParseReq::class.java))
         verify(executionClient).lint(ArgumentMatchers.any())
 
-        // se sube al bucket (sin usar matchers)
         verify(assetClient).upload(
             "snippets",
             "$ownerId/$snippetId/v1.ps",
             "println(1);".toByteArray(StandardCharsets.UTF_8),
         )
 
-        // se crea autorización OWNER
         val captor = ArgumentCaptor.forClass(PermissionCreateSnippetInput::class.java)
         verify(permissionClient).createAuthorization(captor.capture())
         val authReq = captor.value
@@ -457,13 +451,10 @@ class SnippetDetailServiceTest {
 
         service.deleteSnippetOwnerAware(userId, snippetId)
 
-        // borra permisos
         verify(permissionClient).deleteSnippetPermissions(snippetId.toString())
-        // borra archivos
         verify(assetClient).delete("snippets", "k1")
         verify(assetClient).delete("snippets", "k2")
         verify(assetClient).delete("snippets", "kf2")
-        // borra de db
         verify(versionRepo).deleteAll(listOf(v1, v2))
         verify(snippetRepo).deleteById(snippetId)
     }
@@ -556,7 +547,6 @@ class SnippetDetailServiceTest {
 
         val ps = list.first { it.language == "printscript" }
         assertEquals("prs", ps.extension)
-        // versiones ordenadas desc
         assertEquals(listOf("1.1", "1.0"), ps.versions)
 
         val js = list.first { it.language == "js" }
