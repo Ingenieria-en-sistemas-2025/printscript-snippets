@@ -76,7 +76,7 @@ class Auth0TokenService(
         }
     }
 
-    private data class TokenResponse(
+    data class TokenResponse(
         @get:JsonProperty("access_token") val accessToken: String,
         @get:JsonProperty("expires_in") val expiresIn: Int,
         @get:JsonProperty("token_type") val tokenType: String,

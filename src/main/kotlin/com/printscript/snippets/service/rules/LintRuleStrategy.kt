@@ -66,15 +66,12 @@ internal class LintRuleStrategy : RuleTypeStrategy {
         row: RulesState?,
         rules: List<RuleDto>,
     ): Pair<String, String> {
-        val enabledFromRow: Set<String> =
-            row?.enabledJson?.toSet() ?: defaultEnabled()
+        val enabledFromRules: Set<String> =
+            rules.filter { it.enabled }.map { it.id }.toSet()
 
-        val cfgText: String = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" }
-            ?: buildLintConfigFromEnabled(enabledFromRow, rules)
+        val cfgText: String = buildLintConfigFromEnabled(enabledFromRules, rules)
 
-        val cfgFmt: String = row?.configFormat ?: "json"
+        val cfgFmt: String = "json"
 
         return cfgText to cfgFmt
     }
