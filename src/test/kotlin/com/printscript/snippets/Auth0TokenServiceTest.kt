@@ -5,7 +5,8 @@ import com.printscript.snippets.error.RunTimeError
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.ArgumentMatchers.*
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import org.springframework.http.MediaType
 import org.springframework.web.client.ResourceAccessException
@@ -35,10 +36,6 @@ class Auth0TokenServiceTest {
         )
     }
 
-    /**
-     * Happy path: se obtiene un token nuevo y mientras no esté por expirar
-     * no se vuelve a llamar a Auth0.
-     */
     @Test
     fun `getAccessToken obtiene token nuevo y lo reutiliza mientras no expira`() {
         val service = newService()
@@ -75,10 +72,6 @@ class Auth0TokenServiceTest {
         Mockito.verify(restClient, Mockito.times(1)).post()
     }
 
-    /**
-     * Cuando RestClientResponseException sale de la cadena,
-     * refreshToken la envuelve en RunTimeError.
-     */
     @Test
     fun `refreshToken envuelve RestClientResponseException en RunTimeError`() {
         val service = newService()
@@ -112,10 +105,6 @@ class Auth0TokenServiceTest {
         assertEquals("Fallo al obtener token M2M de Auth0.", thrown.message)
     }
 
-    /**
-     * Cuando hay un problema de red (ResourceAccessException),
-     * también se envuelve en RunTimeError.
-     */
     @Test
     fun `refreshToken envuelve ResourceAccessException en RunTimeError`() {
         val service = newService()
@@ -142,9 +131,6 @@ class Auth0TokenServiceTest {
         assertEquals("Fallo al obtener token M2M de Auth0.", thrown.message)
     }
 
-    /**
-     * Si el endpoint devuelve body nulo, tiramos RunTimeError con el mensaje de respuesta nula.
-     */
     @Test
     fun `refreshToken lanza RunTimeError si body nulo`() {
         val service = newService()
@@ -169,10 +155,6 @@ class Auth0TokenServiceTest {
         assertEquals("Respuesta nula del endpoint de token de Auth0.", thrown.message)
     }
 
-    /**
-     * Caso donde el token ya está seteado y no va a expirar en el próximo minuto:
-     * no se hace ninguna llamada a Auth0.
-     */
     @Test
     fun `getAccessToken no refresca si token aun valido`() {
         val service = newService()

@@ -16,7 +16,7 @@ internal interface RuleTypeStrategy {
     // arma lista de RuleDto desde enabled + values
     fun toRuleDtos(enabled: Set<String>, values: Map<String, Any?>): List<RuleDto>
 
-    //cmo armar el estado a persistir en RulesState a partir de las RuleDto del usuario
+    // cmo armar el estado a persistir en RulesState a partir de las RuleDto del usuario
     fun buildStateFromDtos(
         rules: List<RuleDto>,
         rawConfigText: String?,

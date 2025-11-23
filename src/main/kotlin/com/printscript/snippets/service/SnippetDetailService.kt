@@ -182,7 +182,7 @@ class SnippetDetailService(
         return updateSnippetOwnerAware(
             userId,
             snippetId,
-            meta.copy(content = content)
+            meta.copy(content = content),
         )
     }
 

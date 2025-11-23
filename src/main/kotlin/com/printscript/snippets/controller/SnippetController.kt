@@ -138,7 +138,7 @@ class SnippetController(
             principal.name,
             snippetId,
             meta,
-            file.bytes
+            file.bytes,
         )
     }
 

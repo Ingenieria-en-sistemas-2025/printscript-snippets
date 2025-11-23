@@ -1,7 +1,17 @@
 package com.printscript.snippets
 
 import com.printscript.snippets.controller.SnippetController
-import com.printscript.snippets.dto.*
+import com.printscript.snippets.dto.CreateSnippetReq
+import com.printscript.snippets.dto.CreateTestReq
+import com.printscript.snippets.dto.FileTypeDto
+import com.printscript.snippets.dto.PageDto
+import com.printscript.snippets.dto.RunSnippetInputsReq
+import com.printscript.snippets.dto.ShareSnippetReq
+import com.printscript.snippets.dto.SingleTestRunResult
+import com.printscript.snippets.dto.SnippetDetailDto
+import com.printscript.snippets.dto.SnippetSummaryDto
+import com.printscript.snippets.dto.TestCaseDto
+import com.printscript.snippets.dto.UpdateSnippetReq
 import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.redis.service.BulkRulesService
 import com.printscript.snippets.service.SnippetDetailService
@@ -11,19 +21,23 @@ import com.printscript.snippets.service.SnippetsExecuteService
 import com.printscript.snippets.service.rules.RulesStateService
 import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.run.RunRes
-import org.junit.jupiter.api.Assertions.*
+import org.junit.Assert.assertArrayEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 @ExtendWith(MockitoExtension::class)
 class SnippetControllerTest {
@@ -68,7 +82,7 @@ class SnippetControllerTest {
         val pageMock = mock(PageDto::class.java) as PageDto<SnippetSummaryDto>
 
         `when`(
-            snippetDetailService.listAccessibleSnippets("auth0|abc", 0, 10, null)
+            snippetDetailService.listAccessibleSnippets("auth0|abc", 0, 10, null),
         ).thenReturn(pageMock)
 
         val result = controller.listAccessible(principal, 0, 10, null)
@@ -120,7 +134,7 @@ class SnippetControllerTest {
 
         val detailMock = mock(SnippetDetailDto::class.java)
         `when`(
-            snippetDetailService.createSnippetFromFile("auth0|file-owner", meta, file.bytes)
+            snippetDetailService.createSnippetFromFile("auth0|file-owner", meta, file.bytes),
         ).thenReturn(detailMock)
 
         val result = controller.createFromFile(principal, meta, file)
@@ -143,7 +157,7 @@ class SnippetControllerTest {
 
         val detailMock = mock(SnippetDetailDto::class.java)
         `when`(
-            snippetDetailService.updateSnippetOwnerAware("auth0|editor", snippetId, req)
+            snippetDetailService.updateSnippetOwnerAware("auth0|editor", snippetId, req),
         ).thenReturn(detailMock)
 
         val result = controller.updateSnippet(principal, snippetId, req)
@@ -179,7 +193,7 @@ class SnippetControllerTest {
                 snippetId,
                 meta,
                 file.bytes,
-            )
+            ),
         ).thenReturn(detailMock)
 
         val result = controller.updateSnippetFromFile(principal, snippetId, meta, file)
@@ -220,10 +234,10 @@ class SnippetControllerTest {
         val fileBytes = "content".toByteArray()
 
         `when`(
-            snippetDetailService.download(snippetId, false)
+            snippetDetailService.download(snippetId, false),
         ).thenReturn(fileBytes)
         `when`(
-            snippetDetailService.filename(snippetId, false)
+            snippetDetailService.filename(snippetId, false),
         ).thenReturn("code.prs")
 
         val response = controller.download(principal, snippetId, false)
@@ -251,7 +265,7 @@ class SnippetControllerTest {
 
         val dtoMock = mock(TestCaseDto::class.java)
         `when`(
-            snippetTestService.createTestCase(req.copy(snippetId = snippetId.toString()))
+            snippetTestService.createTestCase(req.copy(snippetId = snippetId.toString())),
         ).thenReturn(dtoMock)
 
         val res = controller.createTest(snippetId, req)
@@ -291,7 +305,7 @@ class SnippetControllerTest {
 
         val resultMock = mock(SingleTestRunResult::class.java)
         `when`(
-            snippetsExecuteService.runOneTestOwnerAware("auth0|tester", snippetId, testId)
+            snippetsExecuteService.runOneTestOwnerAware("auth0|tester", snippetId, testId),
         ).thenReturn(resultMock)
 
         val res = controller.runSingleTest(principal, snippetId, testId)
@@ -319,7 +333,7 @@ class SnippetControllerTest {
         val runResMock = mock(RunRes::class.java)
 
         `when`(
-            snippetsExecuteService.runSnippetOwnerAware("auth0|runner", snippetId, body.inputs)
+            snippetsExecuteService.runSnippetOwnerAware("auth0|runner", snippetId, body.inputs),
         ).thenReturn(runResMock)
 
         val response = controller.runSnippet(principal, snippetId, body)

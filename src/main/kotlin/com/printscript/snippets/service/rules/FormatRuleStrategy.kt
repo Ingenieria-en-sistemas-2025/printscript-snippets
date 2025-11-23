@@ -70,11 +70,11 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
     override fun buildStateFromDtos(
         rules: List<RuleDto>,
         rawConfigText: String?,
-        rawConfigFormat: String?
+        rawConfigFormat: String?,
     ): RuleStatePieces {
-        val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet() //lee reglas activadas
+        val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet() // lee reglas activadas
 
-        //valores numericos si hay
+        // valores numericos si hay
         val options: Map<String, Any?> = rules.mapNotNull { r ->
             val intValue = when (val v = r.value) {
                 is Number -> v.toInt()
@@ -85,7 +85,7 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         }.toMap()
 
         val normalizedConfigText = rawConfigText
-            ?.trim() //si no es nulo el config text le aplica trim saca espacios y eso
+            ?.trim() // si no es nulo el config text le aplica trim saca espacios y eso
             ?.takeUnless { it.isEmpty() || it == "{}" }
 
         val normalizedFormat = normalizeFormat(rawConfigFormat)
@@ -106,19 +106,18 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
             else -> "json"
         }
 
-
     // construye el config efectivo para el formatter
     override fun buildEffectiveConfig(
         row: RulesState?,
         rules: List<RuleDto>,
     ): Pair<String, String> {
-        //Si el usuario pego config manual -> usarla
+        // Si el usuario pego config manual -> usarla
         val cfgText: String = row
             ?.configText
             ?.takeUnless { it.isBlank() || it == "{}" } // intenta usar la config raw que el usuario haya guardado
             ?: buildFormatterConfigFromRules(rules) // sino, genera un JSON de config basado en las rules
 
-        val cfgFmt: String = row?.configFormat ?: "json" //Si no un json a partir de las reglas activas
+        val cfgFmt: String = row?.configFormat ?: "json" // Si no un json a partir de las reglas activas
 
         return cfgText to cfgFmt
     }

@@ -126,7 +126,6 @@ class RemoteSnippetExecutionTest {
         assertEquals("empty lint", ex.message)
     }
 
-
     @Test
     fun `format delega en restTemplate y devuelve body`() {
         val req: FormatReq = mock()
@@ -172,7 +171,6 @@ class RemoteSnippetExecutionTest {
         assertEquals("empty format", ex.message)
     }
 
-
     @Test
     fun `run delega en restTemplate y devuelve body`() {
         val req: RunReq = mock()
@@ -217,7 +215,6 @@ class RemoteSnippetExecutionTest {
         }
         assertEquals("empty run", ex.message)
     }
-
 
     @Test
     fun `runSingleTest delega en restTemplate y devuelve body`() {

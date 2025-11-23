@@ -44,7 +44,7 @@ internal class LintRuleStrategy : RuleTypeStrategy {
     override fun buildStateFromDtos(
         rules: List<RuleDto>,
         rawConfigText: String?,
-        rawConfigFormat: String?
+        rawConfigFormat: String?,
     ): RuleStatePieces {
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
         val options: Map<String, Any?> = rules.mapNotNull { r ->
