@@ -18,4 +18,10 @@ internal interface RuleTypeStrategy {
 
     // Construye el config efectivo (texto + formato) a partir de la fila en db (si no hay configText, puede generarlo en base a enabled/options)
     fun buildEffectiveConfig(row: RulesState?, rules: List<RuleDto>): Pair<String, String>
+
+    fun buildStateFromDtos(
+        rules: List<RuleDto>,
+        configText: String?,
+        configFormat: String?, // ya viene normalizado desde el service
+    ): RuleStatePieces
 }

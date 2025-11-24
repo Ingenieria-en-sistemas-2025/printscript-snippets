@@ -58,6 +58,33 @@ internal class LintRuleStrategy : RuleTypeStrategy {
         return cfgText to cfgFmt
     }
 
+    override fun buildStateFromDtos(
+        rules: List<RuleDto>,
+        configText: String?,
+        configFormat: String?,
+    ): RuleStatePieces {
+        val enabled: Set<String> = rules
+            .filter { it.enabled }
+            .map { it.id }
+            .toSet()
+
+        val options: Map<String, Any?> = rules
+            .mapNotNull { r ->
+                r.value?.let { v -> r.id to v }
+            }.toMap()
+
+        val normalizedConfigText = configText
+            ?.trim()
+            ?.takeUnless { it.isEmpty() || it == "{}" }
+
+        return RuleStatePieces(
+            enabled = enabled,
+            options = options,
+            configText = normalizedConfigText,
+            configFormat = configFormat ?: "json",
+        )
+    }
+
     private fun buildLintConfigFromEnabled(
         enabled: Set<String>,
         rules: List<RuleDto>,

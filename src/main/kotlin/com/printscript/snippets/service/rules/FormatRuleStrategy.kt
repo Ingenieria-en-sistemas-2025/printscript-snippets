@@ -82,6 +82,38 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         return cfgText to cfgFmt
     }
 
+    override fun buildStateFromDtos(
+        rules: List<RuleDto>,
+        configText: String?,
+        configFormat: String?,
+    ): RuleStatePieces {
+        val enabled: Set<String> = rules
+            .filter { it.enabled }
+            .map { it.id }
+            .toSet()
+
+        val options: Map<String, Any?> = rules
+            .mapNotNull { r ->
+                val intValue = when (val v = r.value) {
+                    is Number -> v.toInt()
+                    is String -> v.toIntOrNull()
+                    else -> null
+                }
+                intValue?.let { r.id to it }
+            }.toMap()
+
+        val normalizedConfigText = configText
+            ?.trim()
+            ?.takeUnless { it.isEmpty() || it == "{}" }
+
+        return RuleStatePieces(
+            enabled = enabled,
+            options = options,
+            configText = normalizedConfigText,
+            configFormat = configFormat ?: "json",
+        )
+    }
+
     private fun buildFormatterConfigFromRules(rules: List<RuleDto>): String {
         val opts: FormatterOptionsDto = FormatterMapper.toFormatterOptionsDto(rules)
         val config = mapOf(
@@ -96,4 +128,6 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         )
         return jacksonObjectMapper().writeValueAsString(config)
     }
+
+
 }
