@@ -1,4 +1,4 @@
-package com.printscript.snippets
+package com.printscript.snippets.controllers
 
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetVersionRepo

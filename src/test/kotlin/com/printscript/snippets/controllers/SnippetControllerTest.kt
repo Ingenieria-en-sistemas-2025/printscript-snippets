@@ -1,11 +1,13 @@
-package com.printscript.snippets
+package com.printscript.snippets.controllers
 
 import com.printscript.snippets.controller.SnippetController
 import com.printscript.snippets.dto.CreateSnippetReq
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.FileTypeDto
 import com.printscript.snippets.dto.PageDto
+import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.dto.RunSnippetInputsReq
+import com.printscript.snippets.dto.SaveRulesReq
 import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.dto.SingleTestRunResult
 import com.printscript.snippets.dto.SnippetDetailDto
@@ -31,6 +33,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.security.oauth2.jwt.Jwt
@@ -346,7 +349,7 @@ class SnippetControllerTest {
     @Test
     fun `ping devuelve no content`() {
         val response = controller.ping()
-        assertEquals(org.springframework.http.HttpStatus.NO_CONTENT, response.statusCode)
+        assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
     }
 
     @Test
@@ -365,8 +368,8 @@ class SnippetControllerTest {
     fun `saveAndPublishFormat guarda y notifica`() {
         val owner = "auth0|owner-format"
         val principal = jwt(owner)
-        val rules = listOf(mock(com.printscript.snippets.dto.RuleDto::class.java))
-        val body = com.printscript.snippets.dto.SaveRulesReq(
+        val rules = listOf(mock(RuleDto::class.java))
+        val body = SaveRulesReq(
             rules = rules,
             configText = "cfg",
             configFormat = "fmt",
@@ -374,7 +377,7 @@ class SnippetControllerTest {
 
         val response = controller.saveAndPublishFormat(principal, body)
 
-        assertEquals(org.springframework.http.HttpStatus.ACCEPTED, response.statusCode)
+        assertEquals(HttpStatus.ACCEPTED, response.statusCode)
         verify(rulesStateService).saveFormatState(owner, body.rules, body.configText, body.configFormat)
         verify(bulkRulesService).onFormattingRulesChanged(owner)
     }
@@ -383,8 +386,8 @@ class SnippetControllerTest {
     fun `saveAndPublishLint guarda y notifica`() {
         val owner = "auth0|owner-lint"
         val principal = jwt(owner)
-        val rules = listOf(mock(com.printscript.snippets.dto.RuleDto::class.java))
-        val body = com.printscript.snippets.dto.SaveRulesReq(
+        val rules = listOf(mock(RuleDto::class.java))
+        val body = SaveRulesReq(
             rules = rules,
             configText = "cfg",
             configFormat = "fmt",
@@ -392,7 +395,7 @@ class SnippetControllerTest {
 
         val response = controller.saveAndPublishLint(principal, body)
 
-        assertEquals(org.springframework.http.HttpStatus.ACCEPTED, response.statusCode)
+        assertEquals(HttpStatus.ACCEPTED, response.statusCode)
         verify(rulesStateService).saveLintState(owner, body.rules, body.configText, body.configFormat)
         verify(bulkRulesService).onLintingRulesChanged(owner)
     }
@@ -401,7 +404,7 @@ class SnippetControllerTest {
     fun `getFmtRules devuelve lo del service`() {
         val owner = "auth0|owner-get-fmt"
         val principal = jwt(owner)
-        val rules = listOf(mock(com.printscript.snippets.dto.RuleDto::class.java))
+        val rules = listOf(mock(RuleDto::class.java))
         `when`(rulesStateService.getFormatAsRules(owner)).thenReturn(rules)
 
         val response = controller.getFmtRules(principal)
@@ -414,7 +417,7 @@ class SnippetControllerTest {
     fun `getLintRules devuelve lo del service`() {
         val owner = "auth0|owner-get-lint"
         val principal = jwt(owner)
-        val rules = listOf(mock(com.printscript.snippets.dto.RuleDto::class.java))
+        val rules = listOf(mock(RuleDto::class.java))
         `when`(rulesStateService.getLintAsRules(owner)).thenReturn(rules)
 
         val response = controller.getLintRules(principal)
@@ -433,7 +436,7 @@ class SnippetControllerTest {
 
         val response = controller.formatOne(id, principal)
 
-        assertEquals(org.springframework.http.HttpStatus.OK, response.statusCode)
+        assertEquals(HttpStatus.OK, response.statusCode)
         assertSame(dtoMock, response.body)
         verify(snippetRuleDomainService).formatOneOwnerAware(owner, id)
     }
@@ -448,7 +451,7 @@ class SnippetControllerTest {
 
         val response = controller.lintOne(id, principal)
 
-        assertEquals(org.springframework.http.HttpStatus.OK, response.statusCode)
+        assertEquals(HttpStatus.OK, response.statusCode)
         assertSame(dtoMock, response.body)
         verify(snippetRuleDomainService).lintOneOwnerAware(owner, id)
     }
