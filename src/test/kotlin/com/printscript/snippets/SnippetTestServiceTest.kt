@@ -1,9 +1,10 @@
-package com.printscript.snippets.service
+package com.printscript.snippets
 
 import com.printscript.snippets.domain.TestCaseRepo
 import com.printscript.snippets.domain.model.TestCase
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.TestCaseDto
+import com.printscript.snippets.service.SnippetTestService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

@@ -13,19 +13,19 @@ import java.time.Instant
 
 class Auth0ManagementTokenServiceTest {
 
-    private fun newTokenResponse(
-        accessToken: String,
-        expiresIn: Int,
-        tokenType: String = "Bearer",
-    ): Any {
-        val clazz =
-            Class.forName(
-                "com.printscript.snippets.user.auth0.Auth0ManagementTokenService\$TokenResponse",
-            )
-        val ctor = clazz.getDeclaredConstructor(String::class.java, Int::class.javaPrimitiveType, String::class.java)
-        ctor.isAccessible = true
-        return ctor.newInstance(accessToken, expiresIn, tokenType)
-    }
+//    private fun newTokenResponse(
+//        accessToken: String,
+//        expiresIn: Int,
+//        tokenType: String = "Bearer",
+//    ): Any {
+//        val clazz =
+//            Class.forName(
+//                "com.printscript.snippets.user.auth0.Auth0ManagementTokenService\$TokenResponse",
+//            )
+//        val ctor = clazz.getDeclaredConstructor(String::class.java, Int::class.javaPrimitiveType, String::class.java)
+//        ctor.isAccessible = true
+//        return ctor.newInstance(accessToken, expiresIn, tokenType)
+//    }
 
     private fun newServiceWithRest(
         issuer: String = "https://auth0.example.com/",
