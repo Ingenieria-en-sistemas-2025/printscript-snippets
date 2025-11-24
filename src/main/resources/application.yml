@@ -1,14 +1,10 @@
 server:
-  port: ${SERVER_PORT:8080}
-
-spring:
-  profiles:
-    active: dev
+  port: 8080
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/snippets}
-    username: ${SPRING_DATASOURCE_USERNAME:snippets}
-    password: ${SPRING_DATASOURCE_PASSWORD:snippets}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -38,9 +34,6 @@ streams:
   linting:
     key: ps.linting
     group: linting-workers
-  dlq:
-    formatting: ps.dlq.formatting
-    linting: ps.dlq.linting
 
 asset:
   service:
@@ -63,17 +56,3 @@ auth0:
 newrelic:
   logs:
     enabled: true
-
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.security.web: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    root: INFO
-    org.springframework.data.redis.stream: DEBUG
-    org.springframework.data.redis.serializer: DEBUG
-    org.springframework.data.redis.connection: DEBUG
-    io.lettuce.core: INFO           # pasar a DEBUG si sospechás networking
-    reactor.core.publisher: INFO    # útil para ver reintentos/retries
-  pattern:
-    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
