@@ -15,7 +15,7 @@ class Auth0Client(
     private val auth0ManagementTokenService: Auth0ManagementTokenService,
 ) : IdentityProviderClient {
 
-    private data class Auth0UserDto(
+    data class Auth0UserDto(
         @param:JsonProperty("user_id") val userId: String,
         @param:JsonProperty("name") val name: String?,
         @param:JsonProperty("email") val email: String?,
