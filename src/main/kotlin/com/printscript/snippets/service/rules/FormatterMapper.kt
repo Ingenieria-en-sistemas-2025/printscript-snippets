@@ -2,7 +2,7 @@ package com.printscript.snippets.service.rules
 
 import com.printscript.snippets.dto.RuleDto
 import io.printscript.contracts.formatter.FormatterOptionsDto
-
+//mm
 object FormatterMapper {
 
     fun toFormatterOptionsDto(rules: List<RuleDto>): FormatterOptionsDto =
