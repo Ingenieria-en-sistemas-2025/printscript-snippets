@@ -369,7 +369,7 @@ class SnippetControllerTest {
         val body = com.printscript.snippets.dto.SaveRulesReq(
             rules = rules,
             configText = "cfg",
-            configFormat = "fmt"
+            configFormat = "fmt",
         )
 
         val response = controller.saveAndPublishFormat(principal, body)
@@ -387,7 +387,7 @@ class SnippetControllerTest {
         val body = com.printscript.snippets.dto.SaveRulesReq(
             rules = rules,
             configText = "cfg",
-            configFormat = "fmt"
+            configFormat = "fmt",
         )
 
         val response = controller.saveAndPublishLint(principal, body)
@@ -494,6 +494,4 @@ class SnippetControllerTest {
         verify(snippetDetailService).download(snippetId, true)
         verify(snippetDetailService).filename(snippetId, true)
     }
-
-
 }

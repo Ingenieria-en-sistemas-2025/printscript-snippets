@@ -17,7 +17,6 @@ class UserServiceTest {
     @Mock
     lateinit var identityProviderClient: IdentityProviderClient
 
-
     @Test
     fun `getAllOtherUsers filtra al usuario actual`() {
         val currentUser = "auth0|me"
@@ -41,7 +40,6 @@ class UserServiceTest {
         verify(identityProviderClient).getAllUsers()
     }
 
-
     @Test
     fun `getUsernameById devuelve name del usuario`() {
         val userId = "auth0|u3"
@@ -57,7 +55,6 @@ class UserServiceTest {
         assertEquals("Charlie", result)
         verify(identityProviderClient).getUserById(userId)
     }
-    
 
     @Test
     fun `getEmailById devuelve email del usuario`() {

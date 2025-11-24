@@ -17,10 +17,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -176,9 +176,8 @@ class SnippetPermissionServiceTest {
         val req = ShareSnippetReq(
             snippetId = snippetId.toString(),
             userId = "auth0|other",
-            permissionType = "READER"
+            permissionType = "READER",
         )
-
 
         assertThrows(com.printscript.snippets.error.UnsupportedOperation::class.java) {
             service.shareSnippetOwnerAware("auth0|wrong-owner", req)

@@ -5,19 +5,13 @@ import com.printscript.snippets.user.auth0.Auth0ManagementTokenService
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
-import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
-import org.springframework.web.client.RestClientResponseException
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 class Auth0ManagementTokenServiceTest {
-
 
     private fun newTokenResponse(
         accessToken: String,
@@ -32,7 +26,6 @@ class Auth0ManagementTokenServiceTest {
         ctor.isAccessible = true
         return ctor.newInstance(accessToken, expiresIn, tokenType)
     }
-
 
     private fun newServiceWithRest(
         issuer: String = "https://auth0.example.com/",
@@ -52,7 +45,6 @@ class Auth0ManagementTokenServiceTest {
 
         return Triple(service, builder, rest)
     }
-
 
 //    @Test
 //    fun `getAccessToken obtiene token cuando no hay y lo cachea mientras no expire`() {
@@ -157,7 +149,6 @@ class Auth0ManagementTokenServiceTest {
 //        Assertions.assertEquals("https://tenant.auth0.com/oauth/token", uriCaptor.value)
 //    }
 
-
     @Test
     fun `getAccessToken lanza RunTimeError si Auth0 devuelve body nulo`() {
         val (service, _, rest) = newServiceWithRest()
@@ -179,7 +170,6 @@ class Auth0ManagementTokenServiceTest {
 
         Assertions.assertTrue(ex.message!!.contains("Respuesta nula del endpoint de token de Auth0"))
     }
-
 
 //    @Test
 //    fun `getAccessToken envuelve RestClientResponseException en RunTimeError`() {
@@ -233,7 +223,6 @@ class Auth0ManagementTokenServiceTest {
 //
 //        Assertions.assertTrue(ex.message!!.contains("Fallo al obtener token M2M de Auth0."))
 //    }
-
 
     @Test
     fun `getAccessToken no llama a Auth0 si ya hay token valido y lejos de expirar`() {

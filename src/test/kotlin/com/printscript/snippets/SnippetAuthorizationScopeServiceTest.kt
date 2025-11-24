@@ -1,7 +1,6 @@
 package com.printscript.snippets
 
 import com.printscript.snippets.domain.model.Snippet
-import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.error.UnsupportedOperation
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.SnippetAuthorizationScopeService
@@ -12,8 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
-import org.mockito.quality.Strictness
 import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)

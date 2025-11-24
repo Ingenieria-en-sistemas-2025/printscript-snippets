@@ -13,7 +13,6 @@ import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.execution.SnippetExecution
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.SnippetsExecuteService
-import io.printscript.contracts.DiagnosticDto
 import io.printscript.contracts.run.RunReq
 import io.printscript.contracts.run.RunRes
 import io.printscript.contracts.tests.RunSingleTestReq

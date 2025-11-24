@@ -1,6 +1,5 @@
 package com.printscript.snippets
 
-
 import com.printscript.snippets.user.User
 import com.printscript.snippets.user.UserController
 import com.printscript.snippets.user.UserService
@@ -9,8 +8,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.whenever
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.jwt.Jwt
 

@@ -4,14 +4,18 @@ import com.printscript.snippets.domain.TestCaseRepo
 import com.printscript.snippets.domain.model.TestCase
 import com.printscript.snippets.dto.CreateTestReq
 import com.printscript.snippets.dto.TestCaseDto
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.*
-import java.util.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class SnippetTestServiceTest {
@@ -21,10 +25,6 @@ class SnippetTestServiceTest {
 
     @InjectMocks
     lateinit var service: SnippetTestService
-
-    // =========================================================
-    // createTestCase
-    // =========================================================
 
     @Test
     fun `createTestCase guarda entidad y devuelve DTO`() {
@@ -71,10 +71,6 @@ class SnippetTestServiceTest {
         )
     }
 
-    // =========================================================
-    // listTestCases
-    // =========================================================
-
     @Test
     fun `listTestCases devuelve lista mapeada correctamente`() {
         val snipId = UUID.randomUUID()
@@ -118,10 +114,6 @@ class SnippetTestServiceTest {
 
         verify(testCaseRepo).findAllBySnippetId(snipId)
     }
-
-    // =========================================================
-    // deleteTestCase
-    // =========================================================
 
     @Test
     fun `deleteTestCase llama a repo deleteById`() {

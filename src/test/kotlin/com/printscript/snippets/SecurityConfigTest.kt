@@ -12,16 +12,12 @@ import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.DefaultSecurityFilterChain
 import org.springframework.security.web.SecurityFilterChain
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 
 class SecurityConfigTest {
 
@@ -99,7 +95,6 @@ class SecurityConfigTest {
         // No nos casamos con el mensaje exacto, solo comprobamos que es de audience
         assertTrue(error.description.contains("aud"), "El error debería estar relacionado con la audience")
     }
-
 
     @Test
     fun `permissionsConverter agrega authorities SCOPE_ a partir de claim permissions`() {
@@ -188,7 +183,6 @@ class SecurityConfigTest {
         assertTrue(error!!.description.contains("aud"), "El error debería estar relacionado con la audience")
     }
 
-
     @Test
     fun `securityFilterChain devuelve SecurityFilterChain con el conversor y CSRF deshabilitado`() {
         val config = newConfig()
@@ -204,7 +198,6 @@ class SecurityConfigTest {
 
         // SOLUCIÓN: Usar DefaultSecurityFilterChain en el mock de retorno
         `when`(http.build()).thenReturn(mock(DefaultSecurityFilterChain::class.java))
-
 
         val result: SecurityFilterChain = config.securityFilterChain(http)
 

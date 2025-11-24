@@ -1,21 +1,13 @@
 package com.printscript.snippets.auth0
 
- import com.printscript.snippets.auth.Auth0TokenService
- import com.printscript.snippets.auth.Auth0TokenService.TokenResponse
- import com.printscript.snippets.error.RunTimeError
- import org.junit.jupiter.api.Assertions.assertEquals
- import org.junit.jupiter.api.Test
- import org.junit.jupiter.api.assertThrows
- import org.mockito.ArgumentMatchers.any
- import org.mockito.ArgumentMatchers.anyString
- import org.mockito.Mockito
- import org.springframework.http.MediaType
- import org.springframework.web.client.ResourceAccessException
- import org.springframework.web.client.RestClient
- import org.springframework.web.client.RestClientResponseException
- import java.time.Instant
+import com.printscript.snippets.auth.Auth0TokenService
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.mockito.Mockito
+import org.springframework.web.client.RestClient
+import java.time.Instant
 
- class Auth0TokenServiceTest {
+class Auth0TokenServiceTest {
 
     private val builder: RestClient.Builder = Mockito.mock(RestClient.Builder::class.java)
 
@@ -149,7 +141,6 @@ package com.printscript.snippets.auth0
 //        assertEquals("Respuesta nula del endpoint de token de Auth0.", thrown.message)
 //    }
 
-
     @Test
     fun `getAccessToken no refresca si token aun valido`() {
         val service = newService()
@@ -169,4 +160,4 @@ package com.printscript.snippets.auth0
         // El restClient nunca se usa para postear a Auth0
         Mockito.verify(restClient, Mockito.never()).post()
     }
- }
+}

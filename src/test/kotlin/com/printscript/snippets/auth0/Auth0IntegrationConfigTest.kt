@@ -1,15 +1,14 @@
 package com.printscript.snippets.auth0
 
-
 import com.printscript.snippets.user.auth0.Auth0Client
 import com.printscript.snippets.user.auth0.Auth0IntegrationConfig
-import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import org.springframework.web.client.RestTemplate
 import com.printscript.snippets.user.auth0.Auth0ManagementTokenService
 import com.printscript.snippets.user.auth0.IdentityProviderClient
 import junit.framework.TestCase.assertTrue
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
+import org.mockito.Mockito.mock
+import org.springframework.web.client.RestTemplate
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame

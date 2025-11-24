@@ -22,7 +22,7 @@ class SnippetToDtoTest {
             currentVersionId = UUID.randomUUID(),
             lastIsValid = true,
             lastLintCount = 3,
-            compliance = Compliance.COMPLIANT
+            compliance = Compliance.COMPLIANT,
         )
 
     private fun version(snippetId: UUID): SnippetVersion =
@@ -34,7 +34,7 @@ class SnippetToDtoTest {
             formattedKey = null,
             isFormatted = false,
             isValid = true,
-            lintIssues = "[]"
+            lintIssues = "[]",
         )
 
     // ---------- toDetailDto ----------

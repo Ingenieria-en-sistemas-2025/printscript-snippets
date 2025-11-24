@@ -37,7 +37,7 @@ class InternalReadControllerTest {
             id = UUID.randomUUID(),
             snippetId = id,
             versionNumber = 1,
-            contentKey = "key123"
+            contentKey = "key123",
         )
 
         whenever(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id))

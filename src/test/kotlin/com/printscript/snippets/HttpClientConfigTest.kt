@@ -1,6 +1,5 @@
 package com.printscript.snippets
 
-
 import com.printscript.snippets.auth.Auth0TokenService
 import com.printscript.snippets.config.HttpClientConfig
 import com.printscript.snippets.logs.CorrelationIdFilter.Companion.CORRELATION_ID_HEADER

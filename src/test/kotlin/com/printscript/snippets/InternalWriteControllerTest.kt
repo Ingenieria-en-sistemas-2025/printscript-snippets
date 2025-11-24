@@ -7,8 +7,8 @@ import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.enums.Compliance
 import com.printscript.snippets.enums.LintStatus
 import com.printscript.snippets.error.NotFound
-import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import com.printscript.snippets.redis.controllers.InternalWriteController
+import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.DiagnosticDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -21,12 +21,13 @@ import org.mockito.kotlin.whenever
 import java.util.Optional
 import java.util.UUID
 
-
 @ExtendWith(MockitoExtension::class)
 class InternalWriteControllerTest {
 
     @Mock lateinit var results: SnippetRuleDomainService
+
     @Mock lateinit var versionRepo: SnippetVersionRepo
+
     @Mock lateinit var snippetRepo: SnippetRepo
 
     private fun controller() =
@@ -60,7 +61,7 @@ class InternalWriteControllerTest {
     fun `saveLint llama a saveLint con los diagnostics`() {
         val id = UUID.randomUUID()
         val diags = listOf(
-            DiagnosticDto("R1", "msg", 1, 2)
+            DiagnosticDto("R1", "msg", 1, 2),
         )
 
         controller().saveLint(id, diags)
@@ -79,7 +80,7 @@ class InternalWriteControllerTest {
             id = UUID.randomUUID(),
             snippetId = id,
             versionNumber = 1,
-            contentKey = "key"
+            contentKey = "key",
         )
 
         val snippet = Snippet(
@@ -88,7 +89,7 @@ class InternalWriteControllerTest {
             name = "s",
             description = null,
             language = "printscript",
-            languageVersion = "1.1"
+            languageVersion = "1.1",
         )
 
         whenever(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id))
@@ -132,7 +133,7 @@ class InternalWriteControllerTest {
             id = UUID.randomUUID(),
             snippetId = id,
             versionNumber = 1,
-            contentKey = "key"
+            contentKey = "key",
         )
 
         whenever(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(id))
