@@ -115,11 +115,15 @@ class RulesStateService( // preferencias del usuario sobre reglas
             r.value?.let { v -> r.id to v }
         }.toMap()
 
+        val normalizedConfigText = configText
+            ?.trim()
+            ?.takeUnless { it.isEmpty() || it == "{}" }
+
         val row = upsertRow(RulesType.LINT, ownerId)
         row.enabledJson = enabled.toList()
         row.optionsJson = options.ifEmpty { null }
-        row.configText = configText
-        row.configFormat = configFormat
+        row.configText = normalizedConfigText
+        row.configFormat = normalizeFormat(configFormat)
         rulesStateRepo.save(row)
     }
 
