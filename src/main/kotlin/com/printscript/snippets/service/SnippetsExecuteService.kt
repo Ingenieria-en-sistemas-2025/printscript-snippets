@@ -4,6 +4,7 @@ import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.TestCaseRepo
+import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.dto.SingleTestRunResult
 import com.printscript.snippets.error.InvalidRequest
 import com.printscript.snippets.error.NotFound
@@ -80,7 +81,7 @@ class SnippetsExecuteService(
         return response
     }
 
-    private fun requireSnippetWithReadAccess(userId: String, snippetId: UUID): com.printscript.snippets.domain.model.Snippet {
+    private fun requireSnippetWithReadAccess(userId: String, snippetId: UUID): Snippet {
         val snippet = snippetRepo.findById(snippetId)
             .orElseThrow { NotFound("Snippet not found") }
 
