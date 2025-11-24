@@ -6,14 +6,15 @@ import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.redis.controllers.InternalReadController
 import com.printscript.snippets.redis.dto.ContentDto
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.*
+import java.util.UUID
+import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class InternalReadControllerTest {
