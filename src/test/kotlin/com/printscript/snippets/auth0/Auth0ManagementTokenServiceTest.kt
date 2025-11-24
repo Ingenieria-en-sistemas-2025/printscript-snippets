@@ -18,9 +18,6 @@ import java.time.Instant
 
 class Auth0ManagementTokenServiceTest {
 
-    // ==============================
-    // helpers
-    // ==============================
 
     private fun newTokenResponse(
         accessToken: String,
@@ -36,10 +33,7 @@ class Auth0ManagementTokenServiceTest {
         return ctor.newInstance(accessToken, expiresIn, tokenType)
     }
 
-    /**
-     * Crea un RestClient.Builder + RestClient con deep stubs,
-     * y arma el servicio listo para usar en cada test.
-     */
+
     private fun newServiceWithRest(
         issuer: String = "https://auth0.example.com/",
     ): Triple<Auth0ManagementTokenService, RestClient.Builder, RestClient> {
@@ -59,9 +53,6 @@ class Auth0ManagementTokenServiceTest {
         return Triple(service, builder, rest)
     }
 
-    // ==============================
-    // Happy path + cache
-    // ==============================
 
     @Test
     fun `getAccessToken obtiene token cuando no hay y lo cachea mientras no expire`() {
@@ -117,9 +108,6 @@ class Auth0ManagementTokenServiceTest {
         Mockito.verify(rest, Mockito.times(2)).post()
     }
 
-    // ==============================
-    // issuer con y sin /
-    // ==============================
 
     @Test
     fun `refreshToken arma correctamente la URL cuando issuer termina con barra`() {
@@ -169,9 +157,6 @@ class Auth0ManagementTokenServiceTest {
         Assertions.assertEquals("https://tenant.auth0.com/oauth/token", uriCaptor.value)
     }
 
-    // ==============================
-    // Error: body nulo
-    // ==============================
 
     @Test
     fun `getAccessToken lanza RunTimeError si Auth0 devuelve body nulo`() {
@@ -195,9 +180,6 @@ class Auth0ManagementTokenServiceTest {
         Assertions.assertTrue(ex.message!!.contains("Respuesta nula del endpoint de token de Auth0"))
     }
 
-    // ==============================
-    // Error: RestClientResponseException (HTTP error)
-    // ==============================
 
     @Test
     fun `getAccessToken envuelve RestClientResponseException en RunTimeError`() {
@@ -230,9 +212,6 @@ class Auth0ManagementTokenServiceTest {
         Assertions.assertTrue(ex.message!!.contains("Fallo al obtener token M2M de Auth0."))
     }
 
-    // ==============================
-    // Error: ResourceAccessException (timeout, red)
-    // ==============================
 
     @Test
     fun `getAccessToken envuelve ResourceAccessException en RunTimeError`() {
@@ -255,9 +234,6 @@ class Auth0ManagementTokenServiceTest {
         Assertions.assertTrue(ex.message!!.contains("Fallo al obtener token M2M de Auth0."))
     }
 
-    // ==============================
-    // Branch donde ya hay token y no expira pronto
-    // ==============================
 
     @Test
     fun `getAccessToken no llama a Auth0 si ya hay token valido y lejos de expirar`() {

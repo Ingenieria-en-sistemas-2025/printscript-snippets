@@ -453,4 +453,47 @@ class SnippetControllerTest {
         verify(snippetRuleDomainService).lintOneOwnerAware(owner, id)
     }
 
+    @Test
+    fun `listAccessible pasa page size y name al service`() {
+        val principal = jwt("auth0|filter-user")
+        val pageMock = mock(PageDto::class.java) as PageDto<SnippetSummaryDto>
+
+        `when`(
+            snippetDetailService.listAccessibleSnippets("auth0|filter-user", 2, 5, "my-snippet"),
+        ).thenReturn(pageMock)
+
+        val result = controller.listAccessible(principal, 2, 5, "my-snippet")
+
+        assertSame(pageMock, result)
+        verify(snippetDetailService).listAccessibleSnippets("auth0|filter-user", 2, 5, "my-snippet")
+    }
+
+    @Test
+    fun `download con formatted true delega correctamente`() {
+        val principal = jwt("auth0|reader-fmt")
+        val snippetId = UUID.randomUUID()
+        val fileBytes = "formatted-content".toByteArray()
+
+        `when`(
+            snippetDetailService.download(snippetId, true),
+        ).thenReturn(fileBytes)
+        `when`(
+            snippetDetailService.filename(snippetId, true),
+        ).thenReturn("code-formatted.prs")
+
+        val response = controller.download(principal, snippetId, true)
+
+        assertArrayEquals(fileBytes, response.body)
+        assertEquals(
+            "attachment; filename=\"code-formatted.prs\"",
+            response.headers.getFirst(HttpHeaders.CONTENT_DISPOSITION),
+        )
+        assertEquals(MediaType.TEXT_PLAIN, response.headers.contentType)
+
+        verify(snippetPermissionService).checkPermissions("auth0|reader-fmt", snippetId, min = AccessLevel.READER)
+        verify(snippetDetailService).download(snippetId, true)
+        verify(snippetDetailService).filename(snippetId, true)
+    }
+
+
 }

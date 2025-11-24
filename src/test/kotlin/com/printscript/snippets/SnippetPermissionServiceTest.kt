@@ -6,6 +6,7 @@ import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.enums.Compliance
 import com.printscript.snippets.error.NotFound
+import com.printscript.snippets.error.UnsupportedOperation
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.SnippetAuthorizationScopeService
 import com.printscript.snippets.service.SnippetPermissionService
@@ -19,6 +20,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -157,6 +159,46 @@ class SnippetPermissionServiceTest {
                 AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, sn)
                 AccessLevel.OWNER -> authorization.requireOwner(userId, sn)
             }
+        }
+    }
+
+    @Test
+    fun `shareSnippetOwnerAware falla cuando no es owner`() {
+        val snippetId = UUID.randomUUID()
+
+        val sn = snippet(snippetId, "auth0|real-owner")
+
+        Mockito.`when`(snippetRepo.findById(snippetId))
+            .thenReturn(Optional.of(sn))
+
+        val service = SnippetPermissionService(snippetRepo, permissionClient)
+
+        val req = ShareSnippetReq(
+            snippetId = snippetId.toString(),
+            userId = "auth0|other",
+            permissionType = "READER"
+        )
+
+
+        assertThrows(com.printscript.snippets.error.UnsupportedOperation::class.java) {
+            service.shareSnippetOwnerAware("auth0|wrong-owner", req)
+        }
+
+        verify(permissionClient, Mockito.never())
+            .createAuthorization(any())
+    }
+
+    @Test
+    fun `checkPermissions lanza NotFound cuando el snippet no existe`() {
+        val id = UUID.randomUUID()
+
+        Mockito.`when`(snippetRepo.findById(id))
+            .thenReturn(Optional.empty())
+
+        val service = SnippetPermissionService(snippetRepo, permissionClient)
+
+        assertThrows(NotFound::class.java) {
+            service.checkPermissions("auth0|user", id, AccessLevel.READER)
         }
     }
 }
