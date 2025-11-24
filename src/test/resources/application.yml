@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL #la base vive en memoria → se crea al inicio del test y desaparece cuando el contexto se cierra.
     username: sa
     password:
   jpa:
