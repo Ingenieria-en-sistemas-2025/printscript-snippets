@@ -1,4 +1,4 @@
-package com.printscript.snippets
+package com.printscript.snippets.auth0
 
 import com.printscript.snippets.user.auth0.Auth0Client
 import com.printscript.snippets.user.auth0.Auth0ManagementTokenService

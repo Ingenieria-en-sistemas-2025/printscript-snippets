@@ -1,4 +1,4 @@
- package com.printscript.snippets
+package com.printscript.snippets.auth0
 
  import com.printscript.snippets.auth.Auth0TokenService
  import com.printscript.snippets.auth.Auth0TokenService.TokenResponse
@@ -92,7 +92,7 @@
                 .contentType(Mockito.eq(MediaType.APPLICATION_JSON))
                 .body(any())
                 .retrieve()
-                .body(Mockito.any(tokenClass) as Class<TokenResponse>), // <--- FUERZA el tipo genérico 'T'
+                .body(any(tokenClass) as Class<TokenResponse>), // <--- FUERZA el tipo genérico 'T'
         ).thenThrow(ex)
 
         val thrown = assertThrows<RunTimeError> {
@@ -121,7 +121,7 @@
                 .contentType(Mockito.eq(MediaType.APPLICATION_JSON))
                 .body(any())
                 .retrieve()
-                .body(Mockito.any(tokenClass) as Class<TokenResponse>), // <--- FUERZA el tipo genérico 'T'
+                .body(any(tokenClass) as Class<TokenResponse>), // <--- FUERZA el tipo genérico 'T'
         ).thenThrow(ex)
 
         val thrown = assertThrows<RunTimeError> {
