@@ -1,6 +1,5 @@
 package com.printscript.snippets.rules
 
-
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
@@ -34,7 +33,6 @@ class FormatRuleStrategyTest {
     private fun r(id: String, enabled: Boolean, value: Any?) =
         RuleDto(id = id, enabled = enabled, value = value)
 
-
     @Test
     fun `defaultEnabled tiene reglas conocidas`() {
         val d = strategy.defaultEnabled()
@@ -58,7 +56,6 @@ class FormatRuleStrategyTest {
         assertTrue(ids.size > 5)
         assertEquals(ids.sorted(), ids) // ordenados
     }
-
 
     @Test
     fun `toRuleDtos mapea enabled y numeric defaults`() {
@@ -91,33 +88,35 @@ class FormatRuleStrategyTest {
         val dtos = strategy.toRuleDtos(enabled, values)
 
         val indent = dtos.find { it.id == "indent_size" }!!
-        assertEquals(8, indent.value)          // "8" -> 8
+        assertEquals(8, indent.value) // "8" -> 8
 
         val tab = dtos.find { it.id == "tabsize" }!!
-        assertNull(tab.value)                  // "hola" -> null, se descarta
+        assertNull(tab.value) // "hola" -> null, se descarta
     }
-
 
     @Test
     fun `buildStateFromDtos arma enabled + options + config normalizado`() {
         val rules = listOf(
             r("indent-spaces", true, 5),
             r("tabsize", false, 2),
-            r("if-brace-below-line", true, null)
+            r("if-brace-below-line", true, null),
         )
 
         val pieces = strategy.buildStateFromDtos(
             rules = rules,
             configText = "   {hello}   ",
-            configFormat = "yaml"
+            configFormat = "yaml",
         )
 
         assertEquals(setOf("indent-spaces", "if-brace-below-line"), pieces.enabled)
 
-        assertEquals(mapOf(
-            "indent-spaces" to 5,
-            "tabsize" to 2
-        ), pieces.options)
+        assertEquals(
+            mapOf(
+                "indent-spaces" to 5,
+                "tabsize" to 2,
+            ),
+            pieces.options,
+        )
 
         assertEquals("{hello}", pieces.configText)
         assertEquals("yaml", pieces.configFormat)
@@ -145,14 +144,13 @@ class FormatRuleStrategyTest {
         assertEquals("json", pieces.configFormat)
     }
 
-
     @Test
     fun `buildEffectiveConfig usa config del row si existe`() {
         val row = row(
             enabled = listOf("indent-spaces"),
             options = mapOf("indent-spaces" to 2),
             text = "{mycfg}",
-            fmt = "yaml"
+            fmt = "yaml",
         )
 
         val rules = listOf(r("indent-spaces", true, 2))
@@ -168,12 +166,12 @@ class FormatRuleStrategyTest {
         val row = row(
             text = null,
             options = null,
-            fmt = null
+            fmt = null,
         )
 
         val rules = listOf(
             r("indent-spaces", true, 3),
-            r("mandatory-single-space-separation", true, null)
+            r("mandatory-single-space-separation", true, null),
         )
 
         val (text, fmt) = strategy.buildEffectiveConfig(row, rules)
