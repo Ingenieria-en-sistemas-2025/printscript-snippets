@@ -68,6 +68,7 @@ dependencies {
 
     implementation("io.printscript:contracts:0.1.2")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
+
 }
 
 // configura el compilador de kt
