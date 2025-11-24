@@ -41,19 +41,37 @@ internal class LintRuleStrategy : RuleTypeStrategy {
             )
         }
 
+    override fun buildStateFromDtos(
+        rules: List<RuleDto>,
+        rawConfigText: String?,
+        rawConfigFormat: String?,
+    ): RuleStatePieces {
+        val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
+        val options: Map<String, Any?> = rules.mapNotNull { r ->
+            r.value?.let { v -> r.id to v }
+        }.toMap()
+
+        // acá podés decidir si querés normalizar o no
+        val format = rawConfigFormat ?: "json"
+
+        return RuleStatePieces(
+            enabled = enabled,
+            options = options,
+            configText = rawConfigText, // en tu caso hoy siempre null, pero queda preparado
+            configFormat = format,
+        )
+    }
+
     override fun buildEffectiveConfig(
         row: RulesState?,
         rules: List<RuleDto>,
     ): Pair<String, String> {
-        val enabledFromRow: Set<String> =
-            row?.enabledJson?.toSet() ?: defaultEnabled()
+        val enabledFromRules: Set<String> =
+            rules.filter { it.enabled }.map { it.id }.toSet()
 
-        val cfgText: String = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" }
-            ?: buildLintConfigFromEnabled(enabledFromRow, rules)
+        val cfgText: String = buildLintConfigFromEnabled(enabledFromRules, rules)
 
-        val cfgFmt: String = row?.configFormat ?: "json"
+        val cfgFmt: String = "json"
 
         return cfgText to cfgFmt
     }

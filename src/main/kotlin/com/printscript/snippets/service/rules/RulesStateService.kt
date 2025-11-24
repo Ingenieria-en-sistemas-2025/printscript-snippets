@@ -17,6 +17,9 @@ class RulesStateService( // preferencias del usuario sobre reglas
             LintRuleStrategy(),
         ).associateBy { it.type }
 
+    private fun strategyFor(type: RulesType): RuleTypeStrategy =
+        strategies.getValue(type)
+
     private fun findRow(type: RulesType, ownerId: String?): RulesState? =
         rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElseGet {
             rulesStateRepo.findByTypeAndOwnerId(type, null).orElse(null)
@@ -47,96 +50,67 @@ class RulesStateService( // preferencias del usuario sobre reglas
         return raw.filterValues { it != null }
     }
 
-    private fun normalizeFormat(configFormat: String?): String =
-        when (configFormat?.lowercase()) {
-            "yaml", "yml" -> "yaml"
-            "json" -> "json"
-            null, "" -> "json"
-            else -> "json"
-        }
+    // guardar estado para cualquier tipo de reglas
+    fun saveState(
+        type: RulesType,
+        ownerId: String,
+        rules: List<RuleDto>,
+        configText: String?,
+        configFormat: String?,
+    ) {
+        val strategy = strategyFor(type) // strategy correcta
+        val state = strategy.buildStateFromDtos(rules, configText, configFormat) // convuerte ruledto en un dto para guardar en la db
 
-    fun saveFormatState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
-        val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
-
-        val options: Map<String, Int> = rules.mapNotNull { r ->
-            val intValue = when (val v = r.value) {
-                is Number -> v.toInt()
-                is String -> v.toIntOrNull()
-                else -> null
-            }
-            intValue?.let { r.id to it }
-        }.toMap()
-
-        val normalizedConfigText = configText
-            ?.trim()
-            ?.takeUnless { it.isEmpty() || it == "{}" }
-
-        val row = upsertRow(RulesType.FORMAT, ownerId)
-        row.enabledJson = enabled.toList()
-        row.optionsJson = options.ifEmpty { null }
-        row.configText = normalizedConfigText
-        row.configFormat = normalizeFormat(configFormat)
+        val row = upsertRow(type, ownerId) // busca la fila de ese owner si no existe la crea
+        row.enabledJson = state.enabled.toList() // setea lista de ids activados
+        row.optionsJson = state.options.ifEmpty { null } // setea los nros solo si toene vals
+        row.configText = state.configText
+        row.configFormat = state.configFormat
         rulesStateRepo.save(row)
     }
 
-    fun getFormatAsRules(ownerId: String): List<RuleDto> {
-        val type = RulesType.FORMAT
-        val strategy = strategies.getValue(type)
-
-        val enabled = readEnabled(type, ownerId)
-        val values = readOptions(type, ownerId)
-
-        return strategy.toRuleDtos(enabled, values)
+    // lo q le doy a la ui para mostrar las rules
+    fun getRules(type: RulesType, ownerId: String): List<RuleDto> {
+        val strategy = strategyFor(type)
+        val enabled = readEnabled(type, ownerId) // busca las rules activadas
+        val values = readOptions(type, ownerId) // busca options guardadas
+        return strategy.toRuleDtos(enabled, values) // la misma strategy arma la lista de RuleDto
     }
 
-    fun currentFormatConfig(ownerId: String): Pair<String?, String?> {
-        val type = RulesType.FORMAT
+    // obtener config (configText + formato) para cualquier tipo
+    fun currentConfig(type: RulesType, ownerId: String): Pair<String?, String?> {
+        val strategy = strategyFor(type)
         val row = findRow(type, ownerId)
-        val rules = getFormatAsRules(ownerId)
-
-        // A diferencia de lint, acá permitís null si no tenés nada configurado
-        val (cfgText, cfgFmt) = strategies.getValue(type).buildEffectiveConfig(row, rules)
-        return cfgText to cfgFmt
+        val rules = getRules(type, ownerId) // regla ya lista para la ui
+        return strategy.buildEffectiveConfig(row, rules) // la strategy decide como generar json final
     }
 
-    fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
-        val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
-        val options: Map<String, Any> = rules.mapNotNull { r ->
-            r.value?.let { v -> r.id to v }
-        }.toMap()
-
-        val row = upsertRow(RulesType.LINT, ownerId)
-        row.enabledJson = enabled.toList()
-        row.optionsJson = options.ifEmpty { null }
-        row.configText = configText
-        row.configFormat = configFormat
-        rulesStateRepo.save(row)
-    }
-
-    fun getLintAsRules(ownerId: String): List<RuleDto> {
-        val type = RulesType.LINT
-        val strategy = strategies.getValue(type)
-
-        val enabled = readEnabled(type, ownerId)
-        val values = readOptions(type, ownerId)
-
-        return strategy.toRuleDtos(enabled, values)
-    }
-
-    fun currentLintConfig(ownerId: String): Pair<String?, String?> {
-        val type = RulesType.LINT
-        val row = findRow(type, ownerId)
-        val rules = getLintAsRules(ownerId)
-        return strategies.getValue(type).buildEffectiveConfig(row, rules)
-    }
-
-    fun currentLintConfigEffective(ownerId: String): Pair<String, String> {
-        val (cfgText, cfgFmt) = currentLintConfig(ownerId)
+    fun currentConfigEffective(type: RulesType, ownerId: String): Pair<String, String> {
+        val (cfgText, cfgFmt) = currentConfig(type, ownerId)
         return (cfgText ?: "{}") to (cfgFmt ?: "json")
     }
 
-    fun currentFormatConfigEffective(ownerId: String): Pair<String, String> {
-        val (cfgText, cfgFmt) = currentFormatConfig(ownerId)
-        return (cfgText ?: "{}") to (cfgFmt ?: "json")
-    }
+    fun saveFormatState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) =
+        saveState(RulesType.FORMAT, ownerId, rules, configText, configFormat)
+
+    fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) =
+        saveState(RulesType.LINT, ownerId, rules, configText, configFormat)
+
+    fun getFormatAsRules(ownerId: String): List<RuleDto> =
+        getRules(RulesType.FORMAT, ownerId)
+
+    fun getLintAsRules(ownerId: String): List<RuleDto> =
+        getRules(RulesType.LINT, ownerId)
+
+    fun currentFormatConfig(ownerId: String): Pair<String?, String?> =
+        currentConfig(RulesType.FORMAT, ownerId)
+
+    fun currentLintConfig(ownerId: String): Pair<String?, String?> =
+        currentConfig(RulesType.LINT, ownerId)
+
+    fun currentFormatConfigEffective(ownerId: String): Pair<String, String> =
+        currentConfigEffective(RulesType.FORMAT, ownerId)
+
+    fun currentLintConfigEffective(ownerId: String): Pair<String, String> =
+        currentConfigEffective(RulesType.LINT, ownerId)
 }
