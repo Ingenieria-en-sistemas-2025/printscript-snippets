@@ -4,6 +4,7 @@ import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.enums.AccessLevel
+import com.printscript.snippets.enums.Compliance
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.SnippetAuthorizationScopeService
@@ -13,17 +14,16 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.Mockito
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.junit.jupiter.MockitoSettings
-import org.mockito.quality.Strictness
+import java.time.Instant
 import java.util.Optional
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class SnippetPermissionServiceTest {
 
     @Mock
@@ -32,13 +32,21 @@ class SnippetPermissionServiceTest {
     @Mock
     lateinit var permissionClient: SnippetPermission
 
-    // ===== helper =====
-    private fun snippet(id: UUID, owner: String): Snippet {
-        val s = Mockito.mock(Snippet::class.java)
-        Mockito.`when`(s.id).thenReturn(id)
-        Mockito.`when`(s.ownerId).thenReturn(owner)
-        return s
-    }
+    // ==== SNIPPET REAL (NO MOCK!) ====
+    private fun snippet(id: UUID, owner: String): Snippet =
+        Snippet(
+            id = id,
+            ownerId = owner,
+            name = "test",
+            description = "d",
+            language = "printscript",
+            languageVersion = "1.1",
+            currentVersionId = null,
+            lastIsValid = true,
+            lastLintCount = 0,
+            compliance = Compliance.PENDING,
+            createdAt = Instant.now(),
+        )
 
     // =========================================================
     // shareSnippetOwnerAware
@@ -47,7 +55,8 @@ class SnippetPermissionServiceTest {
     @Test
     fun `shareSnippetOwnerAware ok crea permiso`() {
         val snippetId = UUID.randomUUID()
-        val ownerId = "auth0|o1"
+        val ownerId = "auth0|owner"
+
         val req = ShareSnippetReq(
             snippetId = snippetId.toString(),
             userId = "auth0|u2",
@@ -61,10 +70,10 @@ class SnippetPermissionServiceTest {
 
         service.shareSnippetOwnerAware(ownerId, req)
 
-        val captor = ArgumentCaptor.forClass(PermissionCreateSnippetInput::class.java)
-        Mockito.verify(permissionClient).createAuthorization(captor.capture())
+        val captor = argumentCaptor<PermissionCreateSnippetInput>()
+        verify(permissionClient).createAuthorization(captor.capture())
 
-        val sent = captor.value
+        val sent = captor.firstValue
         assertEquals(snippetId.toString(), sent.snippetId)
         assertEquals("auth0|u2", sent.userId)
         assertEquals("EDITOR", sent.scope)
@@ -72,7 +81,6 @@ class SnippetPermissionServiceTest {
 
     @Test
     fun `shareSnippetOwnerAware lanza si snippet no existe`() {
-        val ownerId = "auth0|owner"
         val req = ShareSnippetReq(
             snippetId = UUID.randomUUID().toString(),
             userId = "x",
@@ -84,7 +92,7 @@ class SnippetPermissionServiceTest {
         val service = SnippetPermissionService(snippetRepo, permissionClient)
 
         assertThrows(NotFound::class.java) {
-            service.shareSnippetOwnerAware(ownerId, req)
+            service.shareSnippetOwnerAware("owner", req)
         }
     }
 
@@ -95,70 +103,59 @@ class SnippetPermissionServiceTest {
     @Test
     fun `checkPermissions llama requireReaderOrAbove`() {
         val id = UUID.randomUUID()
-        val snip = snippet(id, "u1")
+        val sn = snippet(id, "u1")
 
-        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(snip))
+        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(sn))
 
-        val service = SpykPermissionService(snippetRepo, permissionClient)
+        val service = SpykSvc(snippetRepo, permissionClient)
 
-        service.checkPermissions("uX", id, AccessLevel.READER)
+        service.checkPermissions("ux", id, AccessLevel.READER)
 
-        Mockito.verify(service.authorization)
-            .requireReaderOrAbove("uX", snip)
+        verify(service.authorization).requireReaderOrAbove("ux", sn)
     }
 
     @Test
     fun `checkPermissions llama requireEditorOrOwner`() {
         val id = UUID.randomUUID()
-        val snip = snippet(id, "u1")
+        val sn = snippet(id, "u1")
 
-        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(snip))
+        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(sn))
 
-        val service = SpykPermissionService(snippetRepo, permissionClient)
+        val service = SpykSvc(snippetRepo, permissionClient)
 
-        service.checkPermissions("uX", id, AccessLevel.EDITOR)
+        service.checkPermissions("ux", id, AccessLevel.EDITOR)
 
-        Mockito.verify(service.authorization)
-            .requireEditorOrOwner("uX", snip)
+        verify(service.authorization).requireEditorOrOwner("ux", sn)
     }
 
     @Test
     fun `checkPermissions llama requireOwner`() {
         val id = UUID.randomUUID()
-        val snip = snippet(id, "u1")
+        val sn = snippet(id, "u1")
 
-        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(snip))
+        Mockito.`when`(snippetRepo.findById(id)).thenReturn(Optional.of(sn))
 
-        val service = SpykPermissionService(snippetRepo, permissionClient)
+        val service = SpykSvc(snippetRepo, permissionClient)
 
-        service.checkPermissions("uX", id, AccessLevel.OWNER)
+        service.checkPermissions("ux", id, AccessLevel.OWNER)
 
-        Mockito.verify(service.authorization)
-            .requireOwner("uX", snip)
+        verify(service.authorization).requireOwner("ux", sn)
     }
 
-    // === Helper class para interceptar las llamadas a authorization ===
-    class SpykPermissionService(
+    class SpykSvc(
         repo: SnippetRepo,
         client: SnippetPermission,
     ) : SnippetPermissionService(repo, client) {
 
-        // mockeamos explícitamente el servicio de scopes
         val authorization: SnippetAuthorizationScopeService =
             Mockito.mock(SnippetAuthorizationScopeService::class.java)
 
-        override fun checkPermissions(
-            userId: String,
-            snippetId: UUID,
-            min: AccessLevel,
-        ) {
-            val snippet = snippetRepo.findById(snippetId)
-                .orElseThrow { NotFound("Snippet not found") }
-
+        override fun checkPermissions(userId: String, snippetId: UUID, min: AccessLevel) {
+            val sn = snippetRepo.findById(snippetId).orElseThrow()
             when (min) {
-                AccessLevel.READER -> authorization.requireReaderOrAbove(userId, snippet)
-                AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, snippet)
-                AccessLevel.OWNER -> authorization.requireOwner(userId, snippet)
+                AccessLevel.READER -> authorization.requireReaderOrAbove(userId, sn)
+                AccessLevel.EDITOR -> authorization.requireEditorOrOwner(userId, sn)
+                AccessLevel.OWNER -> authorization.requireOwner(userId, sn)
             }
         }
     }
