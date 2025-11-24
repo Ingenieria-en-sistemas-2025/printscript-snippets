@@ -12,7 +12,7 @@ import java.util.UUID
 
 @Service
 class SnippetPermissionService(
-    private val snippetRepo: SnippetRepo,
+    val snippetRepo: SnippetRepo,
     private val permissionClient: SnippetPermission,
 ) {
     private val authorization = SnippetAuthorizationScopeService(permissionClient)
