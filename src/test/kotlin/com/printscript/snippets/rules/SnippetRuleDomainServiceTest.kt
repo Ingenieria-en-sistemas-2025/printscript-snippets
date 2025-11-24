@@ -1,4 +1,4 @@
-package com.printscript.snippets
+package com.printscript.snippets.rules
 
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
@@ -15,12 +15,13 @@ import com.printscript.snippets.service.rules.SnippetRuleDomainService
 import io.printscript.contracts.DiagnosticDto
 import io.printscript.contracts.formatter.FormatReq
 import io.printscript.contracts.formatter.FormatRes
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
@@ -78,7 +79,7 @@ class SnippetRuleDomainServiceTest {
         lastLintCount: Int = 0,
         lastIsValid: Boolean = true,
     ): Snippet {
-        val s = org.mockito.Mockito.mock(Snippet::class.java)
+        val s = Mockito.mock(Snippet::class.java)
         whenever(s.id).thenReturn(id)
         whenever(s.ownerId).thenReturn(ownerId)
         whenever(s.language).thenReturn(language)
@@ -98,7 +99,7 @@ class SnippetRuleDomainServiceTest {
         isValid: Boolean = true,
         lintStatus: LintStatus = LintStatus.PENDING,
     ): SnippetVersion {
-        val v = org.mockito.Mockito.mock(SnippetVersion::class.java)
+        val v = Mockito.mock(SnippetVersion::class.java)
         whenever(v.id).thenReturn(id)
         whenever(v.snippetId).thenReturn(snippetId)
         whenever(v.versionNumber).thenReturn(number)
@@ -252,14 +253,14 @@ class SnippetRuleDomainServiceTest {
         val dto: SnippetDetailDto = service.formatOneOwnerAware(userId, snippetId)
 
         val sentReq = reqCaptor.firstValue
-        assertEquals(s.language, sentReq.language)
-        assertEquals(s.languageVersion, sentReq.version)
-        assertEquals(original, sentReq.content)
-        assertEquals("CFG_TEXT", sentReq.configText)
-        assertEquals("JSON", sentReq.configFormat)
+        Assertions.assertEquals(s.language, sentReq.language)
+        Assertions.assertEquals(s.languageVersion, sentReq.version)
+        Assertions.assertEquals(original, sentReq.content)
+        Assertions.assertEquals("CFG_TEXT", sentReq.configText)
+        Assertions.assertEquals("JSON", sentReq.configFormat)
 
-        assertEquals(s.id.toString(), dto.id)
-        assertEquals(formatted, dto.content)
+        Assertions.assertEquals(s.id.toString(), dto.id)
+        Assertions.assertEquals(formatted, dto.content)
 
         verify(executionClient).format(any())
     }
