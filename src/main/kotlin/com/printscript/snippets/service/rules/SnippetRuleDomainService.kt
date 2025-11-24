@@ -64,6 +64,8 @@ class SnippetRuleDomainService(
         latest.isFormatted = true
 
         versionRepo.save(latest)
+
+        snippetRepo.save(snippet)
     }
 
     fun saveLint(
