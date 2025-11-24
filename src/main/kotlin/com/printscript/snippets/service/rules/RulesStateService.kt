@@ -20,7 +20,6 @@ class RulesStateService( // preferencias del usuario sobre reglas
             LintRuleStrategy(),
         ).associateBy { it.type }
 
-
     private fun strategyFor(type: RulesType): RuleTypeStrategy =
         strategies.getValue(type)
 
@@ -136,5 +135,4 @@ class RulesStateService( // preferencias del usuario sobre reglas
 
     fun currentLintConfigEffective(ownerId: String): Pair<String, String> =
         currentConfigEffective(RulesType.LINT, ownerId)
-
 }

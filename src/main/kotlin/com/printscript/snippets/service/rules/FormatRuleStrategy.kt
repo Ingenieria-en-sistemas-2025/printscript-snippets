@@ -128,6 +128,4 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         )
         return jacksonObjectMapper().writeValueAsString(config)
     }
-
-
 }
