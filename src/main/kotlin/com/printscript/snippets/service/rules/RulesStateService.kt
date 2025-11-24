@@ -4,12 +4,15 @@ import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.enums.RulesType
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class RulesStateService( // preferencias del usuario sobre reglas
     private val rulesStateRepo: RulesStateRepo,
 ) {
+
+    private val logger = LoggerFactory.getLogger(RulesStateService::class.java)
 
     private val strategies: Map<RulesType, RuleTypeStrategy> =
         listOf(
@@ -100,6 +103,13 @@ class RulesStateService( // preferencias del usuario sobre reglas
     }
 
     fun saveLintState(ownerId: String, rules: List<RuleDto>, configText: String?, configFormat: String?) {
+        logger.info(
+            "Saving lint rules for owner={} enabled={} cfgFmt={} cfgText={}",
+            ownerId,
+            rules.joinToString { "${it.id}=${it.enabled}, value=${it.value}" },
+            configFormat,
+            configText,
+        )
         val enabled: Set<String> = rules.filter { it.enabled }.map { it.id }.toSet()
         val options: Map<String, Any> = rules.mapNotNull { r ->
             r.value?.let { v -> r.id to v }
