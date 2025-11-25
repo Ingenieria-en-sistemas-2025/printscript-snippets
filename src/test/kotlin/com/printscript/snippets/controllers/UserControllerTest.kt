@@ -1,4 +1,4 @@
-package com.printscript.snippets
+package com.printscript.snippets.controllers
 
 import com.printscript.snippets.user.User
 import com.printscript.snippets.user.UserController
