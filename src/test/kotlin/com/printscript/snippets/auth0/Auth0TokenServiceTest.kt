@@ -30,7 +30,6 @@ class Auth0TokenServiceTest {
     fun `getAccessToken no refresca si token aun valido`() {
         val service = newService()
 
-        // Seteamos token y expiración directamente en los campos privados
         val accessTokenField = Auth0TokenService::class.java.getDeclaredField("accessToken")
         accessTokenField.isAccessible = true
         accessTokenField.set(service, "cached-token")
