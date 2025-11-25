@@ -8,37 +8,34 @@ import org.springframework.stereotype.Component
 
 @Component
 class LintRuleStrategy : RuleTypeStrategy {
-    private val lintRules = listOf(
-        "IdentifierStyleRuleStreaming",
-        "PrintlnSimpleArgRuleStreaming",
-        "ReadInputSimpleArgRuleStreaming",
-    )
 
     override val type: RulesType = RulesType.LINT
 
-    override fun defaultEnabled(): Set<String> = setOf(
-        "IdentifierStyleRuleStreaming",
-        "PrintlnSimpleArgRuleStreaming",
-    )
+    override fun defaultEnabled(): Set<String> =
+        setOf(
+            LintRuleId.IDENTIFIER_STYLE.id,
+            LintRuleId.PRINTLN_SIMPLE_ARG.id,
+        )
 
     override fun defaultValues(): Map<String, Any?> = emptyMap()
 
-    override fun allRuleIds(): List<String> = lintRules.distinct()
+    override fun allRuleIds(): List<String> =
+        LintRuleId.entries.map { it.id }
 
     override fun toRuleDtos(
         enabled: Set<String>,
         values: Map<String, Any?>,
     ): List<RuleDto> =
-        allRuleIds().map { id ->
-            val raw = values[id]
-            val value: Any? = when (raw) {
+        LintRuleId.entries.map { rule ->
+            val raw = values[rule.id]
+            val value = when (raw) {
                 is String -> raw
                 is Number -> raw.toInt()
                 else -> null
             }
             RuleDto(
-                id = id,
-                enabled = enabled.contains(id),
+                id = rule.id,
+                enabled = enabled.contains(rule.id),
                 value = value,
             )
         }
@@ -47,14 +44,13 @@ class LintRuleStrategy : RuleTypeStrategy {
         row: RulesState?,
         rules: List<RuleDto>,
     ): Pair<String, String> {
-        val enabledFromRow: Set<String> =
-            row?.enabledJson?.toSet() ?: defaultEnabled()
+        val enabledFromRow = row?.enabledJson?.toSet() ?: defaultEnabled()
 
-        val cfgText: String =
+        val cfgText =
             RuleHelpers.configTextOrNull(row?.configText)
                 ?: buildLintConfigFromEnabled(enabledFromRow, rules)
 
-        val cfgFmt: String = RuleHelpers.defaultConfigFormat(row?.configFormat)
+        val cfgFmt = RuleHelpers.defaultConfigFormat(row?.configFormat)
 
         return cfgText to cfgFmt
     }
@@ -66,12 +62,9 @@ class LintRuleStrategy : RuleTypeStrategy {
     ): RuleStatePieces {
         val enabled = RuleHelpers.enabledSet(rules)
 
-        val options: Map<String, Any?> =
-            rules
-                .mapNotNull { r ->
-                    r.value?.let { v -> r.id to v }
-                }
-                .toMap()
+        val options = rules
+            .mapNotNull { r -> r.value?.let { v -> r.id to v } }
+            .toMap()
 
         val normalizedConfigText = RuleHelpers.configTextOrNull(configText)
 
@@ -87,11 +80,8 @@ class LintRuleStrategy : RuleTypeStrategy {
         enabled: Set<String>,
         rules: List<RuleDto>,
     ): String {
-        val identifierValue: String? = rules
-            .firstOrNull { it.id == "IdentifierStyleRuleStreaming" }
-            ?.value
-            ?.toString()
-            ?.uppercase()
+        val identifierRule = rules.firstOrNull { it.id == LintRuleId.IDENTIFIER_STYLE.id }
+        val identifierValue = identifierRule?.value?.toString()?.uppercase()
 
         val style = when (identifierValue) {
             "SNAKE_CASE" -> "SNAKE_CASE"
@@ -101,16 +91,17 @@ class LintRuleStrategy : RuleTypeStrategy {
 
         val cfg = mapOf(
             "identifiers" to mapOf(
-                "enabled" to enabled.contains("IdentifierStyleRuleStreaming"),
+                "enabled" to enabled.contains(LintRuleId.IDENTIFIER_STYLE.id),
                 "style" to style,
             ),
             "printlnRule" to mapOf(
-                "enabled" to enabled.contains("PrintlnSimpleArgRuleStreaming"),
+                "enabled" to enabled.contains(LintRuleId.PRINTLN_SIMPLE_ARG.id),
             ),
             "readInputRule" to mapOf(
-                "enabled" to enabled.contains("ReadInputSimpleArgRuleStreaming"),
+                "enabled" to enabled.contains(LintRuleId.READ_INPUT_SIMPLE_ARG.id),
             ),
         )
+
         return jacksonObjectMapper().writeValueAsString(cfg)
     }
 }

@@ -1,6 +1,7 @@
 package com.printscript.snippets.service.rules
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.printscript.snippets.SnippetsProperties
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
@@ -31,10 +32,12 @@ class SnippetRuleDomainService(
     private val executionClient: SnippetExecution,
     permissionClient: SnippetPermission,
     private val rulesStateService: RulesStateService,
+    private val snippetsProperties: SnippetsProperties,
 ) {
 
     private val authorization = SnippetAuthorizationScopeHelper(permissionClient)
-    private val containerName = "snippets"
+    private val containerName: String
+        get() = snippetsProperties.assetContainer
 
     fun saveFormatted(snippetId: UUID, formatted: String) {
         val snippet = snippetRepo.findById(snippetId)

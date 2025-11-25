@@ -14,33 +14,33 @@ class FormatRuleStrategy : RuleTypeStrategy {
         private const val DEFAULT_TABSIZE = 3
         private const val DEFAULT_PRINTLN_BREAKS = 0
     }
-
-    private val formatBoolRules = setOf(
-        "enforce-spacing-around-equals",
-        "enforce-no-spacing-around-equals",
-        "enforce-spacing-after-colon-in-declaration",
-        "enforce-spacing-before-colon-in-declaration",
-        "indent-inside-if",
-        "mandatory-single-space-separation",
-        "if-brace-below-line",
-        "if-brace-same-line",
+    private val formatBoolRules: Set<String> = setOf(
+        FormatRuleId.SPACING_AROUND_EQUALS.id,
+        FormatRuleId.NO_SPACING_AROUND_EQUALS.id,
+        FormatRuleId.SPACE_AFTER_COLON_IN_DECL.id,
+        FormatRuleId.SPACE_BEFORE_COLON_IN_DECL.id,
+        FormatRuleId.INDENT_INSIDE_IF.id,
+        FormatRuleId.MANDATORY_SINGLE_SPACE_SEPARATION.id,
+        FormatRuleId.IF_BRACE_BELOW_LINE.id,
+        FormatRuleId.IF_BRACE_SAME_LINE.id,
     )
 
     private val formatNumericDefaults: Map<String, Int> = mapOf(
-        "indent_size" to DEFAULT_INDENT,
-        "indent-spaces" to DEFAULT_INDENT,
-        "tabsize" to DEFAULT_TABSIZE,
-        "line-breaks-after-println" to DEFAULT_PRINTLN_BREAKS,
+        FormatRuleId.INDENT_SIZE.id to DEFAULT_INDENT,
+        FormatRuleId.INDENT_SPACES.id to DEFAULT_INDENT,
+        FormatRuleId.TABSIZE.id to DEFAULT_TABSIZE,
+        FormatRuleId.LINE_BREAKS_AFTER_PRINTLN.id to DEFAULT_PRINTLN_BREAKS,
     )
 
-    private val allIds: List<String> = (formatBoolRules + formatNumericDefaults.keys).toList().sorted()
+    private val allIds: List<String> =
+        (formatBoolRules + formatNumericDefaults.keys).toList().sorted()
 
     override val type: RulesType = RulesType.FORMAT
 
     override fun defaultEnabled(): Set<String> = setOf(
-        "indent-spaces",
-        "mandatory-single-space-separation",
-        "if-brace-same-line",
+        FormatRuleId.INDENT_SPACES.id,
+        FormatRuleId.MANDATORY_SINGLE_SPACE_SEPARATION.id,
+        FormatRuleId.IF_BRACE_SAME_LINE.id,
     )
 
     override fun defaultValues(): Map<String, Any?> = formatNumericDefaults

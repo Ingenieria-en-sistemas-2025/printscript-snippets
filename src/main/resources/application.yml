@@ -57,3 +57,6 @@ auth0:
 newrelic:
   logs:
     enabled: true
+
+snippets:
+  asset-container: snippets

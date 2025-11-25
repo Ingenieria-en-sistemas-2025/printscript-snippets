@@ -1,5 +1,6 @@
 package com.printscript.snippets.rules
 
+import com.printscript.snippets.SnippetsProperties
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.domain.SnippetVersionRepo
@@ -57,10 +58,15 @@ class SnippetRuleDomainServiceTest {
     @Mock
     lateinit var rulesStateService: RulesStateService
 
+    @Mock
+    lateinit var snippetsProperties: SnippetsProperties
+
     lateinit var service: SnippetRuleDomainService
 
     @BeforeEach
     fun setUp() {
+        whenever(snippetsProperties.assetContainer).thenReturn("snippets")
+
         service = SnippetRuleDomainService(
             snippetRepo = snippetRepo,
             versionRepo = versionRepo,
@@ -68,6 +74,7 @@ class SnippetRuleDomainServiceTest {
             executionClient = executionClient,
             permissionClient = permissionClient,
             rulesStateService = rulesStateService,
+            snippetsProperties = snippetsProperties,
         )
     }
 

@@ -7,22 +7,38 @@ object FormatterMapper {
 
     fun toFormatterOptionsDto(rules: List<RuleDto>): FormatterOptionsDto =
         FormatterOptionsDto(
-            spaceBeforeColonInDecl = enabled(rules, "enforce-spacing-before-colon-in-declaration"),
-            spaceAfterColonInDecl = enabled(rules, "enforce-spacing-after-colon-in-declaration"),
+            spaceBeforeColonInDecl = enabled(rules, FormatRuleId.SPACE_BEFORE_COLON_IN_DECL.id),
+            spaceAfterColonInDecl = enabled(rules, FormatRuleId.SPACE_AFTER_COLON_IN_DECL.id),
             spaceAroundAssignment = assignmentSpacing(rules),
-            blankLinesAfterPrintln = numericValue(rules, "line-breaks-after-println", "line_breaks_after_println"),
-            indentSpaces = numericValue(rules, "indent-spaces", "indent_size", "tabsize"),
-            mandatorySingleSpaceSeparation = enabled(rules, "mandatory-single-space-separation"),
-            ifBraceBelowLine = enabled(rules, "if-brace-below-line"),
-            ifBraceSameLine = enabled(rules, "if-brace-same-line"),
+            blankLinesAfterPrintln = numericValue(
+                rules,
+                FormatRuleId.LINE_BREAKS_AFTER_PRINTLN.id,
+                "line_breaks_after_println", // alias legacy
+            ),
+            indentSpaces = numericValue(
+                rules,
+                FormatRuleId.INDENT_SPACES.id,
+                FormatRuleId.INDENT_SIZE.id,
+                FormatRuleId.TABSIZE.id,
+            ),
+            mandatorySingleSpaceSeparation = enabled(
+                rules,
+                FormatRuleId.MANDATORY_SINGLE_SPACE_SEPARATION.id,
+            ),
+            ifBraceBelowLine = enabled(rules, FormatRuleId.IF_BRACE_BELOW_LINE.id),
+            ifBraceSameLine = enabled(rules, FormatRuleId.IF_BRACE_SAME_LINE.id),
         )
 
     private fun enabled(rules: List<RuleDto>, id: String): Boolean? =
         if (rules.any { it.id == id && it.enabled }) true else null
 
     private fun assignmentSpacing(rules: List<RuleDto>): Boolean? = when {
-        rules.any { it.id == "enforce-spacing-around-equals" && it.enabled } -> true
-        rules.any { it.id == "enforce-no-spacing-around-equals" && it.enabled } -> false
+        rules.any {
+            it.id == FormatRuleId.SPACING_AROUND_EQUALS.id && it.enabled
+        } -> true
+        rules.any {
+            it.id == FormatRuleId.NO_SPACING_AROUND_EQUALS.id && it.enabled
+        } -> false
         else -> null
     }
 

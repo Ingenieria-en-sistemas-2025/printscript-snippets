@@ -1,6 +1,7 @@
 package com.printscript.snippets.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.printscript.snippets.SnippetsProperties
 import com.printscript.snippets.bucket.SnippetAsset
 import com.printscript.snippets.domain.LanguageConfigRepo
 import com.printscript.snippets.domain.SnippetRepo
@@ -47,11 +48,13 @@ class SnippetDetailService(
     private val rulesStateService: RulesStateService,
     private val languageConfigRepo: LanguageConfigRepo,
     private val snippetTestService: SnippetTestService,
+    private val snippetsProperties: SnippetsProperties,
 ) {
 
     private val authorization = SnippetAuthorizationScopeHelper(permissionClient)
     private val logger = LoggerFactory.getLogger(SnippetDetailService::class.java)
-    private val containerName = "snippets"
+    private val containerName: String
+        get() = snippetsProperties.assetContainer
     private val objectMapper = jacksonObjectMapper()
 
     @Transactional(readOnly = true)

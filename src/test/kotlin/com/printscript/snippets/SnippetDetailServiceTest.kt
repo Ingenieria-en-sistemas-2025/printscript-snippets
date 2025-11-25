@@ -29,6 +29,7 @@ import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import io.printscript.contracts.permissions.SnippetPermissionListResponse
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -67,6 +68,9 @@ class SnippetDetailServiceTest {
     lateinit var executionClient: SnippetExecution
 
     @Mock
+    lateinit var snippetsProperties: SnippetsProperties
+
+    @Mock
     lateinit var permissionClient: SnippetPermission
 
     @Mock
@@ -84,7 +88,10 @@ class SnippetDetailServiceTest {
     @InjectMocks
     lateinit var service: SnippetDetailService
 
-    // ===== helpers =====
+    @BeforeEach
+    fun setUp() {
+        whenever(snippetsProperties.assetContainer).thenReturn("snippets")
+    }
 
     private fun snippet(
         id: UUID = UUID.randomUUID(),
