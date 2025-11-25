@@ -124,7 +124,7 @@ tasks.jacocoTestReport {
     }
 }
 
-tasks.register<JacocoCoverageVerification>("jacocoVerify") {
+tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
@@ -137,7 +137,7 @@ tasks.register<JacocoCoverageVerification>("jacocoVerify") {
 }
 
 tasks.check {
-    dependsOn("detekt", "spotlessCheck", "jacocoVerify")
+    dependsOn("detekt", "spotlessCheck", tasks.jacocoTestCoverageVerification)
 }
 
 // Git hooks
