@@ -43,11 +43,11 @@ repositories {
 
 dependencies {
     implementation("org.postgresql:postgresql:42.7.4") // para conectarse con pg
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa") // da hibernate, jpa, etc
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.flywaydb:flyway-core") // para q spring maneje migraciones
     implementation("org.flywaydb:flyway-database-postgresql")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-reflect") // Hibernate necesita reflection para leer mis clases
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -56,10 +56,11 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     testImplementation("org.testcontainers:postgresql")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.1"))
-
     testImplementation("org.testcontainers:junit-jupiter")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test") // JUnit5 + Mockito + MockMvc
     testImplementation("io.mockk:mockk:1.13.12") // mocking para Kotlin
 
