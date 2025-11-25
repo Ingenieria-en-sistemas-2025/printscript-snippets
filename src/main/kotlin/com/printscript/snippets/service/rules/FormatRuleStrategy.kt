@@ -5,8 +5,10 @@ import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.enums.RulesType
 import io.printscript.contracts.formatter.FormatterOptionsDto
+import org.springframework.stereotype.Component
 
-internal class FormatRuleStrategy : RuleTypeStrategy {
+@Component
+class FormatRuleStrategy : RuleTypeStrategy {
     companion object {
         private const val DEFAULT_INDENT = 3
         private const val DEFAULT_TABSIZE = 3

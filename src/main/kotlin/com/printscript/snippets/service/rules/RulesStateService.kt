@@ -10,15 +10,13 @@ import org.springframework.stereotype.Service
 @Service
 class RulesStateService( // preferencias del usuario sobre reglas
     private val rulesStateRepo: RulesStateRepo,
+    strategies: List<RuleTypeStrategy>,
 ) {
 
     private val logger = LoggerFactory.getLogger(RulesStateService::class.java)
 
     private val strategies: Map<RulesType, RuleTypeStrategy> =
-        listOf(
-            FormatRuleStrategy(),
-            LintRuleStrategy(),
-        ).associateBy { it.type }
+        strategies.associateBy { it.type }
 
     private fun strategyFor(type: RulesType): RuleTypeStrategy =
         strategies.getValue(type)

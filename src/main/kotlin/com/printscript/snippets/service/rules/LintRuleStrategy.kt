@@ -4,8 +4,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.enums.RulesType
+import org.springframework.stereotype.Component
 
-internal class LintRuleStrategy : RuleTypeStrategy {
+@Component
+class LintRuleStrategy : RuleTypeStrategy {
     private val lintRules = listOf(
         "IdentifierStyleRuleStreaming",
         "PrintlnSimpleArgRuleStreaming",

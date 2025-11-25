@@ -4,7 +4,7 @@ import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.enums.RulesType
 
-internal interface RuleTypeStrategy {
+interface RuleTypeStrategy {
     val type: RulesType
 
     fun defaultEnabled(): Set<String>

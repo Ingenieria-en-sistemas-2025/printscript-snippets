@@ -4,6 +4,8 @@ import com.printscript.snippets.domain.RulesStateRepo
 import com.printscript.snippets.domain.model.RulesState
 import com.printscript.snippets.dto.RuleDto
 import com.printscript.snippets.enums.RulesType
+import com.printscript.snippets.service.rules.FormatRuleStrategy
+import com.printscript.snippets.service.rules.LintRuleStrategy
 import com.printscript.snippets.service.rules.RulesStateService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -37,10 +39,8 @@ class RulesStateServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = RulesStateService(rulesStateRepo)
+        service = RulesStateService(rulesStateRepo, listOf(LintRuleStrategy(), FormatRuleStrategy()))
     }
-
-    // ==== helpers =====
 
     private fun row(
         type: RulesType,
