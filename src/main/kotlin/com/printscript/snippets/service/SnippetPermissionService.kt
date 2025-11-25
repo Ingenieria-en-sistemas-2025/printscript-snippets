@@ -4,6 +4,7 @@ import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.error.NotFound
+import com.printscript.snippets.permission.SnippetAuthorizationScopeHelper
 import com.printscript.snippets.permission.SnippetPermission
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import org.springframework.stereotype.Service
@@ -15,7 +16,7 @@ class SnippetPermissionService(
     val snippetRepo: SnippetRepo,
     private val permissionClient: SnippetPermission,
 ) {
-    private val authorization = SnippetAuthorizationScopeService(permissionClient)
+    private val authorization = SnippetAuthorizationScopeHelper(permissionClient)
 
     @Transactional
     fun shareSnippetOwnerAware(ownerId: String, req: ShareSnippetReq) {

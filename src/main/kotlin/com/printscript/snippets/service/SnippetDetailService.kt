@@ -19,13 +19,15 @@ import com.printscript.snippets.error.InvalidRequest
 import com.printscript.snippets.error.InvalidSnippet
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.execution.SnippetExecution
+import com.printscript.snippets.permission.SnippetAuthorizationScopeHelper
 import com.printscript.snippets.permission.SnippetPermission
-import com.printscript.snippets.service.SnippetToDto.toApiDiagnostics
-import com.printscript.snippets.service.SnippetToDto.toDetailDto
-import com.printscript.snippets.service.SnippetToDto.toSummaryDto
+import com.printscript.snippets.service.SnippetAndSnippetTestsToDto.toApiDiagnostics
+import com.printscript.snippets.service.SnippetAndSnippetTestsToDto.toDetailDto
+import com.printscript.snippets.service.SnippetAndSnippetTestsToDto.toSummaryDto
 import com.printscript.snippets.service.rules.RulesStateService
 import com.printscript.snippets.user.UserService
 import io.printscript.contracts.linting.LintReq
+import io.printscript.contracts.linting.LintRes
 import io.printscript.contracts.parse.ParseReq
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import org.slf4j.LoggerFactory
@@ -44,9 +46,10 @@ class SnippetDetailService(
     private val userService: UserService,
     private val rulesStateService: RulesStateService,
     private val languageConfigRepo: LanguageConfigRepo,
+    private val snippetTestService: SnippetTestService,
 ) {
 
-    private val authorization = SnippetAuthorizationScopeService(permissionClient)
+    private val authorization = SnippetAuthorizationScopeHelper(permissionClient)
     private val logger = LoggerFactory.getLogger(SnippetDetailService::class.java)
     private val containerName = "snippets"
     private val objectMapper = jacksonObjectMapper()
@@ -75,24 +78,12 @@ class SnippetDetailService(
         name: String?,
     ): PageDto<SnippetSummaryDto> {
         val base = findSnippetsWithPermissions(userId)
-
-        val filtered = base.filter { snippet ->
-            name == null || snippet.name.contains(name, ignoreCase = true)
-        }
-
-        val sorted = filtered.sortedByDescending { it.createdAt }
+        val filtered = filterSnippetsByName(base, name)
+        val sorted = sortSnippets(filtered)
 
         val total = sorted.size
         val (from, to) = pageBounds(total, page, size)
-
-        val pageItems = if (from < total) {
-            sorted.subList(from, to).map { snippet ->
-                val authorEmail = userService.getEmailById(snippet.ownerId)
-                toSummaryDto(snippet, authorEmail)
-            }
-        } else {
-            emptyList()
-        }
+        val pageItems = buildSnippetSummariesPage(sorted, from, to)
 
         return PageDto(pageItems, total.toLong(), page, size)
     }
@@ -127,18 +118,11 @@ class SnippetDetailService(
     }
 
     fun deleteSnippet(snippetId: UUID) {
-        permissionClient.deleteSnippetPermissions(snippetId.toString())
+        deleteSnippetPermissionsAndTests(snippetId)
 
-        // borrar files del bucket
         val versions = versionRepo.findAllBySnippetId(snippetId)
-        versions.forEach { v ->
-            assetClient.delete(containerName, v.contentKey)
-            v.formattedKey?.let { assetClient.delete(containerName, it) }
-        }
-
-        // borrar datos en db
-        versionRepo.deleteAll(versions)
-        snippetRepo.deleteById(snippetId)
+        deleteAssetsForVersions(versions)
+        deleteVersionsAndSnippet(versions, snippetId)
     }
 
     fun createSnippetFromFile(ownerId: String, meta: CreateSnippetReq, bytes: ByteArray): SnippetDetailDto {
@@ -156,18 +140,16 @@ class SnippetDetailService(
         applyBasicUpdates(snippet, req)
         snippetRepo.save(snippet)
 
-        val needsNewVersion = req.content != null || req.language != null || req.version != null
-
-        if (needsNewVersion) {
+        return if (requiresNewVersion(req)) {
             val content = resolveUpdatedContent(snippetId, req)
             validateNonBlankContent(content)
             val version = createAndPersistVersion(snippet, content)
-            return toDetailDto(snippet, version, content)
+            toDetailDto(snippet, version, content)
+        } else {
+            val latest = requireLatestVersion(snippetId)
+            val content = readContent(latest.contentKey)
+            toDetailDto(snippet, latest, content)
         }
-
-        val latest = requireLatestVersion(snippetId)
-        val content = readContent(latest.contentKey)
-        return toDetailDto(snippet, latest, content)
     }
 
     @Transactional
@@ -178,7 +160,6 @@ class SnippetDetailService(
         fileBytes: ByteArray,
     ): SnippetDetailDto {
         val content = String(fileBytes, StandardCharsets.UTF_8)
-
         return updateSnippetOwnerAware(
             userId,
             snippetId,
@@ -188,7 +169,7 @@ class SnippetDetailService(
 
     @Transactional
     fun deleteSnippetOwnerAware(userId: String, snippetId: UUID) {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        val snippet = requireSnippet(snippetId)
         authorization.requireOwner(userId, snippet)
         deleteSnippet(snippetId)
     }
@@ -196,7 +177,11 @@ class SnippetDetailService(
     @Transactional(readOnly = true)
     fun download(snippetId: UUID, formatted: Boolean): ByteArray {
         val version = requireLatestVersion(snippetId)
-        val key = if (formatted && version.isFormatted && version.formattedKey != null) version.formattedKey!! else version.contentKey
+        val key = if (formatted && version.isFormatted && version.formattedKey != null) {
+            version.formattedKey!!
+        } else {
+            version.contentKey
+        }
         return assetClient.download(containerName, key)
     }
 
@@ -230,34 +215,68 @@ class SnippetDetailService(
         snippet: Snippet,
         content: String,
     ): SnippetVersion {
-        val nextVersion = getLatestVersionNumber(snippet.id!!) + 1
+        val nextVersion = determineNextVersion(snippet.id!!)
         val contentKey = buildVersionKey(snippet.ownerId, snippet.id!!, nextVersion)
 
         logger.info("Starting version creation for snippet ${snippet.id}, next version: $nextVersion")
 
-        // valido sintaxis antes de subir al bucket
-        val parseRes = executionClient.parse(ParseReq(snippet.language, snippet.languageVersion, content))
-        if (!parseRes.valid) {
-            logger.error("Snippet version creation failed due to syntax errors. Count: ${parseRes.diagnostics.size}")
-            throw InvalidSnippet(toApiDiagnostics(parseRes.diagnostics))
-        }
+        validateSyntax(snippet, content)
+        uploadContent(contentKey, content)
 
-        logger.debug("Uploading content to asset client with key: $contentKey")
-        assetClient.upload(containerName, contentKey, content.toByteArray(StandardCharsets.UTF_8))
+        val lintRes = lintContent(snippet, content)
+        val version = persistNewVersion(snippet, nextVersion, contentKey, lintRes)
+        updateSnippetMetadata(snippet, version, lintRes)
 
-        val (configText, configFormat) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
-        logger.debug("Calling execution service for linting with owner rules...")
-        val lintRes = executionClient.lint(
-            LintReq(
-                language = snippet.language,
-                version = snippet.languageVersion,
-                content = content,
-                configText = configText,
-                configFormat = configFormat,
-            ),
+        logger.info("Snippet version $nextVersion created successfully")
+        return version
+    }
+
+    private fun determineNextVersion(snippetId: UUID): Long =
+        getLatestVersionNumber(snippetId) + 1
+
+    private fun validateSyntax(snippet: Snippet, content: String) {
+        val parseRes = executionClient.parse(
+            ParseReq(snippet.language, snippet.languageVersion, content),
         )
 
-        val version = versionRepo.save(
+        if (!parseRes.valid) {
+            logger.error(
+                "Snippet version creation failed due to syntax errors. Count: ${parseRes.diagnostics.size}",
+            )
+            throw InvalidSnippet(toApiDiagnostics(parseRes.diagnostics))
+        }
+    }
+
+    private fun uploadContent(contentKey: String, content: String) {
+        logger.debug("Uploading content to asset client with key: $contentKey")
+        assetClient.upload(
+            containerName,
+            contentKey,
+            content.toByteArray(StandardCharsets.UTF_8),
+        )
+    }
+
+    private fun lintContent(snippet: Snippet, content: String) =
+        rulesStateService.currentLintConfigEffective(snippet.ownerId).let { (configText, configFormat) ->
+            logger.debug("Calling execution service for linting with owner rules...")
+            executionClient.lint(
+                LintReq(
+                    language = snippet.language,
+                    version = snippet.languageVersion,
+                    content = content,
+                    configText = configText,
+                    configFormat = configFormat,
+                ),
+            )
+        }
+
+    private fun persistNewVersion(
+        snippet: Snippet,
+        nextVersion: Long,
+        contentKey: String,
+        lintRes: LintRes,
+    ): SnippetVersion {
+        return versionRepo.save(
             SnippetVersion(
                 id = null,
                 snippetId = snippet.id!!,
@@ -270,16 +289,39 @@ class SnippetDetailService(
                 lintStatus = LintStatus.DONE,
             ),
         )
+    }
 
+    private fun updateSnippetMetadata(
+        snippet: Snippet,
+        version: SnippetVersion,
+        lintRes: LintRes,
+    ) {
         snippet.currentVersionId = version.id
         snippet.lastIsValid = version.isValid
         snippet.lastLintCount = lintRes.violations.size
         snippet.compliance = ComplianceCalculator.compute(
-            LintStatus.DONE, version.isValid, lintRes.violations.size,
+            LintStatus.DONE,
+            version.isValid,
+            lintRes.violations.size,
         )
         snippetRepo.save(snippet)
-        logger.info("Snippet version $nextVersion created successfully")
-        return version
+    }
+
+    private fun deleteSnippetPermissionsAndTests(snippetId: UUID) {
+        permissionClient.deleteSnippetPermissions(snippetId.toString())
+        snippetTestService.deleteAllTestsOfSnippet(snippetId)
+    }
+
+    private fun deleteAssetsForVersions(versions: List<SnippetVersion>) {
+        versions.forEach { v ->
+            assetClient.delete(containerName, v.contentKey)
+            v.formattedKey?.let { assetClient.delete(containerName, it) }
+        }
+    }
+
+    private fun deleteVersionsAndSnippet(versions: List<SnippetVersion>, snippetId: UUID) {
+        versionRepo.deleteAll(versions)
+        snippetRepo.deleteById(snippetId)
     }
 
     private fun findSnippetsWithPermissions(
@@ -288,14 +330,43 @@ class SnippetDetailService(
         val permissions = permissionClient.getAllSnippetsPermission(userId, pageNum = 0, pageSize = 1000).body
         val ids = (permissions?.authorizations ?: emptyList())
             .mapNotNull { auth ->
-                runCatching { UUID.fromString(auth.snippetId) } // run catching para evitar que un uuid mal formado rompa tdo
+                runCatching { UUID.fromString(auth.snippetId) }
                     .onFailure {
-                        logger.warn("Invalid UUID format found in authorization service: ${auth.snippetId}", it)
+                        logger.warn(
+                            "Invalid UUID format found in authorization service: ${auth.snippetId}",
+                            it,
+                        )
                     }
                     .getOrNull()
             }
 
         return snippetRepo.findAllById(ids)
+    }
+
+    private fun filterSnippetsByName(
+        snippets: List<Snippet>,
+        name: String?,
+    ): List<Snippet> =
+        if (name.isNullOrBlank()) {
+            snippets
+        } else {
+            snippets.filter { snippet -> snippet.name.contains(name, ignoreCase = true) }
+        }
+
+    private fun sortSnippets(snippets: List<Snippet>): List<Snippet> =
+        snippets.sortedByDescending { it.createdAt }
+
+    private fun buildSnippetSummariesPage(
+        sorted: List<Snippet>,
+        from: Int,
+        to: Int,
+    ): List<SnippetSummaryDto> {
+        if (from >= sorted.size) return emptyList()
+
+        return sorted.subList(from, to).map { snippet ->
+            val authorEmail = userService.getEmailById(snippet.ownerId)
+            toSummaryDto(snippet, authorEmail)
+        }
     }
 
     private fun pageBounds(total: Int, page: Int, size: Int): Pair<Int, Int> {
@@ -317,6 +388,9 @@ class SnippetDetailService(
         req.language?.let { snippet.language = it }
         req.version?.let { snippet.languageVersion = it }
     }
+
+    private fun requiresNewVersion(req: UpdateSnippetReq): Boolean =
+        req.content != null || req.language != null || req.version != null
 
     private fun resolveUpdatedContent(snippetId: UUID, req: UpdateSnippetReq): String =
         req.content ?: run {
@@ -344,7 +418,6 @@ class SnippetDetailService(
     private fun buildVersionKey(ownerId: String, snippetId: UUID, versionNumber: Long): String =
         "$ownerId/$snippetId/v$versionNumber.ps"
 
-    // ult nro de version persistido para ese snippet
     private fun getLatestVersionNumber(snippetId: UUID): Long =
         versionRepo.findMaxVersionBySnippetId(snippetId) ?: 0L
 }

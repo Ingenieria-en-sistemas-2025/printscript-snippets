@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.Query
 import java.util.UUID
 
 interface SnippetRepo : JpaRepository<Snippet, UUID> {
-    @Query("select s.id from Snippet s")
-    fun findAllIds(): List<UUID>
 
     @Query(
         """

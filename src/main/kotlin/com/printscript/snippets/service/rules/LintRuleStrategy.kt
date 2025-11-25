@@ -48,12 +48,11 @@ internal class LintRuleStrategy : RuleTypeStrategy {
         val enabledFromRow: Set<String> =
             row?.enabledJson?.toSet() ?: defaultEnabled()
 
-        val cfgText: String = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" }
-            ?: buildLintConfigFromEnabled(enabledFromRow, rules)
+        val cfgText: String =
+            RuleHelpers.configTextOrNull(row?.configText)
+                ?: buildLintConfigFromEnabled(enabledFromRow, rules)
 
-        val cfgFmt: String = row?.configFormat ?: "json"
+        val cfgFmt: String = RuleHelpers.defaultConfigFormat(row?.configFormat)
 
         return cfgText to cfgFmt
     }
@@ -63,25 +62,22 @@ internal class LintRuleStrategy : RuleTypeStrategy {
         configText: String?,
         configFormat: String?,
     ): RuleStatePieces {
-        val enabled: Set<String> = rules
-            .filter { it.enabled }
-            .map { it.id }
-            .toSet()
+        val enabled = RuleHelpers.enabledSet(rules)
 
-        val options: Map<String, Any?> = rules
-            .mapNotNull { r ->
-                r.value?.let { v -> r.id to v }
-            }.toMap()
+        val options: Map<String, Any?> =
+            rules
+                .mapNotNull { r ->
+                    r.value?.let { v -> r.id to v }
+                }
+                .toMap()
 
-        val normalizedConfigText = configText
-            ?.trim()
-            ?.takeUnless { it.isEmpty() || it == "{}" }
+        val normalizedConfigText = RuleHelpers.configTextOrNull(configText)
 
         return RuleStatePieces(
             enabled = enabled,
             options = options,
             configText = normalizedConfigText,
-            configFormat = configFormat ?: "json",
+            configFormat = RuleHelpers.defaultConfigFormat(configFormat),
         )
     }
 

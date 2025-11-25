@@ -52,13 +52,10 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
     ): List<RuleDto> {
         val numDefaults = defaultValues()
 
-        return allRuleIds().map { id -> // x cada id un RuleDto
+        return allRuleIds().map { id ->
             val raw = values[id] ?: numDefaults[id]
-            val intVal = when (raw) {
-                is Number -> raw.toInt()
-                is String -> raw.toIntOrNull()
-                else -> null
-            }
+            val intVal = RuleHelpers.numericOptionValue(raw)
+
             RuleDto(
                 id = id,
                 enabled = enabled.contains(id),
@@ -72,12 +69,11 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         row: RulesState?,
         rules: List<RuleDto>,
     ): Pair<String, String> {
-        val cfgText: String = row
-            ?.configText
-            ?.takeUnless { it.isBlank() || it == "{}" } // intenta usar la config raw que el usuario haya guardado
-            ?: buildFormatterConfigFromRules(rules) // sino, genera un JSON de config basado en las rules
+        val cfgText: String =
+            RuleHelpers.configTextOrNull(row?.configText)
+                ?: buildFormatterConfigFromRules(rules)
 
-        val cfgFmt: String = row?.configFormat ?: "json"
+        val cfgFmt: String = RuleHelpers.defaultConfigFormat(row?.configFormat)
 
         return cfgText to cfgFmt
     }
@@ -87,30 +83,22 @@ internal class FormatRuleStrategy : RuleTypeStrategy {
         configText: String?,
         configFormat: String?,
     ): RuleStatePieces {
-        val enabled: Set<String> = rules
-            .filter { it.enabled }
-            .map { it.id }
-            .toSet()
+        val enabled = RuleHelpers.enabledSet(rules)
 
-        val options: Map<String, Any?> = rules
-            .mapNotNull { r ->
-                val intValue = when (val v = r.value) {
-                    is Number -> v.toInt()
-                    is String -> v.toIntOrNull()
-                    else -> null
+        val options: Map<String, Any?> =
+            rules
+                .mapNotNull { r ->
+                    RuleHelpers.numericOptionValue(r.value)?.let { r.id to it }
                 }
-                intValue?.let { r.id to it }
-            }.toMap()
+                .toMap()
 
-        val normalizedConfigText = configText
-            ?.trim()
-            ?.takeUnless { it.isEmpty() || it == "{}" }
+        val normalizedConfigText = RuleHelpers.configTextOrNull(configText)
 
         return RuleStatePieces(
             enabled = enabled,
             options = options,
             configText = normalizedConfigText,
-            configFormat = configFormat ?: "json",
+            configFormat = RuleHelpers.defaultConfigFormat(configFormat),
         )
     }
 

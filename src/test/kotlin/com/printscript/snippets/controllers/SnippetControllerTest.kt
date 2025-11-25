@@ -31,7 +31,11 @@ import org.mockito.Mock
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -40,6 +44,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 @ExtendWith(MockitoExtension::class)
@@ -256,10 +261,11 @@ class SnippetControllerTest {
     }
 
     @Test
-    fun `createTest pasa el snippetId al service`() {
+    fun `createTest pasa owner y request al service`() {
+        val principal = jwt("auth0|owner-tests")
         val snippetId = UUID.randomUUID()
         val req = CreateTestReq(
-            snippetId = null,
+            snippetId = null, // desde la UI puede venir null
             name = "test-1",
             inputs = emptyList(),
             expectedOutputs = emptyList(),
@@ -267,37 +273,52 @@ class SnippetControllerTest {
         )
 
         val dtoMock = mock(TestCaseDto::class.java)
-        `when`(
-            snippetTestService.createTestCase(req.copy(snippetId = snippetId.toString())),
+
+        whenever(
+            snippetTestService.createTestCase(eq("auth0|owner-tests"), any()),
         ).thenReturn(dtoMock)
 
-        val res = controller.createTest(snippetId, req)
+        val res = controller.createTest(principal, snippetId, req)
 
         assertSame(dtoMock, res)
-        verify(snippetTestService).createTestCase(req.copy(snippetId = snippetId.toString()))
+
+        verify(snippetTestService).createTestCase(
+            eq("auth0|owner-tests"),
+            check { enrichedReq ->
+                assertEquals(snippetId, enrichedReq.snippetId)
+                assertEquals("test-1", enrichedReq.name)
+                assertEquals(emptyList<String>(), enrichedReq.inputs)
+                assertEquals(emptyList<String>(), enrichedReq.expectedOutputs)
+                assertNull(enrichedReq.targetVersionNumber)
+            },
+        )
     }
 
     @Test
     fun `listTests retorna lo del service`() {
+        val owner = jwt("auth0|owner-tests")
+        val ownerId = "auth0|owner-tests"
         val snippetId = UUID.randomUUID()
         val listMock = listOf(mock(TestCaseDto::class.java))
 
-        `when`(snippetTestService.listTestCases(snippetId)).thenReturn(listMock)
+        `when`(snippetTestService.listTestCases(ownerId, snippetId)).thenReturn(listMock)
 
-        val res = controller.listTests(snippetId)
+        val res = controller.listTests(owner, snippetId)
 
         assertEquals(1, res.size)
         assertSame(listMock, res)
-        verify(snippetTestService).listTestCases(snippetId)
+        verify(snippetTestService).listTestCases(ownerId, snippetId)
     }
 
     @Test
     fun `deleteTest delega en service`() {
+        val ownerId = "auth0|owner-tests"
+        val owner = jwt("auth0|owner-tests")
         val testId = UUID.randomUUID()
 
-        controller.deleteTest(testId)
+        controller.deleteTest(owner, testId)
 
-        verify(snippetTestService).deleteTestCase(testId)
+        verify(snippetTestService).deleteTestCase(ownerId, testId)
     }
 
     @Test
@@ -308,13 +329,13 @@ class SnippetControllerTest {
 
         val resultMock = mock(SingleTestRunResult::class.java)
         `when`(
-            snippetsExecuteService.runOneTestOwnerAware("auth0|tester", snippetId, testId),
+            snippetsExecuteService.runOneTestWithPermissions("auth0|tester", snippetId, testId),
         ).thenReturn(resultMock)
 
         val res = controller.runSingleTest(principal, snippetId, testId)
 
         assertSame(resultMock, res)
-        verify(snippetsExecuteService).runOneTestOwnerAware("auth0|tester", snippetId, testId)
+        verify(snippetsExecuteService).runOneTestWithPermissions("auth0|tester", snippetId, testId)
     }
 
     @Test

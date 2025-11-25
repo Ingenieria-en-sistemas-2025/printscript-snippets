@@ -3,7 +3,7 @@ package com.printscript.snippets
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.enums.Compliance
-import com.printscript.snippets.service.SnippetToDto
+import com.printscript.snippets.service.SnippetAndSnippetTestsToDto
 import io.printscript.contracts.DiagnosticDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -43,7 +43,7 @@ class SnippetToDtoTest {
     fun `toDetailDto mapea todos los campos correctamente`() {
         val snip = snippet()
         val ver = version(snip.id!!)
-        val dto = SnippetToDto.toDetailDto(snip, ver, "hello world")
+        val dto = SnippetAndSnippetTestsToDto.toDetailDto(snip, ver, "hello world")
 
         assertEquals(snip.id.toString(), dto.id)
         assertEquals("My Snip", dto.name)
@@ -62,7 +62,7 @@ class SnippetToDtoTest {
     fun `toSummaryDto mapea todos los campos correctamente`() {
         val snip = snippet()
 
-        val dto = SnippetToDto.toSummaryDto(snip, "owner@example.com")
+        val dto = SnippetAndSnippetTestsToDto.toSummaryDto(snip, "owner@example.com")
 
         assertEquals(snip.id.toString(), dto.id)
         assertEquals("My Snip", dto.name)
@@ -83,7 +83,7 @@ class SnippetToDtoTest {
         val d1 = DiagnosticDto("R1", "msg1", 10, 1)
         val d2 = DiagnosticDto("R2", "msg2", 20, 5)
 
-        val list = SnippetToDto.toApiDiagnostics(listOf(d1, d2))
+        val list = SnippetAndSnippetTestsToDto.toApiDiagnostics(listOf(d1, d2))
 
         assertEquals(2, list.size)
 

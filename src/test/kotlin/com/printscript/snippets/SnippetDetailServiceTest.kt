@@ -78,6 +78,9 @@ class SnippetDetailServiceTest {
     @Mock
     lateinit var languageConfigRepo: LanguageConfigRepo
 
+    @Mock
+    lateinit var snippetTestService: com.printscript.snippets.service.SnippetTestService
+
     @InjectMocks
     lateinit var service: SnippetDetailService
 

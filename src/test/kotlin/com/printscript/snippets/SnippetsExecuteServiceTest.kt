@@ -15,7 +15,6 @@ import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.SnippetsExecuteService
 import io.printscript.contracts.run.RunReq
 import io.printscript.contracts.run.RunRes
-import io.printscript.contracts.tests.RunSingleTestReq
 import io.printscript.contracts.tests.RunSingleTestRes
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
@@ -55,6 +54,9 @@ class SnippetsExecuteServiceTest {
 
     @Mock
     lateinit var permissionClient: SnippetPermission
+
+    @Mock
+    lateinit var snippetTestService: com.printscript.snippets.service.SnippetTestService
 
     @InjectMocks
     lateinit var service: SnippetsExecuteService
@@ -197,7 +199,9 @@ class SnippetsExecuteServiceTest {
             expectedOutputs = listOf("1"),
             targetVersionNumber = 1L,
         )
-        whenever(testCaseRepo.findById(testCaseId)).thenReturn(Optional.of(tc))
+
+        whenever(snippetTestService.getTestCaseForSnippet(userId, snippetId, testCaseId))
+            .thenReturn(tc)
 
         val execRes = org.mockito.Mockito.mock(RunSingleTestRes::class.java)
         whenever(execRes.status).thenReturn("OK")
@@ -205,10 +209,10 @@ class SnippetsExecuteServiceTest {
         whenever(execRes.mismatchAt).thenReturn(null)
         whenever(execRes.diagnostic).thenReturn(null)
 
-        whenever(executionClient.runSingleTest(any<RunSingleTestReq>())).thenReturn(execRes)
+        whenever(executionClient.runSingleTest(any())).thenReturn(execRes)
 
         val result: SingleTestRunResult =
-            service.runOneTestOwnerAware(userId, snippetId, testCaseId)
+            service.runOneTestWithPermissions(userId, snippetId, testCaseId)
 
         assertEquals("OK", result.status)
         assertIterableEquals(listOf("1"), result.actual)
@@ -216,7 +220,7 @@ class SnippetsExecuteServiceTest {
         assertEquals(null, result.mismatchAt)
         assertEquals(null, result.diagnostic)
 
-        verify(executionClient).runSingleTest(any<RunSingleTestReq>())
+        verify(executionClient).runSingleTest(any())
     }
 
     @Test
@@ -231,7 +235,7 @@ class SnippetsExecuteServiceTest {
         whenever(testCaseRepo.findById(testCaseId)).thenReturn(Optional.empty())
 
         assertThrows<NotFound> {
-            service.runOneTestOwnerAware(userId, snippetId, testCaseId)
+            service.runOneTestWithPermissions(userId, snippetId, testCaseId)
         }
     }
 
@@ -241,27 +245,15 @@ class SnippetsExecuteServiceTest {
         val snippetId = UUID.randomUUID()
         val s = snippet(id = snippetId, ownerId = userId)
 
-        // el snippet existe
         whenever(snippetRepo.findById(snippetId)).thenReturn(Optional.of(s))
 
-        val v = version(
-            snippetId = snippetId,
-            number = 1L,
-            contentKey = "owner/$snippetId/v1.ps",
-        )
-        whenever(versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)).thenReturn(v)
-        whenever(assetClient.download("snippets", "owner/$snippetId/v1.ps"))
-            .thenReturn("print(1);".toByteArray(StandardCharsets.UTF_8))
-        val otherSnippetId = UUID.randomUUID()
         val testCaseId = UUID.randomUUID()
-        val tc = testCase(
-            id = testCaseId,
-            snippetId = otherSnippetId, // NO coincide con snippetId
-        )
-        whenever(testCaseRepo.findById(testCaseId)).thenReturn(Optional.of(tc))
+
+        whenever(snippetTestService.getTestCaseForSnippet(userId, snippetId, testCaseId))
+            .thenThrow(InvalidRequest("El test no pertenece a este snippet"))
 
         assertThrows<InvalidRequest> {
-            service.runOneTestOwnerAware(userId, snippetId, testCaseId)
+            service.runOneTestWithPermissions(userId, snippetId, testCaseId)
         }
     }
 }

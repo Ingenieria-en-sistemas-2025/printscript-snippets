@@ -2,8 +2,8 @@ package com.printscript.snippets
 
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.error.UnsupportedOperation
+import com.printscript.snippets.permission.SnippetAuthorizationScopeHelper
 import com.printscript.snippets.permission.SnippetPermission
-import com.printscript.snippets.service.SnippetAuthorizationScopeService
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -34,7 +34,7 @@ SnippetAuthorizationScopeServiceTest {
     fun `requireOwner pasa si lo es`() {
         val id = UUID.randomUUID()
         val snip = snippet(id, "u1")
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
 
         assertDoesNotThrow {
             svc.requireOwner("u1", snip)
@@ -45,7 +45,7 @@ SnippetAuthorizationScopeServiceTest {
     fun `requireOwner lanza si user no es owner`() {
         val id = UUID.randomUUID()
         val snip = snippet(id, "u1")
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
 
         assertThrows(UnsupportedOperation::class.java) {
             svc.requireOwner("other", snip)
@@ -57,7 +57,7 @@ SnippetAuthorizationScopeServiceTest {
         val id = UUID.randomUUID()
         val snip = snippet(id, "u1")
 
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
         assertDoesNotThrow { svc.requireEditorOrOwner("u1", snip) }
     }
 
@@ -69,7 +69,7 @@ SnippetAuthorizationScopeServiceTest {
         whenever(permissionClient.getUserScopeForSnippet("u2", id.toString()))
             .thenReturn("EDITOR")
 
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
 
         assertDoesNotThrow {
             svc.requireEditorOrOwner("u2", snip)
@@ -84,7 +84,7 @@ SnippetAuthorizationScopeServiceTest {
         whenever(permissionClient.getUserScopeForSnippet("u2", id.toString()))
             .thenReturn("READER")
 
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
 
         assertThrows(UnsupportedOperation::class.java) {
             svc.requireEditorOrOwner("u2", snip)
@@ -99,7 +99,7 @@ SnippetAuthorizationScopeServiceTest {
         whenever(permissionClient.getUserScopeForSnippet("x", id.toString()))
             .thenReturn(null)
 
-        val svc = SnippetAuthorizationScopeService(permissionClient)
+        val svc = SnippetAuthorizationScopeHelper(permissionClient)
 
         assertThrows(UnsupportedOperation::class.java) {
             svc.requireReaderOrAbove("x", snip)

@@ -6,9 +6,8 @@ import com.printscript.snippets.dto.ShareSnippetReq
 import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.enums.Compliance
 import com.printscript.snippets.error.NotFound
-import com.printscript.snippets.error.UnsupportedOperation
+import com.printscript.snippets.permission.SnippetAuthorizationScopeHelper
 import com.printscript.snippets.permission.SnippetPermission
-import com.printscript.snippets.service.SnippetAuthorizationScopeService
 import com.printscript.snippets.service.SnippetPermissionService
 import io.printscript.contracts.permissions.PermissionCreateSnippetInput
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -149,8 +148,8 @@ class SnippetPermissionServiceTest {
         client: SnippetPermission,
     ) : SnippetPermissionService(repo, client) {
 
-        val authorization: SnippetAuthorizationScopeService =
-            Mockito.mock(SnippetAuthorizationScopeService::class.java)
+        val authorization: SnippetAuthorizationScopeHelper =
+            Mockito.mock(SnippetAuthorizationScopeHelper::class.java)
 
         override fun checkPermissions(userId: String, snippetId: UUID, min: AccessLevel) {
             val sn = snippetRepo.findById(snippetId).orElseThrow()

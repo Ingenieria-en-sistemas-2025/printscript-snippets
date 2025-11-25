@@ -4,7 +4,6 @@ import com.printscript.snippets.domain.SnippetRepo
 import com.printscript.snippets.logs.CorrelationIdFilter.Companion.CORRELATION_ID_KEY
 import com.printscript.snippets.redis.RedisEventBus
 import com.printscript.snippets.service.LintReevaluationService
-import com.printscript.snippets.service.rules.FormatterMapper
 import com.printscript.snippets.service.rules.RulesStateService
 import io.printscript.contracts.events.FormattingRulesUpdated
 import io.printscript.contracts.events.LintingRulesUpdated
@@ -24,8 +23,6 @@ class BulkRulesService(
     private val logger = LoggerFactory.getLogger(BulkRulesService::class.java)
 
     fun onFormattingRulesChanged(ownerId: String) {
-        val rules = rulesStateService.getFormatAsRules(ownerId)
-        val options = FormatterMapper.toFormatterOptionsDto(rules)
         val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(ownerId)
 
         val corr = MDC.get(CORRELATION_ID_KEY) ?: UUID.randomUUID().toString()
@@ -47,7 +44,6 @@ class BulkRulesService(
                 version = lv.languageVersion,
                 configText = cfgText,
                 configFormat = cfgFmt,
-                options = options,
             )
             bus.publish(event)
         }

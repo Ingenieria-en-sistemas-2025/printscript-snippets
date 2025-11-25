@@ -66,7 +66,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.austral.ingsis:redis-streams-mvc:0.1.13")
 
-    implementation("io.printscript:contracts:0.1.2")
+    implementation("io.printscript:contracts:0.1.5")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
 }
 

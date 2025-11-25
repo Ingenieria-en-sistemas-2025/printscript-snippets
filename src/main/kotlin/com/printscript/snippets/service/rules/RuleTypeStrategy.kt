@@ -9,7 +9,7 @@ internal interface RuleTypeStrategy {
 
     fun defaultEnabled(): Set<String>
 
-    fun defaultValues(): Map<String, Any?> // defaults de vals numericos
+    fun defaultValues(): Map<String, Any?> // defaults de vals
 
     fun allRuleIds(): List<String>
 

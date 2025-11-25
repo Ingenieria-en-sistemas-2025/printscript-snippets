@@ -23,12 +23,12 @@ class RulesStateService( // preferencias del usuario sobre reglas
     private fun strategyFor(type: RulesType): RuleTypeStrategy =
         strategies.getValue(type)
 
-    private fun findRow(type: RulesType, ownerId: String?): RulesState? =
+    private fun findRowForOwnerOrDefault(type: RulesType, ownerId: String?): RulesState? =
         rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElseGet {
             rulesStateRepo.findByTypeAndOwnerId(type, null).orElse(null)
         }
 
-    private fun upsertRow(type: RulesType, ownerId: String?): RulesState =
+    private fun findOrCreateRowForOwner(type: RulesType, ownerId: String?): RulesState =
         rulesStateRepo.findByTypeAndOwnerId(type, ownerId).orElse(
             RulesState(
                 id = null,
@@ -42,24 +42,19 @@ class RulesStateService( // preferencias del usuario sobre reglas
         )
 
     private fun readEnabled(type: RulesType, ownerId: String?): Set<String> {
-        val row = findRow(type, ownerId)
-        val strategy = strategies.getValue(type)
+        val row = findRowForOwnerOrDefault(type, ownerId)
+        val strategy = strategyFor(type)
         return row?.enabledJson?.toSet() ?: strategy.defaultEnabled()
     }
 
     private fun readOptions(type: RulesType, ownerId: String?): Map<String, Any?> {
-        val row = findRow(type, ownerId)
+        val row = findRowForOwnerOrDefault(type, ownerId)
         val raw = row?.optionsJson ?: return emptyMap()
         return raw.filterValues { it != null }
     }
 
     private fun normalizeFormat(configFormat: String?): String =
-        when (configFormat?.lowercase()) {
-            "yaml", "yml" -> "yaml"
-            "json" -> "json"
-            null, "" -> "json"
-            else -> "json"
-        }
+        RuleHelpers.defaultConfigFormat(configFormat)
 
     fun saveState(
         type: RulesType,
@@ -77,7 +72,7 @@ class RulesStateService( // preferencias del usuario sobre reglas
             configFormat = normalizedFormat,
         )
 
-        val row = upsertRow(type, ownerId)
+        val row = findOrCreateRowForOwner(type, ownerId)
         row.enabledJson = state.enabled.toList()
         row.optionsJson = state.options.ifEmpty { null }
         row.configText = state.configText
@@ -94,7 +89,7 @@ class RulesStateService( // preferencias del usuario sobre reglas
 
     fun currentConfig(type: RulesType, ownerId: String): Pair<String?, String?> {
         val strategy = strategyFor(type)
-        val row = findRow(type, ownerId)
+        val row = findRowForOwnerOrDefault(type, ownerId)
         val rules = getRules(type, ownerId)
         return strategy.buildEffectiveConfig(row, rules)
     }

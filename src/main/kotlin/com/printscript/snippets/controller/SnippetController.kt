@@ -78,9 +78,7 @@ class SnippetController(
         logger.info("  - page: $page")
         logger.info("  - size: $size")
         logger.info("  - name: $name")
-
         val result = snippetDetailService.listAccessibleSnippets(principal.name, page, size, name)
-
         logger.info("Result from service:")
         logger.info("  - count: ${result.count}")
         logger.info("  - items: ${result.items.size}")
@@ -174,29 +172,34 @@ class SnippetController(
     @PostMapping("/{snippetId}/tests")
     @ResponseStatus(HttpStatus.CREATED)
     fun createTest(
+        principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
         @RequestBody @Valid req: CreateTestReq,
-    ): TestCaseDto =
-        snippetTestService.createTestCase(req.copy(snippetId = snippetId.toString()))
+    ): TestCaseDto {
+        val reqWithSnippetId = req.copy(snippetId = snippetId)
+        return snippetTestService.createTestCase(principal.name, reqWithSnippetId)
+    }
 
     @GetMapping("/{snippetId}/tests")
     fun listTests(
+        principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
     ): List<TestCaseDto> =
-        snippetTestService.listTestCases(snippetId)
+        snippetTestService.listTestCases(principal.name, snippetId)
 
     @DeleteMapping("/tests/{testCaseId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteTest(
+        principal: JwtAuthenticationToken,
         @PathVariable testCaseId: UUID,
-    ) = snippetTestService.deleteTestCase(testCaseId)
+    ) = snippetTestService.deleteTestCase(principal.name, testCaseId)
 
     @PostMapping("/{snippetId}/tests/{testCaseId}/run")
     fun runSingleTest(
         principal: JwtAuthenticationToken,
         @PathVariable snippetId: UUID,
         @PathVariable testCaseId: UUID,
-    ): SingleTestRunResult = snippetsExecuteService.runOneTestOwnerAware(
+    ): SingleTestRunResult = snippetsExecuteService.runOneTestWithPermissions(
         principal.name,
         snippetId,
         testCaseId,
@@ -261,7 +264,7 @@ class SnippetController(
         @RequestBody body: RunSnippetInputsReq = RunSnippetInputsReq(),
     ): ResponseEntity<RunRes> {
         val userId = auth.token.subject
-        val res = snippetsExecuteService.runSnippetOwnerAware(userId, snippetId, body?.inputs)
+        val res = snippetsExecuteService.runSnippetOwnerAware(userId, snippetId, body.inputs)
         return ResponseEntity.ok(res)
     }
 }

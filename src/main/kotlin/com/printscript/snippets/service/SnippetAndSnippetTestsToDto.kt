@@ -2,12 +2,14 @@ package com.printscript.snippets.service
 
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
+import com.printscript.snippets.domain.model.TestCase
 import com.printscript.snippets.dto.SnippetDetailDto
 import com.printscript.snippets.dto.SnippetSummaryDto
+import com.printscript.snippets.dto.TestCaseDto
 import com.printscript.snippets.error.ApiDiagnostic
 import io.printscript.contracts.DiagnosticDto
 
-object SnippetToDto {
+object SnippetAndSnippetTestsToDto {
     fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
         SnippetDetailDto(
             id = snippet.id!!.toString(),
@@ -40,4 +42,14 @@ object SnippetToDto {
         list.map { diagnostic ->
             ApiDiagnostic(diagnostic.ruleId, diagnostic.message, diagnostic.line, diagnostic.col)
         }
+
+    fun toDto(test: TestCase): TestCaseDto =
+        TestCaseDto(
+            id = test.id!!.toString(),
+            snippetId = test.snippetId,
+            name = test.name,
+            inputs = test.inputs,
+            expectedOutputs = test.expectedOutputs,
+            targetVersionNumber = test.targetVersionNumber,
+        )
 }

@@ -68,7 +68,7 @@ class RulesStateServiceTest {
             .thenReturn(Optional.of(userRow))
 
         val method = RulesStateService::class.java
-            .getDeclaredMethod("findRow", RulesType::class.java, String::class.java)
+            .getDeclaredMethod("findRowForOwnerOrDefault", RulesType::class.java, String::class.java)
         method.isAccessible = true
 
         val result = method.invoke(service, RulesType.FORMAT, owner) as RulesState?
@@ -90,7 +90,7 @@ class RulesStateServiceTest {
             .thenReturn(Optional.of(globalRow))
 
         val method = RulesStateService::class.java
-            .getDeclaredMethod("findRow", RulesType::class.java, String::class.java)
+            .getDeclaredMethod("findRowForOwnerOrDefault", RulesType::class.java, String::class.java)
         method.isAccessible = true
 
         val result = method.invoke(service, RulesType.FORMAT, owner) as RulesState?

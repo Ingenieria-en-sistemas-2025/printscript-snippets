@@ -7,12 +7,14 @@ import com.printscript.snippets.domain.SnippetVersionRepo
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.domain.model.SnippetVersion
 import com.printscript.snippets.dto.SnippetDetailDto
+import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.enums.LintStatus
 import com.printscript.snippets.error.NotFound
 import com.printscript.snippets.execution.SnippetExecution
+import com.printscript.snippets.permission.SnippetAuthorizationScopeHelper
 import com.printscript.snippets.permission.SnippetPermission
 import com.printscript.snippets.service.ComplianceCalculator
-import com.printscript.snippets.service.SnippetAuthorizationScopeService
+import com.printscript.snippets.service.SnippetAndSnippetTestsToDto
 import io.printscript.contracts.DiagnosticDto
 import io.printscript.contracts.formatter.FormatReq
 import io.printscript.contracts.linting.LintReq
@@ -27,25 +29,12 @@ class SnippetRuleDomainService(
     private val versionRepo: SnippetVersionRepo,
     private val assetClient: SnippetAsset,
     private val executionClient: SnippetExecution,
-    private val permissionClient: SnippetPermission,
+    permissionClient: SnippetPermission,
     private val rulesStateService: RulesStateService,
 ) {
 
-    private val authorization = SnippetAuthorizationScopeService(permissionClient)
+    private val authorization = SnippetAuthorizationScopeHelper(permissionClient)
     private val containerName = "snippets"
-
-    private fun toDetailDto(snippet: Snippet, version: SnippetVersion, content: String?): SnippetDetailDto =
-        SnippetDetailDto(
-            id = snippet.id!!.toString(),
-            name = snippet.name,
-            description = snippet.description,
-            language = snippet.language,
-            version = snippet.languageVersion,
-            ownerId = snippet.ownerId,
-            content = content,
-            isValid = version.isValid,
-            lintCount = snippet.lastLintCount,
-        )
 
     fun saveFormatted(snippetId: UUID, formatted: String) {
         val snippet = snippetRepo.findById(snippetId)
@@ -80,65 +69,69 @@ class SnippetRuleDomainService(
         latest.isValid = violations.isEmpty()
         latest.lintStatus = LintStatus.DONE
         versionRepo.save(latest)
-        val s = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        s.lastLintCount = violations.size
-        s.lastIsValid = latest.isValid
-        s.compliance = ComplianceCalculator.compute(LintStatus.DONE, latest.isValid, violations.size)
-        snippetRepo.save(s)
+        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
+        snippet.lastLintCount = violations.size
+        snippet.lastIsValid = latest.isValid
+        snippet.compliance = ComplianceCalculator.compute(LintStatus.DONE, latest.isValid, violations.size)
+        snippetRepo.save(snippet)
     }
 
     @Transactional
-    fun formatOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        authorization.requireOwner(userId, snippet)
+    fun formatOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto =
+        withSnippetContext(userId, snippetId, AccessLevel.EDITOR) { snippet, latest, original ->
+            val rules = rulesStateService.getFormatAsRules(snippet.ownerId)
+            val options = FormatterMapper.toFormatterOptionsDto(rules)
+            val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(snippet.ownerId)
+
+            val req = FormatReq(
+                language = snippet.language,
+                version = snippet.languageVersion,
+                content = original,
+                configText = cfgText,
+                configFormat = cfgFmt,
+                options = options,
+            )
+            val res = executionClient.format(req)
+
+            SnippetAndSnippetTestsToDto.toDetailDto(snippet, latest, res.formattedContent)
+        }
+
+    @Transactional
+    fun lintOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto =
+        withSnippetContext(userId, snippetId, AccessLevel.OWNER) { snippet, latest, original ->
+            val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
+
+            val req = LintReq(
+                language = snippet.language,
+                version = snippet.languageVersion,
+                content = original,
+                configText = cfgText,
+                configFormat = cfgFmt,
+            )
+            val res = executionClient.lint(req)
+
+            saveLint(snippetId, res.violations)
+
+            val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
+            SnippetAndSnippetTestsToDto.toDetailDto(snippet, updated, original)
+        }
+
+    private fun <R> withSnippetContext(
+        userId: String,
+        snippetId: UUID,
+        minScope: AccessLevel,
+        block: (snippet: Snippet, latest: SnippetVersion, original: String) -> R,
+    ): R {
+        val snippet = snippetRepo.findById(snippetId)
+            .orElseThrow { NotFound("Snippet not found") }
+
+        authorization.requireScopeAtLeast(userId, snippet, minScope)
 
         val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
             ?: throw NotFound("Snippet without versions")
 
         val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
 
-        val rules = rulesStateService.getFormatAsRules(snippet.ownerId)
-        val options = FormatterMapper.toFormatterOptionsDto(rules)
-        val (cfgText, cfgFmt) = rulesStateService.currentFormatConfigEffective(snippet.ownerId)
-
-        val req = FormatReq(
-            language = snippet.language,
-            version = snippet.languageVersion,
-            content = original,
-            configText = cfgText,
-            configFormat = cfgFmt,
-            options = options,
-        )
-        val res = executionClient.format(req)
-
-        saveFormatted(snippetId, res.formattedContent)
-        val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
-        return toDetailDto(snippet, updated, res.formattedContent)
-    }
-
-    @Transactional
-    fun lintOneOwnerAware(userId: String, snippetId: UUID): SnippetDetailDto {
-        val snippet = snippetRepo.findById(snippetId).orElseThrow { NotFound("Snippet not found") }
-        authorization.requireOwner(userId, snippet)
-
-        val latest = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId)
-            ?: throw NotFound("Snippet without versions")
-
-        val original = String(assetClient.download(containerName, latest.contentKey), StandardCharsets.UTF_8)
-
-        val (cfgText, cfgFmt) = rulesStateService.currentLintConfigEffective(snippet.ownerId)
-        val req = LintReq(
-            language = snippet.language,
-            version = snippet.languageVersion,
-            content = original,
-            configText = cfgText,
-            configFormat = cfgFmt,
-        )
-        val res = executionClient.lint(req)
-
-        saveLint(snippetId, res.violations)
-
-        val updated = versionRepo.findTopBySnippetIdOrderByVersionNumberDesc(snippetId) ?: latest
-        return toDetailDto(snippet, updated, original)
+        return block(snippet, latest, original)
     }
 }

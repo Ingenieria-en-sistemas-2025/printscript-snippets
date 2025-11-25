@@ -1,12 +1,11 @@
-package com.printscript.snippets.service
+package com.printscript.snippets.permission
 
 import com.printscript.snippets.domain.model.Snippet
 import com.printscript.snippets.enums.AccessLevel
 import com.printscript.snippets.error.UnsupportedOperation
-import com.printscript.snippets.permission.SnippetPermission
 import java.util.UUID
 
-class SnippetAuthorizationScopeService(
+class SnippetAuthorizationScopeHelper(
     private val permissionClient: SnippetPermission,
 ) {
 

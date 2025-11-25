@@ -1,7 +1,9 @@
 package com.printscript.snippets.dto
 
+import java.util.UUID
+
 data class CreateTestReq(
-    val snippetId: String? = null,
+    val snippetId: UUID? = null,
     val name: String,
     val inputs: List<String> = emptyList(),
     val expectedOutputs: List<String> = emptyList(),

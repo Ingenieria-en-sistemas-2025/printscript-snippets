@@ -27,8 +27,6 @@ class SecurityConfigTest {
             audience = "my-api-audience",
         )
 
-    // --- Tests Existentes (para referencia) ---
-
     @Test
     fun `corsConfigurationSource configura origins, methods y headers esperados`() {
         val config = newConfig()

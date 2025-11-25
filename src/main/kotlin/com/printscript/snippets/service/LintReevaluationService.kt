@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
-class LintReevaluationService( // no se bn donde iria este pero en rules service siento q no y tampooc en snippets service.
+class LintReevaluationService(
     private val snippetRepo: SnippetRepo,
     private val versionRepo: SnippetVersionRepo,
 ) {
